@@ -740,3 +740,16 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .customize__opt-emoji { font-size: 1.5rem; line-height: 1; }
 .customize__opt-label { font-size: 0.65rem; font-weight: 800; color: var(--ink-soft); }
 .customize__note { margin: var(--s5) var(--s4) 0; text-align: center; color: var(--ink-muted); font-weight: 600; font-size: var(--fs-caption); }
+
+/* ---- Invite a friend ---- */
+.invite__body { display: flex; flex-direction: column; align-items: center; text-align: center; padding-top: var(--s6); }
+.invite__hero { position: relative; width: 132px; height: 132px; display: grid; place-items: center; margin-bottom: var(--s4); }
+.invite__pip { width: 116px; height: 116px; }
+.invite__spark { position: absolute; right: -2px; top: 2px; font-size: 38px; transform: rotate(8deg); }
+.invite__title { margin: 0 0 var(--s2); font-size: var(--fs-h2); font-weight: 800; color: var(--ink); }
+.invite__sub { margin: 0 var(--s5) var(--s6); color: var(--ink-muted); font-weight: 600; line-height: 1.5; max-width: 340px; }
+.invite__code { display: flex; flex-direction: column; align-items: center; gap: 4px; background: var(--surface); border: 2px dashed var(--green); border-radius: var(--r-lg); padding: var(--s4) var(--s6); margin-bottom: var(--s6); box-shadow: var(--shadow-sm); }
+.invite__code-label { font-size: var(--fs-caption); font-weight: 700; color: var(--ink-muted); text-transform: uppercase; letter-spacing: 0.08em; }
+.invite__code-value { font-size: var(--fs-h2); font-weight: 800; color: var(--green-strong); letter-spacing: 0.06em; }
+.invite__cta { width: 100%; max-width: 360px; }
+.invite__note { margin: var(--s4) var(--s5) 0; color: var(--ink-muted); font-weight: 600; font-size: var(--fs-caption); max-width: 320px; }
