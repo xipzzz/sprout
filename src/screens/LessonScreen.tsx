@@ -4,7 +4,7 @@
    teaches kindly and you move on — no lives lost. */
 
 import { useState } from 'react';
-import { lesson } from '../data/course';
+import { getLesson } from '../data/course';
 import type { Exercise } from '../data/course';
 import MultipleChoice from '../components/MultipleChoice';
 import ArrangeWords from '../components/ArrangeWords';
@@ -16,6 +16,7 @@ import LessonComplete from '../components/LessonComplete';
 interface LessonScreenProps {
   onExit: () => void;
   onComplete: () => void;
+  unitId: string | null;
 }
 
 type Phase = 'answering' | 'feedback' | 'complete';
@@ -35,7 +36,8 @@ function isCorrect(ex: Exercise, a: Answer): boolean {
   return true; // match: completing it means every pair was matched correctly
 }
 
-export default function LessonScreen({ onExit, onComplete }: LessonScreenProps) {
+export default function LessonScreen({ onExit, onComplete, unitId }: LessonScreenProps) {
+  const lesson = getLesson(unitId);
   const exercises = lesson.exercises;
   const total = exercises.length;
 

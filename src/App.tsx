@@ -73,7 +73,7 @@ export default function App() {
   if (lessonUnit) {
     return (
       <div className="app">
-        <LessonScreen onExit={() => setLessonUnit(null)} onComplete={completeLesson} />
+        <LessonScreen onExit={() => setLessonUnit(null)} onComplete={completeLesson} unitId={lessonUnit} />
       </div>
     );
   }
