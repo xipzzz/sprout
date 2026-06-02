@@ -753,3 +753,21 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .invite__code-value { font-size: var(--fs-h2); font-weight: 800; color: var(--green-strong); letter-spacing: 0.06em; }
 .invite__cta { width: 100%; max-width: 360px; }
 .invite__note { margin: var(--s4) var(--s5) 0; color: var(--ink-muted); font-weight: 600; font-size: var(--fs-caption); max-width: 320px; }
+
+/* ---- Golden Bloom milestone ---- */
+.bloom { align-items: center; justify-content: center; text-align: center; padding: var(--s8) var(--s6) calc(var(--s8) + env(safe-area-inset-bottom)); background: radial-gradient(120% 70% at 50% 30%, var(--gold-tint) 0%, var(--bg) 62%); }
+.bloom__center { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; position: relative; }
+.bloom__halo { position: absolute; top: 50%; left: 50%; width: 260px; height: 260px; transform: translate(-50%, -64%); border-radius: 50%; background: radial-gradient(circle, rgba(245,194,61,0.32) 0%, rgba(245,194,61,0) 70%); pointer-events: none; }
+.bloom__flower { font-size: 3.4rem; line-height: 1; position: relative; }
+.bloom__pip { width: 120px; height: 120px; margin-top: calc(-1 * var(--s2)); position: relative; }
+.bloom__eyebrow { margin: var(--s4) 0 0; font-size: var(--fs-eyebrow); font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--gold-deep); }
+.bloom__title { margin: var(--s2) 0 0; font-size: var(--fs-display); font-weight: 900; color: var(--ink); }
+.bloom__sub { margin: var(--s3) var(--s2) 0; color: var(--ink-soft); font-weight: 600; line-height: 1.5; max-width: 320px; }
+.bloom__cta { width: 100%; max-width: 360px; }
+@media (prefers-reduced-motion: no-preference) {
+  .bloom__halo { animation: bloomPulse 3.2s ease-in-out infinite; }
+}
+@keyframes bloomPulse {
+  0%, 100% { opacity: .6; transform: translate(-50%, -64%) scale(1); }
+  50%      { opacity: 1;  transform: translate(-50%, -64%) scale(1.06); }
+}

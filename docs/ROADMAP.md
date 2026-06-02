@@ -11,7 +11,7 @@ Legend: ✅ done · 🔨 partial · ⬜ to build
 - **Foundation** — Vite + React + TS, GitHub, exact design tokens (calm palette, Nunito)
 - **Onboarding** — branded Launch Splash (shown once) ✅ · *Welcome / Save-your-garden / Log in / Reminder priming / parent gate* ⬜
 - **Home** — winding path, HUD (🍃/💎/💧 — gems→Shop, water→sheet), **5 sections × 7–8 units**, real **progression** (units unlock + persist)
-- **Lessons** — **4 exercise types**: Multiple Choice · Arrange Words · Match Pairs · Fill in the Blank → warm feedback drawer (green / clay · Meaning · In use · Tip · working Flag) → Lesson Complete · **Daily-goal** celebration · **per-unit content** (Hello / Around the Home / Family / Colors / Animals) with a gentle fallback so every unit is playable
+- **Lessons** — **4 exercise types**: Multiple Choice · Arrange Words · Match Pairs · Fill in the Blank → warm feedback drawer (green / clay · Meaning · In use · Tip · working Flag) → Lesson Complete · **Daily-goal** celebration · **per-unit content** (Hello / Around the Home / Family / Colors / Animals) with a gentle fallback so every unit is playable · **Golden Bloom** milestone when a whole section is finished
 - **Garden** — seedling (Pip) + Monthly Blooms grid
 - **Words** — vocab hub
 - **Grove** — cooperative shared garden (no ranks; opt-in leaderboard noted)
@@ -23,7 +23,6 @@ Legend: ✅ done · 🔨 partial · ⬜ to build
 - **Mobile** — page-scroll (browser chrome hides), no sideways pan, LAN/Tailscale preview
 
 ## ⬜ Remaining — buildable
-- **Golden Bloom** milestone moment
 - **Today Card** (home variant); **Garden depth** (Monthly Blooms detail / Year in Bloom)
 - **Garden Tales** (story content) · Insights · Search
 
