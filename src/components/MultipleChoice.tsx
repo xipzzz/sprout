@@ -32,11 +32,13 @@ export default function MultipleChoice({
               type="button"
               className={cls}
               disabled={revealed}
+              aria-label={c.label}
               aria-pressed={c.id === selectedId}
               onClick={() => onSelect(c.id)}
             >
               <span className="choice__emoji" aria-hidden="true">{c.emoji}</span>
-              <span className="choice__label">{c.label}</span>
+              {/* Word hidden while answering (no giveaway); shown on reveal to reinforce it. */}
+              {revealed && <span className="choice__label">{c.label}</span>}
             </button>
           );
         })}
