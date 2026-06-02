@@ -12,7 +12,9 @@ interface FeedbackDrawerProps {
 
 export default function FeedbackDrawer({ result, ex, onContinue }: FeedbackDrawerProps) {
   const correct = result === 'correct';
-  const answerLabel = ex.choices.find((c) => c.id === ex.answerId)?.label ?? '';
+  let answerLabel = '';
+  if (ex.kind === 'choice') answerLabel = ex.choices.find((c) => c.id === ex.answerId)?.label ?? '';
+  else if (ex.kind === 'arrange') answerLabel = ex.answer.join(' ');
 
   return (
     <div className={`drawer drawer--${result}`} role="status" aria-live="polite">

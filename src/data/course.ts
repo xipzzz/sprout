@@ -116,13 +116,33 @@ export interface Choice {
   emoji: string; // the picture
 }
 
-export interface Exercise {
+export interface Teach {
+  meaning: string;
+  inUse: string;
+  tip: string;
+}
+
+/** Tap the picture that matches the word. */
+export interface ChoiceExercise {
+  kind: 'choice';
   id: string;
   word: string; // the English word being taught
   choices: Choice[];
   answerId: string;
-  teach: { meaning: string; inUse: string; tip: string };
+  teach: Teach;
 }
+
+/** Tap word tiles in order to build a sentence. */
+export interface ArrangeExercise {
+  kind: 'arrange';
+  id: string;
+  prompt: string;   // the cue, e.g. "Put the words in order"
+  tiles: string[];  // shuffled word tiles
+  answer: string[]; // the correct order
+  teach: Teach;
+}
+
+export type Exercise = ChoiceExercise | ArrangeExercise;
 
 export const lesson = {
   id: 's1u2',
@@ -130,6 +150,7 @@ export const lesson = {
   reward: 12, // 🍃 leaves earned on completion
   exercises: [
     {
+      kind: 'choice',
       id: 'e1',
       word: 'door',
       answerId: 'door',
@@ -146,6 +167,7 @@ export const lesson = {
       },
     },
     {
+      kind: 'choice',
       id: 'e2',
       word: 'window',
       answerId: 'window',
@@ -162,6 +184,7 @@ export const lesson = {
       },
     },
     {
+      kind: 'choice',
       id: 'e3',
       word: 'chair',
       answerId: 'chair',
@@ -178,6 +201,7 @@ export const lesson = {
       },
     },
     {
+      kind: 'choice',
       id: 'e4',
       word: 'bed',
       answerId: 'bed',
@@ -191,6 +215,30 @@ export const lesson = {
         meaning: 'A bed is where you sleep at night.',
         inUse: 'It is time for bed.',
         tip: 'Bed has three letters: b-e-d.',
+      },
+    },
+    {
+      kind: 'arrange',
+      id: 'e5',
+      prompt: 'Put the words in order — a polite request:',
+      tiles: ['door', 'the', 'Please', 'close'],
+      answer: ['Please', 'close', 'the', 'door'],
+      teach: {
+        meaning: 'A polite way to ask someone to shut the door.',
+        inUse: 'Please close the door.',
+        tip: 'Start a polite request with “Please”.',
+      },
+    },
+    {
+      kind: 'arrange',
+      id: 'e6',
+      prompt: 'Put the words in order — it is bedtime:',
+      tiles: ['for', 'It', 'bed', 'is', 'time'],
+      answer: ['It', 'is', 'time', 'for', 'bed'],
+      teach: {
+        meaning: 'A way to say it is time to sleep.',
+        inUse: 'It is time for bed.',
+        tip: 'A sentence usually starts with a capital letter.',
       },
     },
   ] as Exercise[],

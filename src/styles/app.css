@@ -476,3 +476,32 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .placeholder__title { margin: var(--s2) 0 0; font-size: var(--fs-h1); font-weight: 900; }
 .placeholder__blurb { margin: 0; color: var(--ink-soft); font-weight: 600; max-width: 280px; }
 .placeholder__soon { margin: var(--s3) 0 0; font-size: var(--fs-caption); font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-muted); }
+
+/* ============================================================
+   Arrange Words (tap tiles to build a sentence)
+   ============================================================ */
+.arrange { padding: var(--s2) var(--s4) var(--s6); }
+.arrange__build {
+  min-height: 64px;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: var(--s2);
+  margin: var(--s4) 0;
+  padding: var(--s3) 0;
+  border-bottom: 2px dashed var(--line);
+}
+.arrange__hint { color: var(--ink-muted); font-weight: 600; align-self: center; }
+.arrange__bank { display: flex; flex-wrap: wrap; gap: var(--s2); }
+.tile {
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 2px solid var(--line);
+  border-bottom-width: 3px;
+  border-radius: var(--r-md);
+  font-weight: 800;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.12s var(--ease);
+}
+.tile:not(:disabled):active { transform: translateY(1px); }
+.tile--placed { background: var(--green-tint); border-color: var(--green); }
