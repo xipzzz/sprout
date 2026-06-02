@@ -5,23 +5,27 @@
 
 /* ---- Base reset ---- */
 * { box-sizing: border-box; }
-html, body, #root { height: 100%; }
+html { -webkit-text-size-adjust: 100%; }
+/* no sideways panning; let the PAGE scroll vertically (so the browser bars can auto-hide) */
+html, body { overflow-x: hidden; overscroll-behavior-x: none; }
 body {
   margin: 0;
+  min-height: 100dvh;
   font-family: var(--font);
   color: var(--ink);
   background: var(--bg);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
+#root { min-height: 100dvh; }
 button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; }
 :focus-visible { outline: 3px solid var(--green); outline-offset: 2px; border-radius: 6px; }
 
-/* ---- App shell: a centered mobile column (great on iPad/desktop too) ---- */
+/* ---- App shell ----
+   Mobile: the PAGE scrolls, so Safari/Chrome auto-hide their bars (native feel).
+   Desktop: a centered, fixed-height "device" card that scrolls inside. */
 .app {
   min-height: 100dvh;
-  display: grid;
-  place-items: center;
   background:
     radial-gradient(120% 80% at 50% -10%, #fbf8ef 0%, var(--bg) 60%);
 }
@@ -29,34 +33,43 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   position: relative;
   width: 100%;
   max-width: 430px;
-  height: 100dvh;            /* bound the height so the body scrolls inside */
+  margin: 0 auto;
+  min-height: 100dvh;
   background: var(--bg);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-}
-@media (min-width: 480px) {
-  .app { padding: 24px; }
-  .screen {
-    height: min(880px, calc(100dvh - 48px));
-    border-radius: 30px;
-    box-shadow: var(--shadow-md);
-  }
 }
 .screen__body {
   flex: 1;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+  padding-bottom: calc(72px + env(safe-area-inset-bottom)); /* clear the fixed tab bar */
+}
+@media (min-width: 480px) {
+  .app { display: grid; place-items: center; padding: 24px; }
+  .screen {
+    height: min(880px, calc(100dvh - 48px));
+    min-height: 0;
+    margin: 0;
+    border-radius: 30px;
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+  }
+  .screen__body { overflow-y: auto; -webkit-overflow-scrolling: touch; padding-bottom: 0; }
+  .hud { position: static; }
+  .tabbar { position: static; max-width: none; margin: 0; }
 }
 
 /* ============================================================
    HUD — three currency chips (each has ONE job)
    ============================================================ */
 .hud {
+  position: sticky;
+  top: 0;
+  z-index: 20;
   display: flex;
   align-items: center;
   gap: var(--s2);
   padding: calc(var(--s4) + env(safe-area-inset-top)) var(--s4) var(--s3);
+  background: var(--bg);
 }
 .chip {
   display: inline-flex;
@@ -217,6 +230,13 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
    Bottom tab bar
    ============================================================ */
 .tabbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  max-width: 430px;
+  margin: 0 auto;
+  z-index: 20;
   display: flex;
   background: var(--surface);
   border-top: 1px solid var(--line);
