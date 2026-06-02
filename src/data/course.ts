@@ -1,13 +1,13 @@
 /* ============================================================
-   Sprout — Course data
-   Lessons live here as plain data. To add a lesson, add an item
-   to `nodes`. Screens read from this file; they don't hard-code
-   content. (Later this can come from a server or a JSON file.)
+   Sprout — Course data (English class)
+   The whole curriculum lives here as plain data:
+   5 sections, each with 7–8 units. Screens read from this file.
    ============================================================ */
 
 export type NodeStatus = 'done' | 'current' | 'locked';
 export type NodeKind = 'lesson' | 'golden';
 
+/** A node on the winding path: a unit, or a section's Golden Bloom. */
 export interface PathNode {
   id: string;
   kind: NodeKind;
@@ -15,61 +15,123 @@ export interface PathNode {
   title: string;
 }
 
+/** A unit within a section. */
 export interface Unit {
-  section: number;
-  unit: number;
+  id: string;
   title: string;
-  nodes: PathNode[];
+  status: NodeStatus;
+}
+
+/** A section of the course. Five of them, each with 7–8 units. */
+export interface Section {
+  id: string;
+  index: number;
+  title: string;
+  status: NodeStatus;
+  units: Unit[];
 }
 
 /** The HUD currencies — each has exactly ONE job. */
 export const hud = {
-  leaves: 34,  // 🍃 progress/streak — earned, never spent
-  gems: 420,   // 💎 premium spend (shop)
-  water: 5,    // 💧 energy/lives that gate lessons
+  leaves: 34, // 🍃 progress/streak — earned, never spent
+  gems: 420,  // 💎 premium spend (shop)
+  water: 5,   // 💧 energy/lives that gate lessons
 };
 
-/** The unit currently shown on the home path. */
-export const currentUnit: Unit = {
-  section: 1,
-  unit: 1,
-  title: 'Getting started',
-  nodes: [
-    { id: 'l1', kind: 'lesson', status: 'done',    title: 'First words' },
-    { id: 'l2', kind: 'lesson', status: 'done',    title: 'Greetings' },
-    { id: 'l3', kind: 'lesson', status: 'current', title: 'Around the home' },
-    { id: 'l4', kind: 'lesson', status: 'locked',  title: 'Food & drink' },
-    { id: 'l5', kind: 'lesson', status: 'locked',  title: 'Family' },
-    { id: 'g1', kind: 'golden', status: 'locked',  title: 'Golden Bloom' },
-  ],
-};
+/* ---------------- The curriculum: 5 sections × 7–8 units ---------------- */
 
-/* ---- Lesson content (exercises as data) ----
-   One target word per exercise, shown as a picture-choice. Add exercises by
-   adding items here; the lesson screen reads from this. */
+export const course: Section[] = [
+  {
+    id: 's1', index: 1, title: 'First Words', status: 'current',
+    units: [
+      { id: 's1u1', title: 'Hello',           status: 'done' },
+      { id: 's1u2', title: 'Around the Home',  status: 'current' },
+      { id: 's1u3', title: 'Family',           status: 'locked' },
+      { id: 's1u4', title: 'Colors',           status: 'locked' },
+      { id: 's1u5', title: 'Numbers',          status: 'locked' },
+      { id: 's1u6', title: 'Food',             status: 'locked' },
+      { id: 's1u7', title: 'Animals',          status: 'locked' },
+    ],
+  },
+  {
+    id: 's2', index: 2, title: 'Everyday Life', status: 'locked',
+    units: [
+      { id: 's2u1', title: 'Clothes',      status: 'locked' },
+      { id: 's2u2', title: 'The Body',     status: 'locked' },
+      { id: 's2u3', title: 'Weather',      status: 'locked' },
+      { id: 's2u4', title: 'Days & Time',  status: 'locked' },
+      { id: 's2u5', title: 'At School',    status: 'locked' },
+      { id: 's2u6', title: 'Toys & Play',  status: 'locked' },
+      { id: 's2u7', title: 'Feelings',     status: 'locked' },
+      { id: 's2u8', title: 'Action Words', status: 'locked' },
+    ],
+  },
+  {
+    id: 's3', index: 3, title: 'Out and About', status: 'locked',
+    units: [
+      { id: 's3u1', title: 'The Park',       status: 'locked' },
+      { id: 's3u2', title: 'Around Town',    status: 'locked' },
+      { id: 's3u3', title: 'Getting There',  status: 'locked' },
+      { id: 's3u4', title: 'Shopping',       status: 'locked' },
+      { id: 's3u5', title: 'People at Work', status: 'locked' },
+      { id: 's3u6', title: 'In Nature',      status: 'locked' },
+      { id: 's3u7', title: 'Directions',     status: 'locked' },
+    ],
+  },
+  {
+    id: 's4', index: 4, title: 'Telling Stories', status: 'locked',
+    units: [
+      { id: 's4u1', title: 'Doing Words',       status: 'locked' },
+      { id: 's4u2', title: 'Asking Questions',  status: 'locked' },
+      { id: 's4u3', title: 'Describing Things', status: 'locked' },
+      { id: 's4u4', title: 'More Than One',     status: 'locked' },
+      { id: 's4u5', title: 'Yesterday',         status: 'locked' },
+      { id: 's4u6', title: 'Talking Together',  status: 'locked' },
+      { id: 's4u7', title: 'Reading Time',      status: 'locked' },
+      { id: 's4u8', title: 'Story Time',        status: 'locked' },
+    ],
+  },
+  {
+    id: 's5', index: 5, title: 'Confident English', status: 'locked',
+    units: [
+      { id: 's5u1', title: 'Opinions',         status: 'locked' },
+      { id: 's5u2', title: 'My Plans',         status: 'locked' },
+      { id: 's5u3', title: 'Likes & Dislikes', status: 'locked' },
+      { id: 's5u4', title: 'Comparing',        status: 'locked' },
+      { id: 's5u5', title: 'Joining Ideas',    status: 'locked' },
+      { id: 's5u6', title: 'Retelling',        status: 'locked' },
+      { id: 's5u7', title: 'Everyday Chat',    status: 'locked' },
+      { id: 's5u8', title: 'Big Words',        status: 'locked' },
+    ],
+  },
+];
+
+/* ---------------- Lesson content (English) ----------------
+   The one playable lesson so far: the current unit, "Around the Home".
+   Tap the picture that matches the word. */
 
 export interface Choice {
   id: string;
-  label: string;   // shown under the picture
-  emoji: string;   // the picture
+  label: string; // shown under the picture
+  emoji: string; // the picture
 }
 
 export interface Exercise {
   id: string;
-  word: string;    // the word being taught (Spanish here)
+  word: string; // the English word being taught
   choices: Choice[];
   answerId: string;
-  teach: { meaning: string; inUse: string; why: string };
+  teach: { meaning: string; inUse: string; tip: string };
 }
 
 export const lesson = {
-  id: 'l3',
-  title: 'Around the home',
+  id: 's1u2',
+  title: 'Around the Home',
   reward: 12, // 🍃 leaves earned on completion
   exercises: [
     {
       id: 'e1',
-      word: 'la puerta',
+      word: 'door',
       answerId: 'door',
       choices: [
         { id: 'door', label: 'door', emoji: '🚪' },
@@ -78,14 +140,14 @@ export const lesson = {
         { id: 'chair', label: 'chair', emoji: '🪑' },
       ],
       teach: {
-        meaning: 'la puerta = the door',
-        inUse: 'Abre la puerta, por favor. — Open the door, please.',
-        why: '“la” means “the” for feminine words like puerta.',
+        meaning: 'A door is what you open to go in or out of a room.',
+        inUse: 'Please close the door.',
+        tip: 'Door starts with the letter D.',
       },
     },
     {
       id: 'e2',
-      word: 'la ventana',
+      word: 'window',
       answerId: 'window',
       choices: [
         { id: 'window', label: 'window', emoji: '🪟' },
@@ -94,14 +156,14 @@ export const lesson = {
         { id: 'bed', label: 'bed', emoji: '🛏️' },
       ],
       teach: {
-        meaning: 'la ventana = the window',
-        inUse: 'Miro por la ventana. — I look out the window.',
-        why: 'Spanish nouns have a gender; ventana is feminine.',
+        meaning: 'A window lets light in so you can see outside.',
+        inUse: 'Look out the window at the rain.',
+        tip: 'Window is two parts joined: wind + ow.',
       },
     },
     {
       id: 'e3',
-      word: 'la silla',
+      word: 'chair',
       answerId: 'chair',
       choices: [
         { id: 'chair', label: 'chair', emoji: '🪑' },
@@ -110,14 +172,14 @@ export const lesson = {
         { id: 'window', label: 'window', emoji: '🪟' },
       ],
       teach: {
-        meaning: 'la silla = the chair',
-        inUse: 'Me siento en la silla. — I sit on the chair.',
-        why: 'Use “la” for feminine nouns like silla.',
+        meaning: 'A chair is a seat for one person.',
+        inUse: 'Please sit on the chair.',
+        tip: 'Chair starts with the “ch” sound, like cheese.',
       },
     },
     {
       id: 'e4',
-      word: 'la cama',
+      word: 'bed',
       answerId: 'bed',
       choices: [
         { id: 'bed', label: 'bed', emoji: '🛏️' },
@@ -126,9 +188,9 @@ export const lesson = {
         { id: 'door', label: 'door', emoji: '🚪' },
       ],
       teach: {
-        meaning: 'la cama = the bed',
-        inUse: 'Voy a la cama. — I go to bed.',
-        why: 'cama is feminine, so it takes “la”.',
+        meaning: 'A bed is where you sleep at night.',
+        inUse: 'It is time for bed.',
+        tip: 'Bed has three letters: b-e-d.',
       },
     },
   ] as Exercise[],

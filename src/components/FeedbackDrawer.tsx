@@ -31,7 +31,7 @@ export default function FeedbackDrawer({ result, ex, onContinue }: FeedbackDrawe
       <dl className="teach">
         <div><dt>Meaning</dt><dd>{ex.teach.meaning}</dd></div>
         <div><dt>In use</dt><dd>{ex.teach.inUse}</dd></div>
-        <div><dt>Why</dt><dd>{ex.teach.why}</dd></div>
+        <div><dt>Tip</dt><dd>{ex.teach.tip}</dd></div>
       </dl>
 
       <button type="button" className="btn-primary" onClick={onContinue}>CONTINUE</button>

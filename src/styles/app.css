@@ -402,3 +402,37 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   .lesson__foot { position: absolute; max-width: none; }
   .drawer { position: absolute; max-width: none; }
 }
+
+/* ============================================================
+   Course sections (5 sections, each with 7–8 units)
+   ============================================================ */
+.section-banner {
+  margin: var(--s6) var(--s4) 0;
+  padding: var(--s4) var(--s5);
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  color: #fff;
+  background: linear-gradient(180deg, var(--green) 0%, var(--green-strong) 100%);
+  border-radius: var(--r-lg);
+  box-shadow: 0 5px 0 var(--green-deep), var(--shadow-md);
+}
+.section-banner__text { flex: 1; min-width: 0; }
+.section-banner__eyebrow {
+  margin: 0 0 2px;
+  font-size: var(--fs-eyebrow);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+.section-banner__title { margin: 0; font-size: var(--fs-h1); font-weight: 800; }
+.section-banner__lock { flex: none; opacity: 0.9; }
+.section-banner--locked {
+  color: var(--locked-ink);
+  background: var(--bg-soft);
+  box-shadow: 0 4px 0 var(--locked-edge);
+}
+.section-banner--locked .section-banner__eyebrow { opacity: 0.7; }
+/* dim a locked section's path slightly so the eye rests on the active section */
+.section-banner--locked + .path { opacity: 0.8; }
