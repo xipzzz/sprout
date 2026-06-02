@@ -15,7 +15,7 @@ Legend: ✅ done · 🔨 partial · ⬜ to build
 - **Garden** — seedling (Pip) + Monthly Blooms grid
 - **Words** — vocab hub
 - **Grove** — cooperative shared garden (no ranks; opt-in leaderboard noted)
-- **Me** — profile, stat tiles, links · **Customize Pip** (accessories) · **Invite a friend** (share sheet)
+- **Me** — profile, stat tiles, links · **Customize Pip** (accessories) · **Invite a friend** (share sheet) · **Insights** (calm progress + weekly chart)
 - **Streak calendar** — calm leaf-dot grid; auto-freeze shown warmly
 - **Shop** — gem-priced extras (gems never required)
 - **Modals** — Water sheet, Offline notice (reusable Modal)
@@ -24,7 +24,7 @@ Legend: ✅ done · 🔨 partial · ⬜ to build
 
 ## ⬜ Remaining — buildable
 - **Today Card** (home variant); **Garden depth** (Monthly Blooms detail / Year in Bloom)
-- **Garden Tales** (story content) · Insights · Search
+- **Garden Tales** (story content) · Search
 
 ## ⬜ Remaining — needs your input / integration
 - **Audio exercises** (Type / Speak What You Hear) — needs text-to-speech + microphone

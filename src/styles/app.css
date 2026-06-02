@@ -771,3 +771,22 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   0%, 100% { opacity: .6; transform: translate(-50%, -64%) scale(1); }
   50%      { opacity: 1;  transform: translate(-50%, -64%) scale(1.06); }
 }
+
+/* ---- Insights ---- */
+.insights__body { padding: var(--s4) var(--s4) calc(72px + env(safe-area-inset-bottom)); }
+.insights__stats { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s3); }
+.insights__stat { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: var(--s4); background: var(--surface); border-radius: var(--r-lg); box-shadow: var(--shadow-sm); }
+.insights__stat-icon { font-size: 1.5rem; line-height: 1; }
+.insights__stat-num { font-size: var(--fs-h1); font-weight: 900; color: var(--ink); font-variant-numeric: tabular-nums; }
+.insights__stat-lbl { font-size: var(--fs-caption); font-weight: 700; color: var(--ink-muted); }
+.insights__card { margin-top: var(--s5); padding: var(--s5); background: var(--surface); border-radius: var(--r-lg); box-shadow: var(--shadow-sm); }
+.insights__card-title { margin: 0 0 var(--s4); font-size: var(--fs-h2); font-weight: 800; color: var(--ink); }
+.insights__chart { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--s2); height: 140px; }
+.insights__bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; }
+.insights__bar-track { flex: 1; width: 100%; display: flex; align-items: flex-end; }
+.insights__bar { width: 60%; margin: 0 auto; min-height: 6px; background: var(--green); border-radius: var(--r-pill); transition: height var(--dur) var(--ease); }
+.insights__bar--best { background: var(--green-strong); }
+.insights__bar-day { font-size: var(--fs-caption); font-weight: 700; color: var(--ink-muted); }
+.insights__note { margin-top: var(--s5); display: flex; align-items: center; gap: var(--s3); padding: var(--s4); background: var(--green-tint); border-radius: var(--r-lg); }
+.insights__pip { width: 56px; height: 56px; flex: none; }
+.insights__note p { margin: 0; font-weight: 600; color: var(--green-deep); line-height: 1.45; }
