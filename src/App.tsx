@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { TabKey } from './components/TabBar';
 import HomeScreen from './screens/HomeScreen';
 import LessonScreen from './screens/LessonScreen';
@@ -20,6 +20,17 @@ export default function App() {
   const [showStreak, setShowStreak] = useState(false);
   const [showShop, setShowShop] = useState(false);
   const [showWater, setShowWater] = useState(false);
+  const [offline, setOffline] = useState(() => typeof navigator !== 'undefined' && !navigator.onLine);
+  useEffect(() => {
+    const goOffline = () => setOffline(true);
+    const goOnline = () => setOffline(false);
+    window.addEventListener('offline', goOffline);
+    window.addEventListener('online', goOnline);
+    return () => {
+      window.removeEventListener('offline', goOffline);
+      window.removeEventListener('online', goOnline);
+    };
+  }, []);
   const [onboarded, setOnboarded] = useState(() => {
     try { return localStorage.getItem('sprout.onboarded') === '1'; } catch { return false; }
   });
@@ -93,6 +104,17 @@ export default function App() {
               Top up in the Shop
             </button>
             <button type="button" className="wmodal__dismiss" onClick={() => setShowWater(false)}>Maybe later</button>
+          </div>
+        </Modal>
+      )}
+
+      {offline && (
+        <Modal onClose={() => setOffline(false)}>
+          <div className="wmodal">
+            <span className="wmodal__icon" aria-hidden="true">🌙</span>
+            <h2 className="wmodal__title">You're offline</h2>
+            <p className="wmodal__body">Your garden is safe — everything you've done is saved. Reconnect to grow more.</p>
+            <button type="button" className="btn-primary" onClick={() => setOffline(false)}>Okay</button>
           </div>
         </Modal>
       )}
