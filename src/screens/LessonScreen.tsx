@@ -8,6 +8,7 @@ import { lesson } from '../data/course';
 import type { Exercise } from '../data/course';
 import MultipleChoice from '../components/MultipleChoice';
 import ArrangeWords from '../components/ArrangeWords';
+import MatchPairs from '../components/MatchPairs';
 import FeedbackDrawer from '../components/FeedbackDrawer';
 import LessonComplete from '../components/LessonComplete';
 
@@ -21,12 +22,14 @@ type Answer = string | string[] | null;
 
 function isComplete(ex: Exercise, a: Answer): boolean {
   if (ex.kind === 'choice') return typeof a === 'string';
-  return Array.isArray(a) && a.length === ex.answer.length;
+  if (ex.kind === 'arrange') return Array.isArray(a) && a.length === ex.answer.length;
+  return Array.isArray(a) && a.length === ex.pairs.length; // match: all pairs found
 }
 
 function isCorrect(ex: Exercise, a: Answer): boolean {
   if (ex.kind === 'choice') return a === ex.answerId;
-  return Array.isArray(a) && a.join(' ') === ex.answer.join(' ');
+  if (ex.kind === 'arrange') return Array.isArray(a) && a.join(' ') === ex.answer.join(' ');
+  return true; // match: completing it means every pair was matched correctly
 }
 
 export default function LessonScreen({ onExit, onComplete }: LessonScreenProps) {
@@ -102,11 +105,18 @@ export default function LessonScreen({ onExit, onComplete }: LessonScreenProps) 
             revealed={phase === 'feedback'}
             onSelect={setAnswer}
           />
-        ) : (
+        ) : ex.kind === 'arrange' ? (
           <ArrangeWords
             key={ex.id}
             prompt={ex.prompt}
             tiles={ex.tiles}
+            revealed={phase === 'feedback'}
+            onChange={setAnswer}
+          />
+        ) : (
+          <MatchPairs
+            key={ex.id}
+            pairs={ex.pairs}
             revealed={phase === 'feedback'}
             onChange={setAnswer}
           />

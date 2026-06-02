@@ -142,7 +142,15 @@ export interface ArrangeExercise {
   teach: Teach;
 }
 
-export type Exercise = ChoiceExercise | ArrangeExercise;
+/** Match each word to its picture (two columns). */
+export interface MatchExercise {
+  kind: 'match';
+  id: string;
+  pairs: { id: string; word: string; emoji: string }[];
+  teach: Teach;
+}
+
+export type Exercise = ChoiceExercise | ArrangeExercise | MatchExercise;
 
 export const lesson = {
   id: 's1u2',
@@ -239,6 +247,21 @@ export const lesson = {
         meaning: 'A way to say it is time to sleep.',
         inUse: 'It is time for bed.',
         tip: 'A sentence usually starts with a capital letter.',
+      },
+    },
+    {
+      kind: 'match',
+      id: 'e7',
+      pairs: [
+        { id: 'door', word: 'door', emoji: '🚪' },
+        { id: 'window', word: 'window', emoji: '🪟' },
+        { id: 'chair', word: 'chair', emoji: '🪑' },
+        { id: 'bed', word: 'bed', emoji: '🛏️' },
+      ],
+      teach: {
+        meaning: 'You matched each word to its picture.',
+        inUse: 'door · window · chair · bed',
+        tip: 'Say each word aloud as you match it.',
       },
     },
   ] as Exercise[],

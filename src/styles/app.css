@@ -508,3 +508,29 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 }
 .tile:not(:disabled):active { transform: translateY(1px); }
 .tile--placed { background: var(--green-tint); border-color: var(--green); }
+
+/* ============================================================
+   Match Pairs (word ↔ picture, two columns)
+   ============================================================ */
+.match { padding: var(--s2) var(--s4) var(--s6); }
+.match__grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s3); margin-top: var(--s4); }
+.match__col { display: flex; flex-direction: column; gap: var(--s3); }
+.match-card {
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--s4);
+  background: var(--surface);
+  border: 2px solid var(--line);
+  border-bottom-width: 3px;
+  border-radius: var(--r-lg);
+  font-weight: 800;
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.12s var(--ease), background 0.12s var(--ease), opacity 0.2s var(--ease);
+}
+.match-card:not(:disabled):active { transform: translateY(1px); }
+.match-card__emoji { font-size: 2rem; line-height: 1; }
+.match-card--selected { border-color: var(--green); background: var(--green-tint); }
+.match-card--matched { opacity: 0.35; }
+.match-card--wrong { border-color: var(--clay); background: var(--clay-tint); }
