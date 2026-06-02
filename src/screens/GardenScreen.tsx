@@ -1,32 +1,37 @@
-/* GardenScreen — the reward home. The blooms you grow by learning,
-   a current seedling that grows with practice, and Monthly Blooms.
-   (Content as data; earned blooms show their flower, others a seed.) */
+/* GardenScreen — the reward home. Blooms are tied to real progress (one per
+   section, earned when the whole section is finished), plus a calm "Year in
+   Bloom" overview of the season so far. */
 
 import TabBar, { type TabKey } from '../components/TabBar';
 import Pip from '../components/Pip';
+import { courseWithProgress } from '../data/course';
 
 interface GardenScreenProps {
   tab: TabKey;
   onTabChange: (tab: TabKey) => void;
+  completed: string[];
 }
 
-const blooms = [
-  { id: 'b1', emoji: '🌼', label: 'Hello',          earned: true },
-  { id: 'b2', emoji: '🌿', label: 'First Words',    earned: true },
-  { id: 'b3', emoji: '🌸', label: 'Around the Home', earned: false },
-  { id: 'b4', emoji: '🌻', label: 'Family',         earned: false },
-  { id: 'b5', emoji: '🌷', label: 'Colors',         earned: false },
-  { id: 'b6', emoji: '🪻', label: 'Numbers',        earned: false },
-];
+// One distinct flower per section, in order.
+const SECTION_FLOWERS = ['🌼', '🌸', '🌻', '🌷', '🪻'];
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-export default function GardenScreen({ tab, onTabChange }: GardenScreenProps) {
+export default function GardenScreen({ tab, onTabChange, completed }: GardenScreenProps) {
+  const sections = courseWithProgress(completed);
+  const blooms = sections.map((s, i) => ({
+    id: s.id,
+    emoji: SECTION_FLOWERS[i % SECTION_FLOWERS.length],
+    label: s.title,
+    earned: s.status === 'done',
+  }));
   const grown = blooms.filter((b) => b.earned).length;
+  const currentMonth = new Date().getMonth();
 
   return (
     <div className="screen garden">
       <header className="garden__head">
         <h1 className="garden__title">Your Garden</h1>
-        <p className="garden__sub">{grown} blooms grown · keep practicing to grow more 🌱</p>
+        <p className="garden__sub">{grown} {grown === 1 ? 'bloom' : 'blooms'} grown · keep practicing to grow more 🌱</p>
       </header>
 
       <main className="screen__body">
@@ -49,6 +54,20 @@ export default function GardenScreen({ tab, onTabChange }: GardenScreenProps) {
             </button>
           ))}
         </div>
+
+        <h2 className="garden__section">Year in Bloom</h2>
+        <div className="year" role="img" aria-label="Your year so far, month by month">
+          {MONTHS.map((m, i) => {
+            const state = i < currentMonth ? 'past' : i === currentMonth ? 'now' : 'future';
+            return (
+              <div key={m} className={`year__cell year__cell--${state}`}>
+                <span className="year__mark" aria-hidden="true">{state === 'now' ? '🌼' : state === 'past' ? '·' : ''}</span>
+                <span className="year__month">{m}</span>
+              </div>
+            );
+          })}
+        </div>
+        <p className="year__cap">This is your first season — watch it fill in, one bloom at a time. 🌱</p>
       </main>
 
       <TabBar active={tab} onChange={onTabChange} />

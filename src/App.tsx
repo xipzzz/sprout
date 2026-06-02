@@ -161,7 +161,7 @@ export default function App() {
       {tab === 'learn' && (
         <HomeScreen tab={tab} onTabChange={setTab} completed={completed} onStartUnit={setLessonUnit} onOpenShop={() => setShowShop(true)} onOpenWater={() => setShowWater(true)} />
       )}
-      {tab === 'garden' && <GardenScreen tab={tab} onTabChange={setTab} />}
+      {tab === 'garden' && <GardenScreen tab={tab} onTabChange={setTab} completed={completed} />}
       {tab === 'words' && <WordsScreen tab={tab} onTabChange={setTab} />}
       {tab === 'grove' && <GroveScreen tab={tab} onTabChange={setTab} />}
       {tab === 'me' && <MeScreen tab={tab} onTabChange={setTab} completed={completed} onOpenStreak={() => setShowStreak(true)} onOpenQuests={() => setShowQuests(true)} onOpenCustomize={() => setShowCustomize(true)} onOpenInvite={() => setShowInvite(true)} onOpenInsights={() => setShowInsights(true)} />}
