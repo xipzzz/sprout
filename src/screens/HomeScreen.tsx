@@ -1,17 +1,34 @@
-/* HomeScreen — the "Winding Path" home.
-   Composes: HUD (top) + scrollable body (unit banner + path) + tab bar.
+/* HomeScreen — the winding-path home, showing the whole course:
+   5 sections, each with 7–8 unit nodes (plus a Golden Bloom milestone).
    Reads everything from src/data/course.ts. */
 
 import { useState } from 'react';
 import HUD from '../components/HUD';
-import UnitBanner from '../components/UnitBanner';
+import SectionBanner from '../components/SectionBanner';
 import WindingPath from '../components/WindingPath';
 import TabBar, { type TabKey } from '../components/TabBar';
-import { currentUnit, hud } from '../data/course';
-import type { PathNode } from '../data/course';
+import { course, hud } from '../data/course';
+import type { PathNode, Section } from '../data/course';
 
 interface HomeScreenProps {
   onStartLesson: () => void;
+}
+
+/** Turn a section's units into path nodes, plus a Golden Bloom at the end. */
+function sectionNodes(section: Section): PathNode[] {
+  const nodes: PathNode[] = section.units.map((u) => ({
+    id: u.id,
+    kind: 'lesson',
+    status: u.status,
+    title: u.title,
+  }));
+  nodes.push({
+    id: `${section.id}-bloom`,
+    kind: 'golden',
+    status: section.status === 'done' ? 'done' : 'locked',
+    title: 'Golden Bloom',
+  });
+  return nodes;
 }
 
 export default function HomeScreen({ onStartLesson }: HomeScreenProps) {
@@ -27,12 +44,12 @@ export default function HomeScreen({ onStartLesson }: HomeScreenProps) {
       <HUD leaves={hud.leaves} gems={hud.gems} water={hud.water} />
 
       <main className="screen__body">
-        <UnitBanner
-          section={currentUnit.section}
-          unit={currentUnit.unit}
-          title={currentUnit.title}
-        />
-        <WindingPath nodes={currentUnit.nodes} onSelect={startLesson} />
+        {course.map((section) => (
+          <section key={section.id} className="course-section">
+            <SectionBanner section={section} />
+            <WindingPath nodes={sectionNodes(section)} onSelect={startLesson} />
+          </section>
+        ))}
       </main>
 
       <TabBar active={tab} onChange={setTab} />
