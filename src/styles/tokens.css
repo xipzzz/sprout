@@ -1,0 +1,66 @@
+/* ============================================================
+   Sprout — Design Tokens
+   The single source of truth for the "calm" look.
+   Every color/size used in the app should come from here, so the
+   whole product stays consistent. (Exact values will be locked in
+   from "Sprout Viewer.html" — these are a close match from the
+   design screenshots.)
+   ============================================================ */
+
+:root {
+  /* ---- Surfaces (warm, calm, light-mode only) ---- */
+  --bg: #f6f3ea;            /* warm cream "paper" — the screen background */
+  --bg-soft: #efebdd;       /* slightly sunken cream */
+  --surface: #ffffff;       /* cards & chips */
+  --surface-2: #fcfaf4;     /* faintly off-white */
+
+  /* ---- Brand green (ONE primary, per the design system) ---- */
+  --green: #5ba53c;         /* leaf green — primary */
+  --green-strong: #4c9233;  /* hover / deeper fill */
+  --green-deep: #3c7a28;    /* 3D edges & shadows */
+  --green-tint: #e9f1dc;    /* soft fills */
+  --green-tint-2: #d8e7c4;  /* the "vine" */
+
+  /* ---- Accents (each used sparingly, for ONE job) ---- */
+  --gold: #e3a82b;          /* gems + special milestones */
+  --gold-deep: #c68a18;
+  --gold-tint: #fbefd2;
+  --water: #4fa6d6;         /* energy / lives */
+  --water-deep: #3e8bba;
+  --water-tint: #dff0f8;
+  --clay: #c9795a;          /* "wrong" feedback — warm, NEVER red */
+  --clay-tint: #f3e4dc;
+
+  /* ---- Ink (text) ---- */
+  --ink: #38362e;           /* warm near-black */
+  --ink-soft: #6b6757;      /* secondary text */
+  --ink-muted: #97927f;     /* tertiary / inactive */
+  --line: #e4dfd0;          /* hairline borders */
+  --locked: #d9d3c3;        /* locked path node */
+  --locked-edge: #c7c1b0;
+  --locked-ink: #aaa492;
+
+  /* ---- Type ---- */
+  --font: 'Nunito', ui-rounded, 'SF Pro Rounded', system-ui, -apple-system, sans-serif;
+  --fs-eyebrow: 0.75rem;    /* 12px — small caps labels */
+  --fs-caption: 0.8125rem;  /* 13px */
+  --fs-body: 1rem;          /* 16px */
+  --fs-h2: 1.25rem;         /* 20px */
+  --fs-h1: 1.5rem;          /* 24px */
+  --fs-display: 2rem;       /* 32px — wordmark */
+
+  /* ---- Spacing (4px base scale) ---- */
+  --s1: 4px;  --s2: 8px;  --s3: 12px; --s4: 16px;
+  --s5: 20px; --s6: 24px; --s8: 32px; --s10: 40px; --s12: 48px;
+
+  /* ---- Radii ---- */
+  --r-sm: 10px; --r-md: 16px; --r-lg: 22px; --r-pill: 999px;
+
+  /* ---- Elevation (soft & calm) ---- */
+  --shadow-sm: 0 1px 2px rgba(56,54,46,.06), 0 2px 6px rgba(56,54,46,.05);
+  --shadow-md: 0 6px 18px rgba(56,54,46,.09);
+
+  /* ---- Motion (gentle springs/eases) ---- */
+  --ease: cubic-bezier(.2,.7,.2,1);
+  --dur: 220ms;
+}

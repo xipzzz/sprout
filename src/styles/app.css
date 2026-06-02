@@ -1,0 +1,239 @@
+/* ============================================================
+   Sprout — App & component styles
+   Reads colors/sizes from tokens.css. Light mode only.
+   ============================================================ */
+
+/* ---- Base reset ---- */
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  font-family: var(--font);
+  color: var(--ink);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; }
+:focus-visible { outline: 3px solid var(--green); outline-offset: 2px; border-radius: 6px; }
+
+/* ---- App shell: a centered mobile column (great on iPad/desktop too) ---- */
+.app {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(120% 80% at 50% -10%, #fbf8ef 0%, var(--bg) 60%);
+}
+.screen {
+  position: relative;
+  width: 100%;
+  max-width: 430px;
+  height: 100dvh;            /* bound the height so the body scrolls inside */
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+@media (min-width: 480px) {
+  .app { padding: 24px; }
+  .screen {
+    height: min(880px, calc(100dvh - 48px));
+    border-radius: 30px;
+    box-shadow: var(--shadow-md);
+  }
+}
+.screen__body {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ============================================================
+   HUD — three currency chips (each has ONE job)
+   ============================================================ */
+.hud {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  padding: calc(var(--s4) + env(safe-area-inset-top)) var(--s4) var(--s3);
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  border-radius: var(--r-pill);
+  font-weight: 800;
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;   /* steady-width stat figures */
+  box-shadow: var(--shadow-sm);
+}
+.chip__icon { font-size: 1.05rem; line-height: 1; }
+.chip--leaves { background: var(--green-tint); color: var(--green-deep); }
+.chip--gems   { background: var(--gold-tint);  color: var(--gold-deep); }
+.chip--water  { background: var(--water-tint); color: var(--water-deep); }
+.hud__spacer { flex: 1; }
+
+/* ============================================================
+   Unit banner
+   ============================================================ */
+.unit {
+  margin: var(--s2) var(--s4) var(--s5);
+  padding: var(--s5);
+  display: flex;
+  align-items: center;
+  gap: var(--s4);
+  color: #fff;
+  background: linear-gradient(180deg, var(--green) 0%, var(--green-strong) 100%);
+  border-radius: var(--r-lg);
+  box-shadow: 0 6px 0 var(--green-deep), var(--shadow-md);
+}
+.unit__text { flex: 1; min-width: 0; }
+.unit__eyebrow {
+  margin: 0 0 3px;
+  font-size: var(--fs-eyebrow);
+  font-weight: 800;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  opacity: .85;
+}
+.unit__title { margin: 0; font-size: var(--fs-h1); font-weight: 800; }
+.unit__guide {
+  flex: none;
+  width: 44px; height: 44px;
+  display: grid; place-items: center;
+  color: #fff;
+  background: rgba(255,255,255,.18);
+  border-radius: 14px;
+  transition: transform var(--dur) var(--ease), background var(--dur);
+}
+.unit__guide:hover { background: rgba(255,255,255,.26); }
+.unit__guide:active { transform: translateY(1px); }
+
+/* ============================================================
+   Winding path — a vine of lesson nodes
+   ============================================================ */
+.path {
+  position: relative;
+  padding: var(--s8) 0 var(--s12);
+}
+/* the soft central "vine" */
+.path::before {
+  content: "";
+  position: absolute;
+  top: var(--s6); bottom: var(--s8);
+  left: 50%;
+  width: 5px;
+  transform: translateX(-50%);
+  background: var(--green-tint-2);
+  border-radius: 999px;
+  opacity: .7;
+}
+.path__nodes {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s6);
+}
+.node-row { display: flex; justify-content: center; width: 100%; }
+
+.node {
+  position: relative;
+  width: 74px; height: 74px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+}
+.node__disc {
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  color: #fff;
+  transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+.node__disc svg { width: 30px; height: 30px; }
+
+.node--done    .node__disc { background: var(--green);  box-shadow: 0 5px 0 var(--green-deep); }
+.node--current .node__disc { background: var(--green);  box-shadow: 0 6px 0 var(--green-deep), 0 0 0 7px var(--green-tint); }
+.node--locked  .node__disc { background: var(--locked); color: var(--locked-ink); box-shadow: 0 5px 0 var(--locked-edge); }
+.node--golden  .node__disc { background: linear-gradient(180deg, #f2c75a, var(--gold)); box-shadow: 0 5px 0 var(--gold-deep); }
+
+/* pressable feedback for unlocked nodes */
+.node:not(:disabled):active .node__disc { transform: translateY(3px); }
+.node--done:not(:disabled):active    .node__disc { box-shadow: 0 2px 0 var(--green-deep); }
+.node--current:not(:disabled):active .node__disc { box-shadow: 0 3px 0 var(--green-deep), 0 0 0 7px var(--green-tint); }
+.node:disabled { cursor: default; }
+
+/* START bubble floating above the current node */
+.start-bubble {
+  position: absolute;
+  top: -40px; left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 14px;
+  background: #fff;
+  color: var(--green-deep);
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: .08em;
+  border-radius: var(--r-pill);
+  box-shadow: var(--shadow-md);
+  white-space: nowrap;
+}
+.start-bubble::after {
+  content: "";
+  position: absolute;
+  bottom: -5px; left: 50%;
+  width: 12px; height: 12px;
+  background: #fff;
+  transform: translateX(-50%) rotate(45deg);
+  border-radius: 2px;
+}
+
+/* Pip lives trailside next to the current node */
+.node__pip {
+  position: absolute;
+  left: 80%;
+  bottom: -8px;
+  width: 62px; height: 62px;
+  pointer-events: none;
+}
+.pip { transform-origin: 50% 92%; display: block; width: 100%; height: 100%; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .start-bubble { animation: bob 1.9s var(--ease) infinite; }
+  .pip { animation: sway 3.4s ease-in-out infinite; }
+}
+@keyframes bob {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50%      { transform: translateX(-50%) translateY(-5px); }
+}
+@keyframes sway {
+  0%, 100% { transform: rotate(-3deg); }
+  50%      { transform: rotate(3deg); }
+}
+
+/* ============================================================
+   Bottom tab bar
+   ============================================================ */
+.tabbar {
+  display: flex;
+  background: var(--surface);
+  border-top: 1px solid var(--line);
+  padding: 8px 4px calc(8px + env(safe-area-inset-bottom));
+}
+.tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 6px 0;
+  min-height: 48px;
+  color: var(--ink-muted);
+  border-radius: 12px;
+  transition: color var(--dur) var(--ease);
+}
+.tab--active { color: var(--green-strong); }
+.tab__icon { width: 26px; height: 26px; }
+.tab__label { font-size: 0.7rem; font-weight: 800; }
