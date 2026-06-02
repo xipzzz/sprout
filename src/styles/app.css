@@ -727,3 +727,16 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .daily__title { margin: var(--s3) 0 0; font-size: var(--fs-display); font-weight: 900; }
 .daily__sub { margin: 0; color: var(--ink-soft); font-weight: 600; }
 .daily__cta { width: 100%; max-width: 360px; }
+
+/* ============================================================
+   Customize Pip
+   ============================================================ */
+.customize__preview { position: relative; display: flex; justify-content: center; padding: var(--s6) var(--s4) var(--s5); }
+.customize__pip { width: 140px; height: 140px; }
+.customize__acc { position: absolute; top: var(--s4); left: 58%; font-size: 2.2rem; }
+.customize__options { display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--s2); padding: 0 var(--s4); }
+.customize__opt { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: var(--s3) 2px; background: var(--surface); border: 2px solid var(--line); border-radius: var(--r-md); box-shadow: var(--shadow-sm); }
+.customize__opt--sel { border-color: var(--green); background: var(--green-tint); }
+.customize__opt-emoji { font-size: 1.5rem; line-height: 1; }
+.customize__opt-label { font-size: 0.65rem; font-weight: 800; color: var(--ink-soft); }
+.customize__note { margin: var(--s5) var(--s4) 0; text-align: center; color: var(--ink-muted); font-weight: 600; font-size: var(--fs-caption); }
