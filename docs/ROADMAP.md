@@ -15,7 +15,7 @@ Legend: ✅ done · 🔨 partial · ⬜ to build
 - **Garden** — seedling (Pip) · Monthly Blooms (one per section, tied to real progress) · **Year in Bloom** (calm yearly overview) · **Garden Tales** (3-story reader + Tale Complete)
 - **Words** — vocab hub (vocabulary derived from the real lessons) · **Search** (filter as you type)
 - **Grove** — cooperative shared garden (no ranks; opt-in leaderboard noted)
-- **Me** — profile, stat tiles, links · **Customize Pip** (accessories) · **Invite a friend** (share sheet) · **Insights** (calm progress + weekly chart)
+- **Me** — profile, stat tiles, links · **Customize Pip** (accessories) · **Invite a friend** (share sheet) · **Insights** (calm progress + weekly chart) · **Settings** (calm prefs + start-over)
 - **Streak calendar** — calm leaf-dot grid; auto-freeze shown warmly
 - **Shop** — gem-priced extras (gems never required)
 - **Modals** — Water sheet, Offline notice (reusable Modal)

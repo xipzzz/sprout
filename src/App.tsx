@@ -15,6 +15,7 @@ import InviteScreen from './screens/InviteScreen';
 import GoldenBloomScreen from './screens/GoldenBloomScreen';
 import InsightsScreen from './screens/InsightsScreen';
 import TalesScreen from './screens/TalesScreen';
+import SettingsScreen from './screens/SettingsScreen';
 import OnboardingSplash from './screens/OnboardingSplash';
 import Modal from './components/Modal';
 import { loadCompleted, saveCompleted } from './state/progress';
@@ -30,6 +31,7 @@ export default function App() {
   const [showInvite, setShowInvite] = useState(false);
   const [showInsights, setShowInsights] = useState(false);
   const [showTales, setShowTales] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [showDailyGoal, setShowDailyGoal] = useState(false);
   const [dailyGoalShown, setDailyGoalShown] = useState(false);
   const [goldenBloom, setGoldenBloom] = useState<string | null>(null);
@@ -45,6 +47,13 @@ export default function App() {
       window.removeEventListener('offline', goOffline);
       window.removeEventListener('online', goOnline);
     };
+  }, []);
+  // Apply the saved "calmer motion" preference on load.
+  useEffect(() => {
+    try {
+      const p = JSON.parse(localStorage.getItem('sprout.prefs') || '{}');
+      document.body.classList.toggle('calm-motion', !!p.calmMotion);
+    } catch { /* ignore */ }
   }, []);
   const [onboarded, setOnboarded] = useState(() => {
     try { return localStorage.getItem('sprout.onboarded') === '1'; } catch { return false; }
@@ -166,6 +175,14 @@ export default function App() {
     );
   }
 
+  if (showSettings) {
+    return (
+      <div className="app">
+        <SettingsScreen onBack={() => setShowSettings(false)} />
+      </div>
+    );
+  }
+
   return (
     <div className="app">
       {tab === 'learn' && (
@@ -174,7 +191,7 @@ export default function App() {
       {tab === 'garden' && <GardenScreen tab={tab} onTabChange={setTab} completed={completed} onOpenTales={() => setShowTales(true)} />}
       {tab === 'words' && <WordsScreen tab={tab} onTabChange={setTab} />}
       {tab === 'grove' && <GroveScreen tab={tab} onTabChange={setTab} />}
-      {tab === 'me' && <MeScreen tab={tab} onTabChange={setTab} completed={completed} onOpenStreak={() => setShowStreak(true)} onOpenQuests={() => setShowQuests(true)} onOpenCustomize={() => setShowCustomize(true)} onOpenInvite={() => setShowInvite(true)} onOpenInsights={() => setShowInsights(true)} />}
+      {tab === 'me' && <MeScreen tab={tab} onTabChange={setTab} completed={completed} onOpenStreak={() => setShowStreak(true)} onOpenQuests={() => setShowQuests(true)} onOpenCustomize={() => setShowCustomize(true)} onOpenInvite={() => setShowInvite(true)} onOpenInsights={() => setShowInsights(true)} onOpenSettings={() => setShowSettings(true)} />}
 
       {showWater && (
         <Modal onClose={() => setShowWater(false)}>
