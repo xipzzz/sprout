@@ -8,6 +8,7 @@ import WordsScreen from './screens/WordsScreen';
 import GroveScreen from './screens/GroveScreen';
 import StreakScreen from './screens/StreakScreen';
 import ShopScreen from './screens/ShopScreen';
+import OnboardingSplash from './screens/OnboardingSplash';
 import { loadCompleted, saveCompleted } from './state/progress';
 
 export default function App() {
@@ -16,6 +17,9 @@ export default function App() {
   const [lessonUnit, setLessonUnit] = useState<string | null>(null);
   const [showStreak, setShowStreak] = useState(false);
   const [showShop, setShowShop] = useState(false);
+  const [onboarded, setOnboarded] = useState(() => {
+    try { return localStorage.getItem('sprout.onboarded') === '1'; } catch { return false; }
+  });
 
   // Finishing a lesson marks its unit complete → the next unit unlocks.
   function completeLesson() {
@@ -25,6 +29,19 @@ export default function App() {
       saveCompleted(next);
     }
     setLessonUnit(null);
+  }
+
+  if (!onboarded) {
+    return (
+      <div className="app">
+        <OnboardingSplash
+          onStart={() => {
+            try { localStorage.setItem('sprout.onboarded', '1'); } catch { /* ignore */ }
+            setOnboarded(true);
+          }}
+        />
+      </div>
+    );
   }
 
   if (lessonUnit) {
