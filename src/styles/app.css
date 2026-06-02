@@ -582,3 +582,30 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .word-card:active { transform: translateY(1px); }
 .word-card__emoji { font-size: 1.8rem; line-height: 1; }
 .word-card__label { font-weight: 800; }
+
+/* ============================================================
+   Grove (cooperative shared garden)
+   ============================================================ */
+.grove__head { padding: calc(var(--s4) + env(safe-area-inset-top)) var(--s4) var(--s2); }
+.grove__head h1 { margin: 0; font-size: var(--fs-display); font-weight: 900; }
+.grove__head p { margin: 2px 0 0; color: var(--ink-soft); font-weight: 600; font-size: var(--fs-caption); }
+.grove__shared {
+  margin: var(--s2) var(--s4) var(--s5);
+  padding: var(--s5);
+  text-align: center;
+  color: #fff;
+  background: linear-gradient(180deg, var(--green) 0%, var(--green-strong) 100%);
+  border-radius: var(--r-lg);
+  box-shadow: 0 5px 0 var(--green-deep), var(--shadow-md);
+}
+.grove__shared-label { margin: 0; font-size: var(--fs-eyebrow); font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.85; }
+.grove__shared-count { margin: var(--s1) 0 var(--s3); font-size: var(--fs-display); font-weight: 900; font-variant-numeric: tabular-nums; }
+.grove__shared .progress { background: rgba(255, 255, 255, 0.3); }
+.grove__shared .progress__fill { background: #fff; }
+.grove__shared-goal { margin: var(--s2) 0 0; font-size: var(--fs-caption); font-weight: 600; opacity: 0.9; }
+.grove__members { list-style: none; margin: 0; padding: 0 var(--s4); display: flex; flex-direction: column; gap: var(--s2); }
+.grove__member { display: flex; align-items: center; gap: var(--s3); padding: var(--s3) var(--s4); background: var(--surface); border-radius: var(--r-md); box-shadow: var(--shadow-sm); }
+.grove__member-avatar { font-size: 1.5rem; }
+.grove__member-name { flex: 1; font-weight: 800; }
+.grove__member-leaves { font-weight: 800; color: var(--green-deep); font-variant-numeric: tabular-nums; }
+.grove__note { margin: var(--s5) var(--s4) 0; color: var(--ink-muted); font-weight: 600; font-size: var(--fs-caption); text-align: center; }
