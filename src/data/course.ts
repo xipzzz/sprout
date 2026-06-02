@@ -43,3 +43,93 @@ export const currentUnit: Unit = {
     { id: 'g1', kind: 'golden', status: 'locked',  title: 'Golden Bloom' },
   ],
 };
+
+/* ---- Lesson content (exercises as data) ----
+   One target word per exercise, shown as a picture-choice. Add exercises by
+   adding items here; the lesson screen reads from this. */
+
+export interface Choice {
+  id: string;
+  label: string;   // shown under the picture
+  emoji: string;   // the picture
+}
+
+export interface Exercise {
+  id: string;
+  word: string;    // the word being taught (Spanish here)
+  choices: Choice[];
+  answerId: string;
+  teach: { meaning: string; inUse: string; why: string };
+}
+
+export const lesson = {
+  id: 'l3',
+  title: 'Around the home',
+  reward: 12, // 🍃 leaves earned on completion
+  exercises: [
+    {
+      id: 'e1',
+      word: 'la puerta',
+      answerId: 'door',
+      choices: [
+        { id: 'door', label: 'door', emoji: '🚪' },
+        { id: 'window', label: 'window', emoji: '🪟' },
+        { id: 'bed', label: 'bed', emoji: '🛏️' },
+        { id: 'chair', label: 'chair', emoji: '🪑' },
+      ],
+      teach: {
+        meaning: 'la puerta = the door',
+        inUse: 'Abre la puerta, por favor. — Open the door, please.',
+        why: '“la” means “the” for feminine words like puerta.',
+      },
+    },
+    {
+      id: 'e2',
+      word: 'la ventana',
+      answerId: 'window',
+      choices: [
+        { id: 'window', label: 'window', emoji: '🪟' },
+        { id: 'door', label: 'door', emoji: '🚪' },
+        { id: 'lamp', label: 'lamp', emoji: '💡' },
+        { id: 'bed', label: 'bed', emoji: '🛏️' },
+      ],
+      teach: {
+        meaning: 'la ventana = the window',
+        inUse: 'Miro por la ventana. — I look out the window.',
+        why: 'Spanish nouns have a gender; ventana is feminine.',
+      },
+    },
+    {
+      id: 'e3',
+      word: 'la silla',
+      answerId: 'chair',
+      choices: [
+        { id: 'chair', label: 'chair', emoji: '🪑' },
+        { id: 'bed', label: 'bed', emoji: '🛏️' },
+        { id: 'door', label: 'door', emoji: '🚪' },
+        { id: 'window', label: 'window', emoji: '🪟' },
+      ],
+      teach: {
+        meaning: 'la silla = the chair',
+        inUse: 'Me siento en la silla. — I sit on the chair.',
+        why: 'Use “la” for feminine nouns like silla.',
+      },
+    },
+    {
+      id: 'e4',
+      word: 'la cama',
+      answerId: 'bed',
+      choices: [
+        { id: 'bed', label: 'bed', emoji: '🛏️' },
+        { id: 'chair', label: 'chair', emoji: '🪑' },
+        { id: 'lamp', label: 'lamp', emoji: '💡' },
+        { id: 'door', label: 'door', emoji: '🚪' },
+      ],
+      teach: {
+        meaning: 'la cama = the bed',
+        inUse: 'Voy a la cama. — I go to bed.',
+        why: 'cama is feminine, so it takes “la”.',
+      },
+    },
+  ] as Exercise[],
+};
