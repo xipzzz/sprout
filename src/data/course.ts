@@ -568,6 +568,38 @@ export function getLesson(unitId: string | null): Lesson {
   return fallbackLesson(unitId ?? 's1u2');
 }
 
+/* ---------------- Vocabulary ----------------
+   Derived from the authored lessons so the Words hub always reflects real
+   content (and grows automatically as more lessons are added). Only words
+   that have a picture (choice options + match pairs) are included. */
+
+export interface VocabWord {
+  word: string;
+  emoji: string;
+}
+
+export const vocabulary: VocabWord[] = (() => {
+  const seen = new Map<string, string>(); // word (lowercased) → emoji
+  for (const l of Object.values(lessons)) {
+    for (const ex of l.exercises) {
+      if (ex.kind === 'choice') {
+        for (const c of ex.choices) {
+          const key = c.label.toLowerCase();
+          if (!seen.has(key)) seen.set(key, c.emoji);
+        }
+      } else if (ex.kind === 'match') {
+        for (const p of ex.pairs) {
+          const key = p.word.toLowerCase();
+          if (!seen.has(key)) seen.set(key, p.emoji);
+        }
+      }
+    }
+  }
+  return [...seen.entries()]
+    .map(([word, emoji]) => ({ word, emoji }))
+    .sort((a, b) => a.word.localeCompare(b.word));
+})();
+
 /* ---------------- Progress helpers ---------------- */
 
 /** Every unit id, in learning order (section 1 → 5). */

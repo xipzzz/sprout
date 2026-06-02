@@ -13,7 +13,7 @@ Legend: ✅ done · 🔨 partial · ⬜ to build
 - **Home** — winding path, HUD (🍃/💎/💧 — gems→Shop, water→sheet), **5 sections × 7–8 units**, real **progression** (units unlock + persist)
 - **Lessons** — **4 exercise types**: Multiple Choice · Arrange Words · Match Pairs · Fill in the Blank → warm feedback drawer (green / clay · Meaning · In use · Tip · working Flag) → Lesson Complete · **Daily-goal** celebration · **per-unit content** (Hello / Around the Home / Family / Colors / Animals) with a gentle fallback so every unit is playable · **Golden Bloom** milestone when a whole section is finished
 - **Garden** — seedling (Pip) + Monthly Blooms grid
-- **Words** — vocab hub
+- **Words** — vocab hub (vocabulary derived from the real lessons) · **Search** (filter as you type)
 - **Grove** — cooperative shared garden (no ranks; opt-in leaderboard noted)
 - **Me** — profile, stat tiles, links · **Customize Pip** (accessories) · **Invite a friend** (share sheet) · **Insights** (calm progress + weekly chart)
 - **Streak calendar** — calm leaf-dot grid; auto-freeze shown warmly
@@ -24,7 +24,7 @@ Legend: ✅ done · 🔨 partial · ⬜ to build
 
 ## ⬜ Remaining — buildable
 - **Today Card** (home variant); **Garden depth** (Monthly Blooms detail / Year in Bloom)
-- **Garden Tales** (story content) · Search
+- **Garden Tales** (story content)
 
 ## ⬜ Remaining — needs your input / integration
 - **Audio exercises** (Type / Speak What You Hear) — needs text-to-speech + microphone

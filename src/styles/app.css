@@ -583,6 +583,15 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .word-card:active { transform: translateY(1px); }
 .word-card__emoji { font-size: 1.8rem; line-height: 1; }
 .word-card__label { font-weight: 800; }
+.words__search { position: relative; display: flex; align-items: center; margin-top: var(--s3); background: var(--surface); border-radius: var(--r-pill); box-shadow: var(--shadow-sm); padding: 0 var(--s3); }
+.words__search-icon { font-size: 1rem; opacity: .7; }
+.words__search-input { flex: 1; min-width: 0; border: none; background: transparent; padding: 11px var(--s2); font: inherit; font-weight: 600; color: var(--ink); outline: none; -webkit-appearance: none; appearance: none; }
+.words__search-input::placeholder { color: var(--ink-muted); font-weight: 600; }
+.words__search-input::-webkit-search-cancel-button { display: none; }
+.words__clear { width: 26px; height: 26px; flex: none; display: grid; place-items: center; border-radius: 50%; background: var(--green-tint); color: var(--green-deep); font-size: 1.1rem; font-weight: 800; line-height: 1; }
+.words__empty { text-align: center; padding: var(--s10) var(--s6); color: var(--ink-muted); font-weight: 600; }
+.words__empty-icon { font-size: 2.4rem; display: block; margin-bottom: var(--s3); }
+.words__empty p { margin: 0; }
 
 /* ============================================================
    Grove (cooperative shared garden)
