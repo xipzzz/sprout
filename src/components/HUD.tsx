@@ -9,9 +9,10 @@ interface HUDProps {
   leaves: number;
   gems: number;
   water: number;
+  onOpenShop?: () => void;
 }
 
-export default function HUD({ leaves, gems, water }: HUDProps) {
+export default function HUD({ leaves, gems, water, onOpenShop }: HUDProps) {
   return (
     <header className="hud">
       <div className="chip chip--leaves" aria-label={`${leaves} leaves grown`}>
@@ -19,10 +20,10 @@ export default function HUD({ leaves, gems, water }: HUDProps) {
         <span>{leaves}</span>
       </div>
       <div className="hud__spacer" />
-      <div className="chip chip--gems" aria-label={`${gems} gems`}>
+      <button type="button" className="chip chip--gems" aria-label={`${gems} gems — open shop`} onClick={onOpenShop}>
         <span className="chip__icon" aria-hidden="true">💎</span>
         <span>{gems}</span>
-      </div>
+      </button>
       <div className="chip chip--water" aria-label={`${water} water — energy for lessons`}>
         <span className="chip__icon" aria-hidden="true">💧</span>
         <span>{water}</span>
