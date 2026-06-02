@@ -9,6 +9,7 @@ interface MeScreenProps {
   tab: TabKey;
   onTabChange: (tab: TabKey) => void;
   completed: string[];
+  onOpenStreak: () => void;
 }
 
 const links = [
@@ -19,7 +20,7 @@ const links = [
   { id: 'settings', emoji: '⚙️', label: 'Settings' },
 ];
 
-export default function MeScreen({ tab, onTabChange, completed }: MeScreenProps) {
+export default function MeScreen({ tab, onTabChange, completed, onOpenStreak }: MeScreenProps) {
   const units = completed.length;
   const words = units * 4; // rough estimate until per-unit vocab is tracked
 
@@ -41,7 +42,7 @@ export default function MeScreen({ tab, onTabChange, completed }: MeScreenProps)
         <ul className="me__list">
           {links.map((l) => (
             <li key={l.id}>
-              <button type="button" className="me__row">
+              <button type="button" className="me__row" onClick={l.id === 'streak' ? onOpenStreak : undefined}>
                 <span className="me__row-icon" aria-hidden="true">{l.emoji}</span>
                 <span className="me__row-label">{l.label}</span>
                 <span className="me__row-chev" aria-hidden="true">›</span>

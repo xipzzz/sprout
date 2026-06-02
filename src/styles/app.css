@@ -609,3 +609,34 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .grove__member-name { flex: 1; font-weight: 800; }
 .grove__member-leaves { font-weight: 800; color: var(--green-deep); font-variant-numeric: tabular-nums; }
 .grove__note { margin: var(--s5) var(--s4) 0; color: var(--ink-muted); font-weight: 600; font-size: var(--fs-caption); text-align: center; }
+
+/* ============================================================
+   Streak calendar (calm month grid)
+   ============================================================ */
+.streak__top { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: var(--s2); padding: calc(var(--s4) + env(safe-area-inset-top)) var(--s4) var(--s3); background: var(--bg); }
+.streak__title { margin: 0; font-size: var(--fs-h1); font-weight: 900; }
+.streak__summary { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: var(--s4) var(--s4) var(--s6); }
+.streak__count { font-size: var(--fs-display); font-weight: 900; font-variant-numeric: tabular-nums; }
+.streak__label { color: var(--ink-soft); font-weight: 600; }
+.cal { padding: 0 var(--s4); }
+.cal__week, .cal__grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: var(--s2); }
+.cal__week { margin-bottom: var(--s2); }
+.cal__wd { text-align: center; font-size: var(--fs-caption); font-weight: 800; color: var(--ink-muted); }
+.sday {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-weight: 800;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  background: var(--bg-soft);
+  font-variant-numeric: tabular-nums;
+}
+.sday--blank { background: transparent; }
+.sday--done { background: var(--green); color: #fff; }
+.sday--freeze { background: var(--water-tint); color: var(--water-deep); }
+.sday--today { background: var(--green); color: #fff; box-shadow: 0 0 0 3px var(--green-tint); }
+.sday--future { background: transparent; color: var(--ink-muted); opacity: 0.5; }
+.streak__note { margin: var(--s6) var(--s4) 0; text-align: center; color: var(--ink-soft); font-weight: 600; font-size: var(--fs-caption); }
