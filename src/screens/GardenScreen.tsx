@@ -10,13 +10,14 @@ interface GardenScreenProps {
   tab: TabKey;
   onTabChange: (tab: TabKey) => void;
   completed: string[];
+  onOpenTales: () => void;
 }
 
 // One distinct flower per section, in order.
 const SECTION_FLOWERS = ['🌼', '🌸', '🌻', '🌷', '🪻'];
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-export default function GardenScreen({ tab, onTabChange, completed }: GardenScreenProps) {
+export default function GardenScreen({ tab, onTabChange, completed, onOpenTales }: GardenScreenProps) {
   const sections = courseWithProgress(completed);
   const blooms = sections.map((s, i) => ({
     id: s.id,
@@ -39,6 +40,15 @@ export default function GardenScreen({ tab, onTabChange, completed }: GardenScre
           <Pip className="seedling__pip" />
           <p className="seedling__cap">Your seedling is growing</p>
         </div>
+
+        <button type="button" className="tales-cta" onClick={onOpenTales}>
+          <span className="tales-cta__icon" aria-hidden="true">📖</span>
+          <span className="tales-cta__text">
+            <span className="tales-cta__title">Garden Tales</span>
+            <span className="tales-cta__sub">Read a calm story together</span>
+          </span>
+          <span className="tales-cta__chev" aria-hidden="true">›</span>
+        </button>
 
         <h2 className="garden__section">Monthly Blooms</h2>
         <div className="bloom-grid">
