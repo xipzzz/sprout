@@ -1,10 +1,13 @@
 /* LessonScreen — the lesson flow as a small state machine:
    answering → (check) → feedback → (continue) → next … → complete.
-   Calm by design: a wrong answer teaches kindly and you move on — no lives lost. */
+   Handles multiple exercise kinds (choice, arrange). Calm: a wrong answer
+   teaches kindly and you move on — no lives lost. */
 
 import { useState } from 'react';
 import { lesson } from '../data/course';
+import type { Exercise } from '../data/course';
 import MultipleChoice from '../components/MultipleChoice';
+import ArrangeWords from '../components/ArrangeWords';
 import FeedbackDrawer from '../components/FeedbackDrawer';
 import LessonComplete from '../components/LessonComplete';
 
@@ -14,13 +17,24 @@ interface LessonScreenProps {
 }
 
 type Phase = 'answering' | 'feedback' | 'complete';
+type Answer = string | string[] | null;
+
+function isComplete(ex: Exercise, a: Answer): boolean {
+  if (ex.kind === 'choice') return typeof a === 'string';
+  return Array.isArray(a) && a.length === ex.answer.length;
+}
+
+function isCorrect(ex: Exercise, a: Answer): boolean {
+  if (ex.kind === 'choice') return a === ex.answerId;
+  return Array.isArray(a) && a.join(' ') === ex.answer.join(' ');
+}
 
 export default function LessonScreen({ onExit, onComplete }: LessonScreenProps) {
   const exercises = lesson.exercises;
   const total = exercises.length;
 
   const [index, setIndex] = useState(0);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [answer, setAnswer] = useState<Answer>(null);
   const [phase, setPhase] = useState<Phase>('answering');
   const [result, setResult] = useState<'correct' | 'wrong'>('correct');
   const [correctCount, setCorrectCount] = useState(0);
@@ -28,8 +42,8 @@ export default function LessonScreen({ onExit, onComplete }: LessonScreenProps) 
   const ex = exercises[index];
 
   function check() {
-    if (!selectedId) return;
-    const ok = selectedId === ex.answerId;
+    if (!isComplete(ex, answer)) return;
+    const ok = isCorrect(ex, answer);
     setResult(ok ? 'correct' : 'wrong');
     if (ok) setCorrectCount((c) => c + 1);
     setPhase('feedback');
@@ -40,7 +54,7 @@ export default function LessonScreen({ onExit, onComplete }: LessonScreenProps) 
       setPhase('complete');
     } else {
       setIndex((i) => i + 1);
-      setSelectedId(null);
+      setAnswer(null);
       setPhase('answering');
     }
   }
@@ -78,19 +92,30 @@ export default function LessonScreen({ onExit, onComplete }: LessonScreenProps) 
       </header>
 
       <main className="screen__body">
-        <MultipleChoice
-          word={ex.word}
-          choices={ex.choices}
-          selectedId={selectedId}
-          answerId={ex.answerId}
-          revealed={phase === 'feedback'}
-          onSelect={setSelectedId}
-        />
+        {ex.kind === 'choice' ? (
+          <MultipleChoice
+            key={ex.id}
+            word={ex.word}
+            choices={ex.choices}
+            selectedId={typeof answer === 'string' ? answer : null}
+            answerId={ex.answerId}
+            revealed={phase === 'feedback'}
+            onSelect={setAnswer}
+          />
+        ) : (
+          <ArrangeWords
+            key={ex.id}
+            prompt={ex.prompt}
+            tiles={ex.tiles}
+            revealed={phase === 'feedback'}
+            onChange={setAnswer}
+          />
+        )}
       </main>
 
       {phase === 'answering' && (
         <footer className="lesson__foot">
-          <button type="button" className="btn-primary" disabled={!selectedId} onClick={check}>
+          <button type="button" className="btn-primary" disabled={!isComplete(ex, answer)} onClick={check}>
             CHECK
           </button>
         </footer>
