@@ -34,7 +34,7 @@ export default function ArrangeWords({ prompt, tiles, revealed, onChange }: Arra
           <button
             key={id}
             type="button"
-            className="tile tile--placed"
+            className="word-tile word-tile--placed"
             disabled={revealed}
             onClick={() => update(placed.filter((x) => x !== id))}
           >
@@ -48,7 +48,7 @@ export default function ArrangeWords({ prompt, tiles, revealed, onChange }: Arra
           <button
             key={t.id}
             type="button"
-            className="tile"
+            className="word-tile"
             disabled={revealed}
             onClick={() => update([...placed, t.id])}
           >
