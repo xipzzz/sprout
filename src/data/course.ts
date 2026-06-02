@@ -518,12 +518,150 @@ const animals: Lesson = {
   ] as Exercise[],
 };
 
+/* "Numbers" — counting one to five. */
+const numbers: Lesson = {
+  id: 's1u5',
+  title: 'Numbers',
+  reward: 12,
+  exercises: [
+    {
+      kind: 'choice', id: 'n1', word: 'one', answerId: 'one',
+      choices: [
+        { id: 'one', label: 'one', emoji: '1️⃣' },
+        { id: 'two', label: 'two', emoji: '2️⃣' },
+        { id: 'three', label: 'three', emoji: '3️⃣' },
+        { id: 'four', label: 'four', emoji: '4️⃣' },
+      ],
+      teach: { meaning: 'One is the first number. It means a single thing.', inUse: 'I have one apple.', tip: 'Hold up one finger for one.' },
+    },
+    {
+      kind: 'choice', id: 'n2', word: 'two', answerId: 'two',
+      choices: [
+        { id: 'two', label: 'two', emoji: '2️⃣' },
+        { id: 'one', label: 'one', emoji: '1️⃣' },
+        { id: 'three', label: 'three', emoji: '3️⃣' },
+        { id: 'five', label: 'five', emoji: '5️⃣' },
+      ],
+      teach: { meaning: 'Two comes after one.', inUse: 'I see two birds.', tip: 'You have two hands.' },
+    },
+    {
+      kind: 'choice', id: 'n3', word: 'three', answerId: 'three',
+      choices: [
+        { id: 'three', label: 'three', emoji: '3️⃣' },
+        { id: 'two', label: 'two', emoji: '2️⃣' },
+        { id: 'four', label: 'four', emoji: '4️⃣' },
+        { id: 'one', label: 'one', emoji: '1️⃣' },
+      ],
+      teach: { meaning: 'Three comes after two.', inUse: 'A cat has three kittens.', tip: 'Count: one, two, three.' },
+    },
+    {
+      kind: 'choice', id: 'n4', word: 'four', answerId: 'four',
+      choices: [
+        { id: 'four', label: 'four', emoji: '4️⃣' },
+        { id: 'five', label: 'five', emoji: '5️⃣' },
+        { id: 'three', label: 'three', emoji: '3️⃣' },
+        { id: 'two', label: 'two', emoji: '2️⃣' },
+      ],
+      teach: { meaning: 'Four comes after three.', inUse: 'A chair has four legs.', tip: 'Two plus two makes four.' },
+    },
+    {
+      kind: 'arrange', id: 'n5', prompt: 'Put the words in order:',
+      tiles: ['can', 'I', 'to', 'count', 'five'], answer: ['I', 'can', 'count', 'to', 'five'],
+      teach: { meaning: 'A proud sentence about counting.', inUse: 'I can count to five.', tip: 'Start with a capital letter.' },
+    },
+    {
+      kind: 'match', id: 'n6',
+      pairs: [
+        { id: 'one', word: 'one', emoji: '1️⃣' },
+        { id: 'two', word: 'two', emoji: '2️⃣' },
+        { id: 'three', word: 'three', emoji: '3️⃣' },
+        { id: 'four', word: 'four', emoji: '4️⃣' },
+      ],
+      teach: { meaning: 'You matched each number word to its number.', inUse: 'one · two · three · four', tip: 'Say each number aloud as you match it.' },
+    },
+    {
+      kind: 'fill', id: 'n7', before: 'One, two,', after: '.', answer: 'three',
+      teach: { meaning: 'Finish counting the sentence.', inUse: 'One, two, three.', tip: 'What number comes after two?' },
+    },
+  ] as Exercise[],
+};
+
+/* "Food" — things we eat and drink. */
+const food: Lesson = {
+  id: 's1u6',
+  title: 'Food',
+  reward: 12,
+  exercises: [
+    {
+      kind: 'choice', id: 'fd1', word: 'apple', answerId: 'apple',
+      choices: [
+        { id: 'apple', label: 'apple', emoji: '🍎' },
+        { id: 'bread', label: 'bread', emoji: '🍞' },
+        { id: 'milk', label: 'milk', emoji: '🥛' },
+        { id: 'egg', label: 'egg', emoji: '🥚' },
+      ],
+      teach: { meaning: 'An apple is a sweet, round fruit.', inUse: 'I eat a red apple.', tip: 'Apple starts with the letter A.' },
+    },
+    {
+      kind: 'choice', id: 'fd2', word: 'bread', answerId: 'bread',
+      choices: [
+        { id: 'bread', label: 'bread', emoji: '🍞' },
+        { id: 'apple', label: 'apple', emoji: '🍎' },
+        { id: 'milk', label: 'milk', emoji: '🥛' },
+        { id: 'egg', label: 'egg', emoji: '🥚' },
+      ],
+      teach: { meaning: 'Bread is soft food made from flour.', inUse: 'I like warm bread.', tip: 'We make toast from bread.' },
+    },
+    {
+      kind: 'choice', id: 'fd3', word: 'milk', answerId: 'milk',
+      choices: [
+        { id: 'milk', label: 'milk', emoji: '🥛' },
+        { id: 'apple', label: 'apple', emoji: '🍎' },
+        { id: 'bread', label: 'bread', emoji: '🍞' },
+        { id: 'egg', label: 'egg', emoji: '🥚' },
+      ],
+      teach: { meaning: 'Milk is a white drink. It helps you grow.', inUse: 'I drink milk.', tip: 'Milk comes from cows.' },
+    },
+    {
+      kind: 'choice', id: 'fd4', word: 'egg', answerId: 'egg',
+      choices: [
+        { id: 'egg', label: 'egg', emoji: '🥚' },
+        { id: 'apple', label: 'apple', emoji: '🍎' },
+        { id: 'bread', label: 'bread', emoji: '🍞' },
+        { id: 'milk', label: 'milk', emoji: '🥛' },
+      ],
+      teach: { meaning: 'An egg comes from a hen. We cook it to eat.', inUse: 'I eat one egg.', tip: 'Birds lay eggs too.' },
+    },
+    {
+      kind: 'arrange', id: 'fd5', prompt: 'Put the words in order:',
+      tiles: ['to', 'I', 'bread', 'like', 'eat'], answer: ['I', 'like', 'to', 'eat', 'bread'],
+      teach: { meaning: 'A sentence about food you enjoy.', inUse: 'I like to eat bread.', tip: 'Start with a capital letter.' },
+    },
+    {
+      kind: 'match', id: 'fd6',
+      pairs: [
+        { id: 'apple', word: 'apple', emoji: '🍎' },
+        { id: 'bread', word: 'bread', emoji: '🍞' },
+        { id: 'milk', word: 'milk', emoji: '🥛' },
+        { id: 'egg', word: 'egg', emoji: '🥚' },
+      ],
+      teach: { meaning: 'You matched each food to its picture.', inUse: 'apple · bread · milk · egg', tip: 'Say each food aloud as you match it.' },
+    },
+    {
+      kind: 'fill', id: 'fd7', before: 'I drink', after: ' in the morning.', answer: 'milk',
+      teach: { meaning: 'Finish the sentence with the right drink.', inUse: 'I drink milk in the morning.', tip: 'It is the white drink.' },
+    },
+  ] as Exercise[],
+};
+
 /** Authored lessons, keyed by unit id. Units without an entry get a gentle review. */
 export const lessons: Record<string, Lesson> = {
   s1u1: greetings,
   s1u2: aroundTheHome,
   s1u3: family,
   s1u4: colors,
+  s1u5: numbers,
+  s1u6: food,
   s1u7: animals,
 };
 
