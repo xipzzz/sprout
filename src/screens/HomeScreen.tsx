@@ -13,6 +13,7 @@ interface HomeScreenProps {
   completed: string[];
   onStartUnit: (unitId: string) => void;
   onOpenShop: () => void;
+  onOpenWater: () => void;
   tab: TabKey;
   onTabChange: (tab: TabKey) => void;
 }
@@ -34,7 +35,7 @@ function sectionNodes(section: Section): PathNode[] {
   return nodes;
 }
 
-export default function HomeScreen({ completed, onStartUnit, onOpenShop, tab, onTabChange }: HomeScreenProps) {
+export default function HomeScreen({ completed, onStartUnit, onOpenShop, onOpenWater, tab, onTabChange }: HomeScreenProps) {
   const sections = courseWithProgress(completed);
 
   function startUnit(node: PathNode) {
@@ -43,7 +44,7 @@ export default function HomeScreen({ completed, onStartUnit, onOpenShop, tab, on
 
   return (
     <div className="screen">
-      <HUD leaves={hud.leaves} gems={hud.gems} water={hud.water} onOpenShop={onOpenShop} />
+      <HUD leaves={hud.leaves} gems={hud.gems} water={hud.water} onOpenShop={onOpenShop} onOpenWater={onOpenWater} />
 
       <main className="screen__body">
         {sections.map((section) => (

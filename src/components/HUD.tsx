@@ -10,9 +10,10 @@ interface HUDProps {
   gems: number;
   water: number;
   onOpenShop?: () => void;
+  onOpenWater?: () => void;
 }
 
-export default function HUD({ leaves, gems, water, onOpenShop }: HUDProps) {
+export default function HUD({ leaves, gems, water, onOpenShop, onOpenWater }: HUDProps) {
   return (
     <header className="hud">
       <div className="chip chip--leaves" aria-label={`${leaves} leaves grown`}>
@@ -24,10 +25,10 @@ export default function HUD({ leaves, gems, water, onOpenShop }: HUDProps) {
         <span className="chip__icon" aria-hidden="true">💎</span>
         <span>{gems}</span>
       </button>
-      <div className="chip chip--water" aria-label={`${water} water — energy for lessons`}>
+      <button type="button" className="chip chip--water" aria-label={`${water} water — energy for lessons`} onClick={onOpenWater}>
         <span className="chip__icon" aria-hidden="true">💧</span>
         <span>{water}</span>
-      </div>
+      </button>
     </header>
   );
 }
