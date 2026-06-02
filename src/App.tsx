@@ -6,12 +6,14 @@ import GardenScreen from './screens/GardenScreen';
 import MeScreen from './screens/MeScreen';
 import WordsScreen from './screens/WordsScreen';
 import GroveScreen from './screens/GroveScreen';
+import StreakScreen from './screens/StreakScreen';
 import { loadCompleted, saveCompleted } from './state/progress';
 
 export default function App() {
   const [tab, setTab] = useState<TabKey>('learn');
   const [completed, setCompleted] = useState<string[]>(loadCompleted);
   const [lessonUnit, setLessonUnit] = useState<string | null>(null);
+  const [showStreak, setShowStreak] = useState(false);
 
   // Finishing a lesson marks its unit complete → the next unit unlocks.
   function completeLesson() {
@@ -31,6 +33,14 @@ export default function App() {
     );
   }
 
+  if (showStreak) {
+    return (
+      <div className="app">
+        <StreakScreen onBack={() => setShowStreak(false)} />
+      </div>
+    );
+  }
+
   return (
     <div className="app">
       {tab === 'learn' && (
@@ -39,7 +49,7 @@ export default function App() {
       {tab === 'garden' && <GardenScreen tab={tab} onTabChange={setTab} />}
       {tab === 'words' && <WordsScreen tab={tab} onTabChange={setTab} />}
       {tab === 'grove' && <GroveScreen tab={tab} onTabChange={setTab} />}
-      {tab === 'me' && <MeScreen tab={tab} onTabChange={setTab} completed={completed} />}
+      {tab === 'me' && <MeScreen tab={tab} onTabChange={setTab} completed={completed} onOpenStreak={() => setShowStreak(true)} />}
     </div>
   );
 }
