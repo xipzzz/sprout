@@ -162,7 +162,15 @@ export interface FillExercise {
 
 export type Exercise = ChoiceExercise | ArrangeExercise | MatchExercise | FillExercise;
 
-export const lesson = {
+export interface Lesson {
+  id: string;
+  title: string;
+  reward: number; // 🍃 leaves earned on completion
+  exercises: Exercise[];
+}
+
+/* "Around the Home" — fully authored. */
+const aroundTheHome: Lesson = {
   id: 's1u2',
   title: 'Around the Home',
   reward: 12, // 🍃 leaves earned on completion
@@ -288,6 +296,277 @@ export const lesson = {
     },
   ] as Exercise[],
 };
+
+/* "Hello" — first greetings, taught through words. */
+const greetings: Lesson = {
+  id: 's1u1',
+  title: 'Hello',
+  reward: 10,
+  exercises: [
+    {
+      kind: 'arrange', id: 'g1', prompt: 'Say hello to a friend:',
+      tiles: ['my', 'Hello', 'friend'], answer: ['Hello', 'my', 'friend'],
+      teach: { meaning: 'A warm way to greet someone you know.', inUse: 'Hello my friend!', tip: 'Start a greeting with “Hello”.' },
+    },
+    {
+      kind: 'fill', id: 'g2', before: 'Hello! How are', after: '?', answer: 'you',
+      teach: { meaning: 'A kind question that asks how someone feels.', inUse: 'How are you?', tip: '“You” means the person you are talking to.' },
+    },
+    {
+      kind: 'arrange', id: 'g3', prompt: 'A friendly goodbye:',
+      tiles: ['you', 'See', 'soon'], answer: ['See', 'you', 'soon'],
+      teach: { meaning: 'A gentle way to say goodbye for now.', inUse: 'See you soon!', tip: 'We say this when we will meet again.' },
+    },
+    {
+      kind: 'fill', id: 'g4', before: 'Thank', after: ' very much.', answer: 'you',
+      teach: { meaning: 'A polite way to show you are grateful.', inUse: 'Thank you very much.', tip: 'Saying “thank you” is always kind.' },
+    },
+  ] as Exercise[],
+};
+
+/* "Family" — the people you love. */
+const family: Lesson = {
+  id: 's1u3',
+  title: 'Family',
+  reward: 12,
+  exercises: [
+    {
+      kind: 'choice', id: 'fa1', word: 'mom', answerId: 'mom',
+      choices: [
+        { id: 'mom', label: 'mom', emoji: '👩' },
+        { id: 'dad', label: 'dad', emoji: '👨' },
+        { id: 'baby', label: 'baby', emoji: '👶' },
+        { id: 'sister', label: 'sister', emoji: '👧' },
+      ],
+      teach: { meaning: 'Your mom is your mother.', inUse: 'I love my mom.', tip: 'Mom and mother both start with “m”.' },
+    },
+    {
+      kind: 'choice', id: 'fa2', word: 'dad', answerId: 'dad',
+      choices: [
+        { id: 'dad', label: 'dad', emoji: '👨' },
+        { id: 'mom', label: 'mom', emoji: '👩' },
+        { id: 'brother', label: 'brother', emoji: '👦' },
+        { id: 'baby', label: 'baby', emoji: '👶' },
+      ],
+      teach: { meaning: 'Your dad is your father.', inUse: 'My dad is tall.', tip: 'Dad and father mean the same person.' },
+    },
+    {
+      kind: 'choice', id: 'fa3', word: 'baby', answerId: 'baby',
+      choices: [
+        { id: 'baby', label: 'baby', emoji: '👶' },
+        { id: 'mom', label: 'mom', emoji: '👩' },
+        { id: 'dad', label: 'dad', emoji: '👨' },
+        { id: 'sister', label: 'sister', emoji: '👧' },
+      ],
+      teach: { meaning: 'A baby is a very young child.', inUse: 'The baby is sleeping.', tip: 'Babies are little and new.' },
+    },
+    {
+      kind: 'arrange', id: 'fa4', prompt: 'Put the words in order:',
+      tiles: ['my', 'I', 'family', 'love'], answer: ['I', 'love', 'my', 'family'],
+      teach: { meaning: 'A happy way to talk about the people you love.', inUse: 'I love my family.', tip: 'A sentence starts with a capital letter.' },
+    },
+    {
+      kind: 'match', id: 'fa5',
+      pairs: [
+        { id: 'mom', word: 'mom', emoji: '👩' },
+        { id: 'dad', word: 'dad', emoji: '👨' },
+        { id: 'sister', word: 'sister', emoji: '👧' },
+        { id: 'brother', word: 'brother', emoji: '👦' },
+      ],
+      teach: { meaning: 'You matched each family word to its picture.', inUse: 'mom · dad · sister · brother', tip: 'Say each word aloud as you match it.' },
+    },
+    {
+      kind: 'fill', id: 'fa6', before: 'This is my', after: '.', answer: 'family',
+      teach: { meaning: 'Finish the sentence with the missing word.', inUse: 'This is my family.', tip: 'It is a word you learned this lesson.' },
+    },
+  ] as Exercise[],
+};
+
+/* "Colors" — naming the rainbow. */
+const colors: Lesson = {
+  id: 's1u4',
+  title: 'Colors',
+  reward: 12,
+  exercises: [
+    {
+      kind: 'choice', id: 'c1', word: 'red', answerId: 'red',
+      choices: [
+        { id: 'red', label: 'red', emoji: '🟥' },
+        { id: 'blue', label: 'blue', emoji: '🟦' },
+        { id: 'green', label: 'green', emoji: '🟩' },
+        { id: 'yellow', label: 'yellow', emoji: '🟨' },
+      ],
+      teach: { meaning: 'Red is the color of a strawberry.', inUse: 'The apple is red.', tip: 'Red starts with the letter R.' },
+    },
+    {
+      kind: 'choice', id: 'c2', word: 'blue', answerId: 'blue',
+      choices: [
+        { id: 'blue', label: 'blue', emoji: '🟦' },
+        { id: 'red', label: 'red', emoji: '🟥' },
+        { id: 'green', label: 'green', emoji: '🟩' },
+        { id: 'yellow', label: 'yellow', emoji: '🟨' },
+      ],
+      teach: { meaning: 'Blue is the color of the sky.', inUse: 'The sky is blue.', tip: 'The sea looks blue too.' },
+    },
+    {
+      kind: 'choice', id: 'c3', word: 'green', answerId: 'green',
+      choices: [
+        { id: 'green', label: 'green', emoji: '🟩' },
+        { id: 'red', label: 'red', emoji: '🟥' },
+        { id: 'blue', label: 'blue', emoji: '🟦' },
+        { id: 'yellow', label: 'yellow', emoji: '🟨' },
+      ],
+      teach: { meaning: 'Green is the color of grass and leaves.', inUse: 'The grass is green.', tip: 'Pip the sprout is green!' },
+    },
+    {
+      kind: 'choice', id: 'c4', word: 'yellow', answerId: 'yellow',
+      choices: [
+        { id: 'yellow', label: 'yellow', emoji: '🟨' },
+        { id: 'red', label: 'red', emoji: '🟥' },
+        { id: 'blue', label: 'blue', emoji: '🟦' },
+        { id: 'green', label: 'green', emoji: '🟩' },
+      ],
+      teach: { meaning: 'Yellow is the color of the sun.', inUse: 'The sun is yellow.', tip: 'Bananas are yellow too.' },
+    },
+    {
+      kind: 'arrange', id: 'c5', prompt: 'Put the words in order:',
+      tiles: ['is', 'The', 'blue', 'sky'], answer: ['The', 'sky', 'is', 'blue'],
+      teach: { meaning: 'A sentence about the color of the sky.', inUse: 'The sky is blue.', tip: 'Start with a capital letter.' },
+    },
+    {
+      kind: 'match', id: 'c6',
+      pairs: [
+        { id: 'red', word: 'red', emoji: '🟥' },
+        { id: 'blue', word: 'blue', emoji: '🟦' },
+        { id: 'green', word: 'green', emoji: '🟩' },
+        { id: 'yellow', word: 'yellow', emoji: '🟨' },
+      ],
+      teach: { meaning: 'You matched each color word to its picture.', inUse: 'red · blue · green · yellow', tip: 'Say each color aloud as you match it.' },
+    },
+    {
+      kind: 'fill', id: 'c7', before: 'Grass is', after: '.', answer: 'green',
+      teach: { meaning: 'Finish the sentence with the missing color.', inUse: 'Grass is green.', tip: 'It is the same color as Pip.' },
+    },
+  ] as Exercise[],
+};
+
+/* "Animals" — friendly creatures. */
+const animals: Lesson = {
+  id: 's1u7',
+  title: 'Animals',
+  reward: 12,
+  exercises: [
+    {
+      kind: 'choice', id: 'a1', word: 'cat', answerId: 'cat',
+      choices: [
+        { id: 'cat', label: 'cat', emoji: '🐱' },
+        { id: 'dog', label: 'dog', emoji: '🐶' },
+        { id: 'bird', label: 'bird', emoji: '🐦' },
+        { id: 'fish', label: 'fish', emoji: '🐟' },
+      ],
+      teach: { meaning: 'A cat is a soft pet that says “meow”.', inUse: 'The cat is sleeping.', tip: 'Cat starts with the letter C.' },
+    },
+    {
+      kind: 'choice', id: 'a2', word: 'dog', answerId: 'dog',
+      choices: [
+        { id: 'dog', label: 'dog', emoji: '🐶' },
+        { id: 'cat', label: 'cat', emoji: '🐱' },
+        { id: 'bird', label: 'bird', emoji: '🐦' },
+        { id: 'fish', label: 'fish', emoji: '🐟' },
+      ],
+      teach: { meaning: 'A dog is a friendly pet that says “woof”.', inUse: 'My dog likes to play.', tip: 'Dog starts with the letter D.' },
+    },
+    {
+      kind: 'choice', id: 'a3', word: 'bird', answerId: 'bird',
+      choices: [
+        { id: 'bird', label: 'bird', emoji: '🐦' },
+        { id: 'cat', label: 'cat', emoji: '🐱' },
+        { id: 'dog', label: 'dog', emoji: '🐶' },
+        { id: 'fish', label: 'fish', emoji: '🐟' },
+      ],
+      teach: { meaning: 'A bird has wings and can fly.', inUse: 'The bird sings in the tree.', tip: 'Birds lay eggs in a nest.' },
+    },
+    {
+      kind: 'choice', id: 'a4', word: 'fish', answerId: 'fish',
+      choices: [
+        { id: 'fish', label: 'fish', emoji: '🐟' },
+        { id: 'cat', label: 'cat', emoji: '🐱' },
+        { id: 'dog', label: 'dog', emoji: '🐶' },
+        { id: 'bird', label: 'bird', emoji: '🐦' },
+      ],
+      teach: { meaning: 'A fish lives and swims in water.', inUse: 'The fish swims fast.', tip: 'Fish breathe under water.' },
+    },
+    {
+      kind: 'arrange', id: 'a5', prompt: 'Put the words in order:',
+      tiles: ['a', 'I', 'cat', 'have', 'pet'], answer: ['I', 'have', 'a', 'pet', 'cat'],
+      teach: { meaning: 'A sentence about having a pet.', inUse: 'I have a pet cat.', tip: 'A pet is an animal you care for.' },
+    },
+    {
+      kind: 'match', id: 'a6',
+      pairs: [
+        { id: 'cat', word: 'cat', emoji: '🐱' },
+        { id: 'dog', word: 'dog', emoji: '🐶' },
+        { id: 'bird', word: 'bird', emoji: '🐦' },
+        { id: 'fish', word: 'fish', emoji: '🐟' },
+      ],
+      teach: { meaning: 'You matched each animal to its picture.', inUse: 'cat · dog · bird · fish', tip: 'Say each animal aloud as you match it.' },
+    },
+    {
+      kind: 'fill', id: 'a7', before: 'The', after: ' says woof.', answer: 'dog',
+      teach: { meaning: 'Finish the sentence with the right animal.', inUse: 'The dog says woof.', tip: 'Which pet barks?' },
+    },
+  ] as Exercise[],
+};
+
+/** Authored lessons, keyed by unit id. Units without an entry get a gentle review. */
+export const lessons: Record<string, Lesson> = {
+  s1u1: greetings,
+  s1u2: aroundTheHome,
+  s1u3: family,
+  s1u4: colors,
+  s1u7: animals,
+};
+
+/** Back-compat: the original single lesson export (Around the Home). */
+export const lesson = aroundTheHome;
+
+/** A gentle, always-playable review for units without authored content yet. */
+function fallbackLesson(unitId: string): Lesson {
+  const title =
+    course.flatMap((s) => s.units).find((u) => u.id === unitId)?.title ?? 'Practice';
+  return {
+    id: unitId,
+    title,
+    reward: 8,
+    exercises: [
+      {
+        kind: 'choice', id: 'p1', word: 'sprout', answerId: 'sprout',
+        choices: [
+          { id: 'sprout', label: 'sprout', emoji: '🌱' },
+          { id: 'tree', label: 'tree', emoji: '🌳' },
+          { id: 'flower', label: 'flower', emoji: '🌸' },
+          { id: 'leaf', label: 'leaf', emoji: '🍃' },
+        ],
+        teach: { meaning: 'A sprout is a tiny new plant — just like your English!', inUse: 'A little sprout grew in the garden.', tip: 'Sprout starts with the “s” sound.' },
+      },
+      {
+        kind: 'arrange', id: 'p2', prompt: 'Put the words in order:',
+        tiles: ['grow', 'Let', 'us'], answer: ['Let', 'us', 'grow'],
+        teach: { meaning: 'A cheerful way to say we will learn more.', inUse: 'Let us grow together.', tip: 'Start a sentence with a capital letter.' },
+      },
+      {
+        kind: 'fill', id: 'p3', before: 'Practice helps me', after: '.', answer: 'grow',
+        teach: { meaning: 'Finish the sentence with the missing word.', inUse: 'Practice helps me grow.', tip: 'It rhymes with “snow”.' },
+      },
+    ] as Exercise[],
+  };
+}
+
+/** The lesson for a unit: authored content if we have it, else a gentle review. */
+export function getLesson(unitId: string | null): Lesson {
+  if (unitId && lessons[unitId]) return lessons[unitId];
+  return fallbackLesson(unitId ?? 's1u2');
+}
 
 /* ---------------- Progress helpers ---------------- */
 
