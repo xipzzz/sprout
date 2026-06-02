@@ -534,3 +534,24 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .match-card--selected { border-color: var(--green); background: var(--green-tint); }
 .match-card--matched { opacity: 0.35; }
 .match-card--wrong { border-color: var(--clay); background: var(--clay-tint); }
+
+/* ============================================================
+   Fill in the Blank (type the missing word)
+   ============================================================ */
+.fill { padding: var(--s2) var(--s4) var(--s6); }
+.fill__sentence { margin-top: var(--s5); font-size: var(--fs-h2); font-weight: 800; line-height: 1.9; }
+.fill__input {
+  width: 7ch;
+  padding: 4px 10px;
+  font: inherit;
+  font-weight: 800;
+  color: var(--ink);
+  text-align: center;
+  background: var(--surface);
+  border: none;
+  border-bottom: 3px solid var(--green);
+  border-radius: var(--r-sm);
+  outline: none;
+}
+.fill__input:focus { background: var(--green-tint); }
+.fill__input:disabled { opacity: 1; }
