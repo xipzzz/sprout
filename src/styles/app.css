@@ -468,6 +468,14 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .bloom__emoji { font-size: 2rem; line-height: 1; }
 .bloom--locked .bloom__emoji { opacity: 0.5; }
 .bloom__label { font-size: 0.72rem; font-weight: 800; color: var(--ink-soft); text-align: center; }
+/* Year in Bloom — a calm 12-month overview of the season so far. */
+.year { display: grid; grid-template-columns: repeat(6, 1fr); gap: var(--s2); padding: 0 var(--s4); }
+.year__cell { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: var(--s3) 0; background: var(--surface); border-radius: var(--r-md); box-shadow: var(--shadow-sm); }
+.year__cell--future { background: transparent; box-shadow: none; border: 1.5px dashed var(--green-tint-2); }
+.year__cell--now { box-shadow: 0 0 0 2px var(--green); }
+.year__mark { min-height: 1.25rem; font-size: 1.2rem; line-height: 1.25rem; color: var(--ink-muted); font-weight: 900; }
+.year__month { font-size: var(--fs-caption); font-weight: 700; color: var(--ink-muted); }
+.year__cap { margin: var(--s4) var(--s4) 0; text-align: center; color: var(--ink-muted); font-weight: 600; font-size: var(--fs-caption); }
 
 /* ============================================================
    Placeholder ("coming soon") tabs
