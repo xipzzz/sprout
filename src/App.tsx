@@ -12,10 +12,11 @@ import QuestsScreen from './screens/QuestsScreen';
 import DailyGoalMet from './screens/DailyGoalMet';
 import CustomizeScreen from './screens/CustomizeScreen';
 import InviteScreen from './screens/InviteScreen';
+import GoldenBloomScreen from './screens/GoldenBloomScreen';
 import OnboardingSplash from './screens/OnboardingSplash';
 import Modal from './components/Modal';
 import { loadCompleted, saveCompleted } from './state/progress';
-import { hud } from './data/course';
+import { hud, sectionCompletedByUnit } from './data/course';
 
 export default function App() {
   const [tab, setTab] = useState<TabKey>('learn');
@@ -27,6 +28,7 @@ export default function App() {
   const [showInvite, setShowInvite] = useState(false);
   const [showDailyGoal, setShowDailyGoal] = useState(false);
   const [dailyGoalShown, setDailyGoalShown] = useState(false);
+  const [goldenBloom, setGoldenBloom] = useState<string | null>(null);
   const [showShop, setShowShop] = useState(false);
   const [showWater, setShowWater] = useState(false);
   const [offline, setOffline] = useState(() => typeof navigator !== 'undefined' && !navigator.onLine);
@@ -46,12 +48,20 @@ export default function App() {
 
   // Finishing a lesson marks its unit complete → the next unit unlocks.
   function completeLesson() {
-    if (lessonUnit && !completed.includes(lessonUnit)) {
-      const next = [...completed, lessonUnit];
+    const unit = lessonUnit;
+    setLessonUnit(null);
+    if (unit && !completed.includes(unit)) {
+      const next = [...completed, unit];
       setCompleted(next);
       saveCompleted(next);
+      // Finishing a whole section is a special golden moment — it takes
+      // precedence over (and replaces) the daily-goal celebration here.
+      const finishedSection = sectionCompletedByUnit(unit, next);
+      if (finishedSection) {
+        setGoldenBloom(finishedSection.title);
+        return;
+      }
     }
-    setLessonUnit(null);
     // The daily-goal celebration is a separate moment (shown once per session).
     if (!dailyGoalShown) {
       setShowDailyGoal(true);
@@ -76,6 +86,14 @@ export default function App() {
     return (
       <div className="app">
         <LessonScreen onExit={() => setLessonUnit(null)} onComplete={completeLesson} unitId={lessonUnit} />
+      </div>
+    );
+  }
+
+  if (goldenBloom) {
+    return (
+      <div className="app">
+        <GoldenBloomScreen sectionTitle={goldenBloom} onContinue={() => setGoldenBloom(null)} />
       </div>
     );
   }

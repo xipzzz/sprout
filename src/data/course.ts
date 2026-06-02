@@ -590,3 +590,11 @@ export function courseWithProgress(completed: string[]): Section[] {
     return { ...s, status: allDone ? 'done' : anyOpen ? 'current' : 'locked', units };
   });
 }
+
+/** If completing `unitId` finished its whole section, return that section (else null).
+    Drives the Golden Bloom milestone celebration. */
+export function sectionCompletedByUnit(unitId: string, completed: string[]): Section | null {
+  const section = course.find((s) => s.units.some((u) => u.id === unitId));
+  if (!section) return null;
+  return section.units.every((u) => completed.includes(u.id)) ? section : null;
+}
