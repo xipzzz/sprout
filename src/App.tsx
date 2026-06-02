@@ -10,6 +10,7 @@ import StreakScreen from './screens/StreakScreen';
 import ShopScreen from './screens/ShopScreen';
 import QuestsScreen from './screens/QuestsScreen';
 import DailyGoalMet from './screens/DailyGoalMet';
+import CustomizeScreen from './screens/CustomizeScreen';
 import OnboardingSplash from './screens/OnboardingSplash';
 import Modal from './components/Modal';
 import { loadCompleted, saveCompleted } from './state/progress';
@@ -21,6 +22,7 @@ export default function App() {
   const [lessonUnit, setLessonUnit] = useState<string | null>(null);
   const [showStreak, setShowStreak] = useState(false);
   const [showQuests, setShowQuests] = useState(false);
+  const [showCustomize, setShowCustomize] = useState(false);
   const [showDailyGoal, setShowDailyGoal] = useState(false);
   const [dailyGoalShown, setDailyGoalShown] = useState(false);
   const [showShop, setShowShop] = useState(false);
@@ -108,6 +110,14 @@ export default function App() {
     );
   }
 
+  if (showCustomize) {
+    return (
+      <div className="app">
+        <CustomizeScreen onBack={() => setShowCustomize(false)} />
+      </div>
+    );
+  }
+
   return (
     <div className="app">
       {tab === 'learn' && (
@@ -116,7 +126,7 @@ export default function App() {
       {tab === 'garden' && <GardenScreen tab={tab} onTabChange={setTab} />}
       {tab === 'words' && <WordsScreen tab={tab} onTabChange={setTab} />}
       {tab === 'grove' && <GroveScreen tab={tab} onTabChange={setTab} />}
-      {tab === 'me' && <MeScreen tab={tab} onTabChange={setTab} completed={completed} onOpenStreak={() => setShowStreak(true)} onOpenQuests={() => setShowQuests(true)} />}
+      {tab === 'me' && <MeScreen tab={tab} onTabChange={setTab} completed={completed} onOpenStreak={() => setShowStreak(true)} onOpenQuests={() => setShowQuests(true)} onOpenCustomize={() => setShowCustomize(true)} />}
 
       {showWater && (
         <Modal onClose={() => setShowWater(false)}>
