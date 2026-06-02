@@ -10,13 +10,16 @@ import TabBar, { type TabKey } from '../components/TabBar';
 import { currentUnit, hud } from '../data/course';
 import type { PathNode } from '../data/course';
 
-export default function HomeScreen() {
+interface HomeScreenProps {
+  onStartLesson: () => void;
+}
+
+export default function HomeScreen({ onStartLesson }: HomeScreenProps) {
   const [tab, setTab] = useState<TabKey>('learn');
 
-  // The lesson flow is the next thing we'll build — this is where a
-  // tapped node will open it.
-  function startLesson(node: PathNode) {
-    console.log('start lesson:', node.id, node.title);
+  // A tapped (unlocked) node opens the lesson flow.
+  function startLesson(_node: PathNode) {
+    onStartLesson();
   }
 
   return (
