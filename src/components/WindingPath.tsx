@@ -74,10 +74,11 @@ export default function WindingPath({ nodes, onSelect }: WindingPathProps) {
           const dx = OFFSETS[i % OFFSETS.length];
           const isLocked = node.status === 'locked';
           return (
-            <div className="node-row" key={node.id} style={{ transform: `translateX(${dx}px)` }}>
+            <div className="node-row" key={node.id}>
               <button
                 type="button"
                 className={`node node--${node.kind === 'golden' ? 'golden' : node.status}`}
+                style={{ transform: `translateX(${dx}px)` }}
                 disabled={isLocked}
                 aria-label={ariaLabel(node)}
                 onClick={() => !isLocked && onSelect?.(node)}
