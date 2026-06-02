@@ -5,6 +5,7 @@ import LessonScreen from './screens/LessonScreen';
 import GardenScreen from './screens/GardenScreen';
 import PlaceholderScreen from './screens/PlaceholderScreen';
 import MeScreen from './screens/MeScreen';
+import WordsScreen from './screens/WordsScreen';
 import { loadCompleted, saveCompleted } from './state/progress';
 
 export default function App() {
@@ -36,10 +37,7 @@ export default function App() {
         <HomeScreen tab={tab} onTabChange={setTab} completed={completed} onStartUnit={setLessonUnit} />
       )}
       {tab === 'garden' && <GardenScreen tab={tab} onTabChange={setTab} />}
-      {tab === 'words' && (
-        <PlaceholderScreen tab={tab} onTabChange={setTab}
-          title="Words" emoji="📖" blurb="Every word you grow will live here, ready to review." />
-      )}
+      {tab === 'words' && <WordsScreen tab={tab} onTabChange={setTab} />}
       {tab === 'grove' && (
         <PlaceholderScreen tab={tab} onTabChange={setTab}
           title="Grove" emoji="🌳" blurb="Grow a shared garden with friends — calm, and never a ranking in sight." />
