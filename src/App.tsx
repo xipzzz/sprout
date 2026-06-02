@@ -13,6 +13,7 @@ import DailyGoalMet from './screens/DailyGoalMet';
 import CustomizeScreen from './screens/CustomizeScreen';
 import InviteScreen from './screens/InviteScreen';
 import GoldenBloomScreen from './screens/GoldenBloomScreen';
+import InsightsScreen from './screens/InsightsScreen';
 import OnboardingSplash from './screens/OnboardingSplash';
 import Modal from './components/Modal';
 import { loadCompleted, saveCompleted } from './state/progress';
@@ -26,6 +27,7 @@ export default function App() {
   const [showQuests, setShowQuests] = useState(false);
   const [showCustomize, setShowCustomize] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
+  const [showInsights, setShowInsights] = useState(false);
   const [showDailyGoal, setShowDailyGoal] = useState(false);
   const [dailyGoalShown, setDailyGoalShown] = useState(false);
   const [goldenBloom, setGoldenBloom] = useState<string | null>(null);
@@ -146,6 +148,14 @@ export default function App() {
     );
   }
 
+  if (showInsights) {
+    return (
+      <div className="app">
+        <InsightsScreen onBack={() => setShowInsights(false)} completed={completed} />
+      </div>
+    );
+  }
+
   return (
     <div className="app">
       {tab === 'learn' && (
@@ -154,7 +164,7 @@ export default function App() {
       {tab === 'garden' && <GardenScreen tab={tab} onTabChange={setTab} />}
       {tab === 'words' && <WordsScreen tab={tab} onTabChange={setTab} />}
       {tab === 'grove' && <GroveScreen tab={tab} onTabChange={setTab} />}
-      {tab === 'me' && <MeScreen tab={tab} onTabChange={setTab} completed={completed} onOpenStreak={() => setShowStreak(true)} onOpenQuests={() => setShowQuests(true)} onOpenCustomize={() => setShowCustomize(true)} onOpenInvite={() => setShowInvite(true)} />}
+      {tab === 'me' && <MeScreen tab={tab} onTabChange={setTab} completed={completed} onOpenStreak={() => setShowStreak(true)} onOpenQuests={() => setShowQuests(true)} onOpenCustomize={() => setShowCustomize(true)} onOpenInvite={() => setShowInvite(true)} onOpenInsights={() => setShowInsights(true)} />}
 
       {showWater && (
         <Modal onClose={() => setShowWater(false)}>
