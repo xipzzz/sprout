@@ -436,3 +436,41 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .section-banner--locked .section-banner__eyebrow { opacity: 0.7; }
 /* dim a locked section's path slightly so the eye rests on the active section */
 .section-banner--locked + .path { opacity: 0.8; }
+
+/* ============================================================
+   Garden (reward home)
+   ============================================================ */
+.garden__head {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--bg);
+  padding: calc(var(--s4) + env(safe-area-inset-top)) var(--s4) var(--s2);
+}
+.garden__title { margin: 0; font-size: var(--fs-display); font-weight: 900; }
+.garden__sub { margin: 2px 0 0; color: var(--ink-soft); font-weight: 600; font-size: var(--fs-caption); }
+.seedling { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: var(--s5) var(--s4) var(--s6); }
+.seedling__pip { width: 96px; height: 96px; }
+.seedling__cap { margin: 0; color: var(--ink-soft); font-weight: 700; }
+.garden__section { margin: var(--s2) var(--s4) var(--s3); font-size: var(--fs-h2); font-weight: 800; }
+.bloom-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s3); padding: 0 var(--s4) var(--s6); }
+.bloom {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: var(--s4) var(--s2);
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+}
+.bloom--locked { background: var(--bg-soft); box-shadow: none; }
+.bloom__emoji { font-size: 2rem; line-height: 1; }
+.bloom--locked .bloom__emoji { opacity: 0.5; }
+.bloom__label { font-size: 0.72rem; font-weight: 800; color: var(--ink-soft); text-align: center; }
+
+/* ============================================================
+   Placeholder ("coming soon") tabs
+   ============================================================ */
+.placeholder__body { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 10px; padding: var(--s8) var(--s6); }
+.placeholder__pip { width: 96px; height: 96px; }
+.placeholder__title { margin: var(--s2) 0 0; font-size: var(--fs-h1); font-weight: 900; }
+.placeholder__blurb { margin: 0; color: var(--ink-soft); font-weight: 600; max-width: 280px; }
+.placeholder__soon { margin: var(--s3) 0 0; font-size: var(--fs-caption); font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-muted); }
