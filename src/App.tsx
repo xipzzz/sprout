@@ -9,6 +9,7 @@ import GroveScreen from './screens/GroveScreen';
 import StreakScreen from './screens/StreakScreen';
 import ShopScreen from './screens/ShopScreen';
 import QuestsScreen from './screens/QuestsScreen';
+import DailyGoalMet from './screens/DailyGoalMet';
 import OnboardingSplash from './screens/OnboardingSplash';
 import Modal from './components/Modal';
 import { loadCompleted, saveCompleted } from './state/progress';
@@ -20,6 +21,8 @@ export default function App() {
   const [lessonUnit, setLessonUnit] = useState<string | null>(null);
   const [showStreak, setShowStreak] = useState(false);
   const [showQuests, setShowQuests] = useState(false);
+  const [showDailyGoal, setShowDailyGoal] = useState(false);
+  const [dailyGoalShown, setDailyGoalShown] = useState(false);
   const [showShop, setShowShop] = useState(false);
   const [showWater, setShowWater] = useState(false);
   const [offline, setOffline] = useState(() => typeof navigator !== 'undefined' && !navigator.onLine);
@@ -45,6 +48,11 @@ export default function App() {
       saveCompleted(next);
     }
     setLessonUnit(null);
+    // The daily-goal celebration is a separate moment (shown once per session).
+    if (!dailyGoalShown) {
+      setShowDailyGoal(true);
+      setDailyGoalShown(true);
+    }
   }
 
   if (!onboarded) {
@@ -64,6 +72,14 @@ export default function App() {
     return (
       <div className="app">
         <LessonScreen onExit={() => setLessonUnit(null)} onComplete={completeLesson} />
+      </div>
+    );
+  }
+
+  if (showDailyGoal) {
+    return (
+      <div className="app">
+        <DailyGoalMet onContinue={() => setShowDailyGoal(false)} />
       </div>
     );
   }
