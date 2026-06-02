@@ -10,7 +10,7 @@ Legend: ✅ done · 🔨 partial · ⬜ to build
 ## ✅ Built so far (21 PRs, all green, live on the dev server)
 - **Foundation** — Vite + React + TS, GitHub, exact design tokens (calm palette, Nunito)
 - **Onboarding** — branded Launch Splash (shown once) ✅ · *Welcome / Save-your-garden / Log in / Reminder priming / parent gate* ⬜
-- **Home** — winding path, HUD (🍃/💎/💧 — gems→Shop, water→sheet), **5 sections × 7–8 units**, real **progression** (units unlock + persist)
+- **Home** — winding path, HUD (🍃/💎/💧 — gems→Shop, water→sheet), **5 sections × 7–8 units**, real **progression** (units unlock + persist) · **Today Card** (calm pointer to the next lesson)
 - **Lessons** — **4 exercise types**: Multiple Choice · Arrange Words · Match Pairs · Fill in the Blank → warm feedback drawer (green / clay · Meaning · In use · Tip · working Flag) → Lesson Complete · **Daily-goal** celebration · **per-unit content** (Hello / Around the Home / Family / Colors / Animals) with a gentle fallback so every unit is playable · **Golden Bloom** milestone when a whole section is finished
 - **Garden** — seedling (Pip) · Monthly Blooms (one per section, tied to real progress) · **Year in Bloom** (calm yearly overview)
 - **Words** — vocab hub (vocabulary derived from the real lessons) · **Search** (filter as you type)
@@ -23,8 +23,7 @@ Legend: ✅ done · 🔨 partial · ⬜ to build
 - **Mobile** — page-scroll (browser chrome hides), no sideways pan, LAN/Tailscale preview
 
 ## ⬜ Remaining — buildable
-- **Today Card** (home variant)
-- **Garden Tales** (story content)
+- **Garden Tales** (story content) — the last big buildable screen; interactive reading stories
 
 ## ⬜ Remaining — needs your input / integration
 - **Audio exercises** (Type / Speak What You Hear) — needs text-to-speech + microphone

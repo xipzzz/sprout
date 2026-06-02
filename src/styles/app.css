@@ -126,6 +126,24 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .unit__guide:hover { background: rgba(255,255,255,.26); }
 .unit__guide:active { transform: translateY(1px); }
 
+/* ---- Today Card (home) ---- */
+.today {
+  margin: var(--s2) var(--s4) var(--s6);
+  padding: var(--s5);
+  border-radius: var(--r-lg);
+  color: #fff;
+  background: linear-gradient(180deg, var(--green) 0%, var(--green-strong) 100%);
+  box-shadow: 0 6px 0 var(--green-deep), var(--shadow-md);
+}
+.today__head { display: flex; align-items: center; gap: var(--s3); }
+.today__text { flex: 1; min-width: 0; }
+.today__eyebrow { margin: 0 0 2px; font-size: var(--fs-eyebrow); font-weight: 800; letter-spacing: .1em; text-transform: uppercase; opacity: .85; }
+.today__title { margin: 0; font-size: var(--fs-h1); font-weight: 800; }
+.today__meta { margin: 3px 0 0; font-weight: 600; opacity: .92; font-size: var(--fs-caption); }
+.today .today__pip { width: 58px; height: 58px; flex: none; }
+.today__cta { width: 100%; margin-top: var(--s4); background: #fff; color: var(--green-deep); box-shadow: 0 4px 0 rgba(0,0,0,.12); }
+.today__cta:active { box-shadow: 0 1px 0 rgba(0,0,0,.12); }
+
 /* ============================================================
    Winding path — a vine of lesson nodes
    ============================================================ */
