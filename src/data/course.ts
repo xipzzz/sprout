@@ -150,7 +150,17 @@ export interface MatchExercise {
   teach: Teach;
 }
 
-export type Exercise = ChoiceExercise | ArrangeExercise | MatchExercise;
+/** Type the missing word to complete the sentence. */
+export interface FillExercise {
+  kind: 'fill';
+  id: string;
+  before: string; // sentence text before the blank
+  after: string;  // sentence text after the blank
+  answer: string;
+  teach: Teach;
+}
+
+export type Exercise = ChoiceExercise | ArrangeExercise | MatchExercise | FillExercise;
 
 export const lesson = {
   id: 's1u2',
@@ -262,6 +272,18 @@ export const lesson = {
         meaning: 'You matched each word to its picture.',
         inUse: 'door · window · chair · bed',
         tip: 'Say each word aloud as you match it.',
+      },
+    },
+    {
+      kind: 'fill',
+      id: 'e8',
+      before: 'Please close the',
+      after: '.',
+      answer: 'door',
+      teach: {
+        meaning: 'Finish the sentence with the missing word.',
+        inUse: 'Please close the door.',
+        tip: 'It is a word you learned earlier this lesson.',
       },
     },
   ] as Exercise[],
