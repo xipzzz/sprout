@@ -12,6 +12,7 @@ import type { PathNode, Section } from '../data/course';
 interface HomeScreenProps {
   completed: string[];
   onStartUnit: (unitId: string) => void;
+  onOpenShop: () => void;
   tab: TabKey;
   onTabChange: (tab: TabKey) => void;
 }
@@ -33,7 +34,7 @@ function sectionNodes(section: Section): PathNode[] {
   return nodes;
 }
 
-export default function HomeScreen({ completed, onStartUnit, tab, onTabChange }: HomeScreenProps) {
+export default function HomeScreen({ completed, onStartUnit, onOpenShop, tab, onTabChange }: HomeScreenProps) {
   const sections = courseWithProgress(completed);
 
   function startUnit(node: PathNode) {
@@ -42,7 +43,7 @@ export default function HomeScreen({ completed, onStartUnit, tab, onTabChange }:
 
   return (
     <div className="screen">
-      <HUD leaves={hud.leaves} gems={hud.gems} water={hud.water} />
+      <HUD leaves={hud.leaves} gems={hud.gems} water={hud.water} onOpenShop={onOpenShop} />
 
       <main className="screen__body">
         {sections.map((section) => (
