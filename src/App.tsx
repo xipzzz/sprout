@@ -8,6 +8,7 @@ import WordsScreen from './screens/WordsScreen';
 import GroveScreen from './screens/GroveScreen';
 import StreakScreen from './screens/StreakScreen';
 import ShopScreen from './screens/ShopScreen';
+import QuestsScreen from './screens/QuestsScreen';
 import OnboardingSplash from './screens/OnboardingSplash';
 import Modal from './components/Modal';
 import { loadCompleted, saveCompleted } from './state/progress';
@@ -18,6 +19,7 @@ export default function App() {
   const [completed, setCompleted] = useState<string[]>(loadCompleted);
   const [lessonUnit, setLessonUnit] = useState<string | null>(null);
   const [showStreak, setShowStreak] = useState(false);
+  const [showQuests, setShowQuests] = useState(false);
   const [showShop, setShowShop] = useState(false);
   const [showWater, setShowWater] = useState(false);
   const [offline, setOffline] = useState(() => typeof navigator !== 'undefined' && !navigator.onLine);
@@ -82,6 +84,14 @@ export default function App() {
     );
   }
 
+  if (showQuests) {
+    return (
+      <div className="app">
+        <QuestsScreen onBack={() => setShowQuests(false)} />
+      </div>
+    );
+  }
+
   return (
     <div className="app">
       {tab === 'learn' && (
@@ -90,7 +100,7 @@ export default function App() {
       {tab === 'garden' && <GardenScreen tab={tab} onTabChange={setTab} />}
       {tab === 'words' && <WordsScreen tab={tab} onTabChange={setTab} />}
       {tab === 'grove' && <GroveScreen tab={tab} onTabChange={setTab} />}
-      {tab === 'me' && <MeScreen tab={tab} onTabChange={setTab} completed={completed} onOpenStreak={() => setShowStreak(true)} />}
+      {tab === 'me' && <MeScreen tab={tab} onTabChange={setTab} completed={completed} onOpenStreak={() => setShowStreak(true)} onOpenQuests={() => setShowQuests(true)} />}
 
       {showWater && (
         <Modal onClose={() => setShowWater(false)}>
