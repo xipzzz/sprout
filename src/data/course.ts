@@ -654,6 +654,210 @@ const food: Lesson = {
   ] as Exercise[],
 };
 
+/* "Clothes" — things we wear. */
+const clothes: Lesson = {
+  id: 's2u1',
+  title: 'Clothes',
+  reward: 12,
+  exercises: [
+    {
+      kind: 'choice', id: 'cl1', word: 'shirt', answerId: 'shirt',
+      choices: [
+        { id: 'shirt', label: 'shirt', emoji: '👕' },
+        { id: 'pants', label: 'pants', emoji: '👖' },
+        { id: 'shoes', label: 'shoes', emoji: '👟' },
+        { id: 'hat', label: 'hat', emoji: '🎩' },
+      ],
+      teach: { meaning: 'A shirt covers the top of your body.', inUse: 'I wear a clean shirt.', tip: 'Shirt starts with the “sh” sound.' },
+    },
+    {
+      kind: 'choice', id: 'cl2', word: 'pants', answerId: 'pants',
+      choices: [
+        { id: 'pants', label: 'pants', emoji: '👖' },
+        { id: 'shirt', label: 'shirt', emoji: '👕' },
+        { id: 'socks', label: 'socks', emoji: '🧦' },
+        { id: 'shoes', label: 'shoes', emoji: '👟' },
+      ],
+      teach: { meaning: 'Pants cover your legs.', inUse: 'These pants are blue.', tip: 'We say a pair of pants.' },
+    },
+    {
+      kind: 'choice', id: 'cl3', word: 'shoes', answerId: 'shoes',
+      choices: [
+        { id: 'shoes', label: 'shoes', emoji: '👟' },
+        { id: 'socks', label: 'socks', emoji: '🧦' },
+        { id: 'hat', label: 'hat', emoji: '🎩' },
+        { id: 'shirt', label: 'shirt', emoji: '👕' },
+      ],
+      teach: { meaning: 'Shoes go on your feet to keep them safe.', inUse: 'I tie my shoes.', tip: 'You wear two shoes — a pair.' },
+    },
+    {
+      kind: 'choice', id: 'cl4', word: 'socks', answerId: 'socks',
+      choices: [
+        { id: 'socks', label: 'socks', emoji: '🧦' },
+        { id: 'shoes', label: 'shoes', emoji: '👟' },
+        { id: 'pants', label: 'pants', emoji: '👖' },
+        { id: 'hat', label: 'hat', emoji: '🎩' },
+      ],
+      teach: { meaning: 'Socks go on your feet, under your shoes.', inUse: 'My socks are warm.', tip: 'Socks keep your feet cozy.' },
+    },
+    {
+      kind: 'arrange', id: 'cl5', prompt: 'Put the words in order:',
+      tiles: ['my', 'I', 'on', 'shoes', 'put'], answer: ['I', 'put', 'on', 'my', 'shoes'],
+      teach: { meaning: 'A sentence about getting dressed.', inUse: 'I put on my shoes.', tip: 'Start with a capital letter.' },
+    },
+    {
+      kind: 'match', id: 'cl6',
+      pairs: [
+        { id: 'shirt', word: 'shirt', emoji: '👕' },
+        { id: 'pants', word: 'pants', emoji: '👖' },
+        { id: 'shoes', word: 'shoes', emoji: '👟' },
+        { id: 'socks', word: 'socks', emoji: '🧦' },
+      ],
+      teach: { meaning: 'You matched each clothing word to its picture.', inUse: 'shirt · pants · shoes · socks', tip: 'Say each one aloud as you match it.' },
+    },
+    {
+      kind: 'fill', id: 'cl7', before: 'I wear a', after: ' on my head.', answer: 'hat',
+      teach: { meaning: 'Finish the sentence with the right clothing.', inUse: 'I wear a hat on my head.', tip: 'It keeps the sun off your face.' },
+    },
+  ] as Exercise[],
+};
+
+/* "The Body" — parts of you. */
+const body: Lesson = {
+  id: 's2u2',
+  title: 'The Body',
+  reward: 12,
+  exercises: [
+    {
+      kind: 'choice', id: 'bo1', word: 'hand', answerId: 'hand',
+      choices: [
+        { id: 'hand', label: 'hand', emoji: '✋' },
+        { id: 'eye', label: 'eye', emoji: '👁️' },
+        { id: 'ear', label: 'ear', emoji: '👂' },
+        { id: 'nose', label: 'nose', emoji: '👃' },
+      ],
+      teach: { meaning: 'You hold things with your hand.', inUse: 'I wave my hand.', tip: 'You have two hands.' },
+    },
+    {
+      kind: 'choice', id: 'bo2', word: 'eye', answerId: 'eye',
+      choices: [
+        { id: 'eye', label: 'eye', emoji: '👁️' },
+        { id: 'ear', label: 'ear', emoji: '👂' },
+        { id: 'nose', label: 'nose', emoji: '👃' },
+        { id: 'hand', label: 'hand', emoji: '✋' },
+      ],
+      teach: { meaning: 'You see with your eyes.', inUse: 'I close my eyes.', tip: 'You have two eyes.' },
+    },
+    {
+      kind: 'choice', id: 'bo3', word: 'ear', answerId: 'ear',
+      choices: [
+        { id: 'ear', label: 'ear', emoji: '👂' },
+        { id: 'eye', label: 'eye', emoji: '👁️' },
+        { id: 'hand', label: 'hand', emoji: '✋' },
+        { id: 'nose', label: 'nose', emoji: '👃' },
+      ],
+      teach: { meaning: 'You hear with your ears.', inUse: 'I cover my ears.', tip: 'You have two ears.' },
+    },
+    {
+      kind: 'choice', id: 'bo4', word: 'nose', answerId: 'nose',
+      choices: [
+        { id: 'nose', label: 'nose', emoji: '👃' },
+        { id: 'ear', label: 'ear', emoji: '👂' },
+        { id: 'eye', label: 'eye', emoji: '👁️' },
+        { id: 'hand', label: 'hand', emoji: '✋' },
+      ],
+      teach: { meaning: 'You smell with your nose.', inUse: 'I touch my nose.', tip: 'You have one nose.' },
+    },
+    {
+      kind: 'arrange', id: 'bo5', prompt: 'Put the words in order:',
+      tiles: ['my', 'I', 'with', 'see', 'eyes'], answer: ['I', 'see', 'with', 'my', 'eyes'],
+      teach: { meaning: 'A sentence about how you see.', inUse: 'I see with my eyes.', tip: 'Start with a capital letter.' },
+    },
+    {
+      kind: 'match', id: 'bo6',
+      pairs: [
+        { id: 'hand', word: 'hand', emoji: '✋' },
+        { id: 'eye', word: 'eye', emoji: '👁️' },
+        { id: 'ear', word: 'ear', emoji: '👂' },
+        { id: 'nose', word: 'nose', emoji: '👃' },
+      ],
+      teach: { meaning: 'You matched each body part to its picture.', inUse: 'hand · eye · ear · nose', tip: 'Point to each part as you say it.' },
+    },
+    {
+      kind: 'fill', id: 'bo7', before: 'I smell with my', after: '.', answer: 'nose',
+      teach: { meaning: 'Finish the sentence with the right body part.', inUse: 'I smell with my nose.', tip: 'It is in the middle of your face.' },
+    },
+  ] as Exercise[],
+};
+
+/* "Weather" — what the sky is doing. */
+const weather: Lesson = {
+  id: 's2u3',
+  title: 'Weather',
+  reward: 12,
+  exercises: [
+    {
+      kind: 'choice', id: 'we1', word: 'sun', answerId: 'sun',
+      choices: [
+        { id: 'sun', label: 'sun', emoji: '☀️' },
+        { id: 'rain', label: 'rain', emoji: '🌧️' },
+        { id: 'snow', label: 'snow', emoji: '❄️' },
+        { id: 'cloud', label: 'cloud', emoji: '☁️' },
+      ],
+      teach: { meaning: 'The sun is bright and warm.', inUse: 'The sun is out today.', tip: 'The sun helps plants grow.' },
+    },
+    {
+      kind: 'choice', id: 'we2', word: 'rain', answerId: 'rain',
+      choices: [
+        { id: 'rain', label: 'rain', emoji: '🌧️' },
+        { id: 'sun', label: 'sun', emoji: '☀️' },
+        { id: 'snow', label: 'snow', emoji: '❄️' },
+        { id: 'cloud', label: 'cloud', emoji: '☁️' },
+      ],
+      teach: { meaning: 'Rain is water that falls from clouds.', inUse: 'The rain is cold.', tip: 'Plants drink the rain.' },
+    },
+    {
+      kind: 'choice', id: 'we3', word: 'snow', answerId: 'snow',
+      choices: [
+        { id: 'snow', label: 'snow', emoji: '❄️' },
+        { id: 'rain', label: 'rain', emoji: '🌧️' },
+        { id: 'sun', label: 'sun', emoji: '☀️' },
+        { id: 'cloud', label: 'cloud', emoji: '☁️' },
+      ],
+      teach: { meaning: 'Snow is soft, white, and cold.', inUse: 'We play in the snow.', tip: 'Snow falls when it is very cold.' },
+    },
+    {
+      kind: 'choice', id: 'we4', word: 'cloud', answerId: 'cloud',
+      choices: [
+        { id: 'cloud', label: 'cloud', emoji: '☁️' },
+        { id: 'sun', label: 'sun', emoji: '☀️' },
+        { id: 'rain', label: 'rain', emoji: '🌧️' },
+        { id: 'snow', label: 'snow', emoji: '❄️' },
+      ],
+      teach: { meaning: 'A cloud is white and floats in the sky.', inUse: 'A big cloud hid the sun.', tip: 'Rain comes from clouds.' },
+    },
+    {
+      kind: 'arrange', id: 'we5', prompt: 'Put the words in order:',
+      tiles: ['is', 'The', 'hot', 'sun'], answer: ['The', 'sun', 'is', 'hot'],
+      teach: { meaning: 'A sentence about the weather.', inUse: 'The sun is hot.', tip: 'Start with a capital letter.' },
+    },
+    {
+      kind: 'match', id: 'we6',
+      pairs: [
+        { id: 'sun', word: 'sun', emoji: '☀️' },
+        { id: 'rain', word: 'rain', emoji: '🌧️' },
+        { id: 'snow', word: 'snow', emoji: '❄️' },
+        { id: 'cloud', word: 'cloud', emoji: '☁️' },
+      ],
+      teach: { meaning: 'You matched each weather word to its picture.', inUse: 'sun · rain · snow · cloud', tip: 'Look out the window and name the weather.' },
+    },
+    {
+      kind: 'fill', id: 'we7', before: 'I use an umbrella in the', after: '.', answer: 'rain',
+      teach: { meaning: 'Finish the sentence with the right weather.', inUse: 'I use an umbrella in the rain.', tip: 'It falls from the clouds.' },
+    },
+  ] as Exercise[],
+};
+
 /** Authored lessons, keyed by unit id. Units without an entry get a gentle review. */
 export const lessons: Record<string, Lesson> = {
   s1u1: greetings,
@@ -663,6 +867,9 @@ export const lessons: Record<string, Lesson> = {
   s1u5: numbers,
   s1u6: food,
   s1u7: animals,
+  s2u1: clothes,
+  s2u2: body,
+  s2u3: weather,
 };
 
 /** Back-compat: the original single lesson export (Around the Home). */
