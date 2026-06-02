@@ -11,11 +11,11 @@ Legend: ✅ done · 🔨 partial · ⬜ to build
 - **Foundation** — Vite + React + TS, GitHub, exact design tokens (calm palette, Nunito)
 - **Onboarding** — branded Launch Splash (shown once) ✅ · *Welcome / Save-your-garden / Log in / Reminder priming / parent gate* ⬜
 - **Home** — winding path, HUD (🍃/💎/💧 — gems→Shop, water→sheet), **5 sections × 7–8 units**, real **progression** (units unlock + persist)
-- **Lessons** — **4 exercise types**: Multiple Choice · Arrange Words · Match Pairs · Fill in the Blank → warm feedback drawer (green / clay · Meaning · In use · Tip · working Flag) → Lesson Complete
+- **Lessons** — **4 exercise types**: Multiple Choice · Arrange Words · Match Pairs · Fill in the Blank → warm feedback drawer (green / clay · Meaning · In use · Tip · working Flag) → Lesson Complete · **Daily-goal** celebration · **per-unit content** (Hello / Around the Home / Family / Colors / Animals) with a gentle fallback so every unit is playable
 - **Garden** — seedling (Pip) + Monthly Blooms grid
 - **Words** — vocab hub
 - **Grove** — cooperative shared garden (no ranks; opt-in leaderboard noted)
-- **Me** — profile, stat tiles, links
+- **Me** — profile, stat tiles, links · **Customize Pip** (accessories) · **Invite a friend** (share sheet)
 - **Streak calendar** — calm leaf-dot grid; auto-freeze shown warmly
 - **Shop** — gem-priced extras (gems never required)
 - **Modals** — Water sheet, Offline notice (reusable Modal)
@@ -23,9 +23,9 @@ Legend: ✅ done · 🔨 partial · ⬜ to build
 - **Mobile** — page-scroll (browser chrome hides), no sideways pan, LAN/Tailscale preview
 
 ## ⬜ Remaining — buildable
-- More exercise content per unit; **Daily-goal** celebration; **Golden Bloom** milestone moment
+- **Golden Bloom** milestone moment
 - **Today Card** (home variant); **Garden depth** (Monthly Blooms detail / Year in Bloom)
-- **Garden Tales** (story content); Customize Pip · Insights · Invite a friend · Search
+- **Garden Tales** (story content) · Insights · Search
 
 ## ⬜ Remaining — needs your input / integration
 - **Audio exercises** (Type / Speak What You Hear) — needs text-to-speech + microphone
