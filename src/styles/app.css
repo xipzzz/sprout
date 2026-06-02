@@ -657,3 +657,29 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .shop__buy:not(:disabled):active { transform: translateY(1px); }
 .shop__buy:disabled { opacity: 0.5; cursor: default; }
 .shop__note { margin: var(--s4) var(--s4) 0; text-align: center; color: var(--ink-muted); font-weight: 600; font-size: var(--fs-caption); }
+
+/* ============================================================
+   Onboarding splash
+   ============================================================ */
+.splash {
+  background: var(--bg);
+  text-align: center;
+  align-items: center;
+  padding: var(--s8) var(--s6) calc(var(--s8) + env(safe-area-inset-bottom));
+}
+.splash__center { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: var(--s2); }
+.splash__pip { width: 140px; height: 140px; }
+.splash__word { margin: var(--s3) 0 0; font-size: 2.6rem; font-weight: 900; color: var(--green-deep); letter-spacing: -0.01em; }
+.splash__tag { margin: 0; font-size: var(--fs-h2); font-weight: 600; color: var(--ink-soft); }
+.splash__cta {
+  width: 100%;
+  max-width: 340px;
+  padding: 16px;
+  border-radius: var(--r-md);
+  background: var(--green);
+  color: #fff;
+  font-weight: 900;
+  font-size: 1.05rem;
+  box-shadow: 0 4px 0 var(--green-deep);
+}
+.splash__cta:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--green-deep); }
