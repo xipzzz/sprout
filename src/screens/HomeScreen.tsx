@@ -1,16 +1,17 @@
 /* HomeScreen — the winding-path home, showing the whole course:
    5 sections, each with 7–8 unit nodes (plus a Golden Bloom milestone).
-   Reads everything from src/data/course.ts. */
+   Statuses are derived live from the learner's progress. */
 
 import HUD from '../components/HUD';
 import SectionBanner from '../components/SectionBanner';
 import WindingPath from '../components/WindingPath';
 import TabBar, { type TabKey } from '../components/TabBar';
-import { course, hud } from '../data/course';
+import { courseWithProgress, hud } from '../data/course';
 import type { PathNode, Section } from '../data/course';
 
 interface HomeScreenProps {
-  onStartLesson: () => void;
+  completed: string[];
+  onStartUnit: (unitId: string) => void;
   tab: TabKey;
   onTabChange: (tab: TabKey) => void;
 }
@@ -32,10 +33,11 @@ function sectionNodes(section: Section): PathNode[] {
   return nodes;
 }
 
-export default function HomeScreen({ onStartLesson, tab, onTabChange }: HomeScreenProps) {
-  // A tapped (unlocked) node opens the lesson flow.
-  function startLesson(_node: PathNode) {
-    onStartLesson();
+export default function HomeScreen({ completed, onStartUnit, tab, onTabChange }: HomeScreenProps) {
+  const sections = courseWithProgress(completed);
+
+  function startUnit(node: PathNode) {
+    if (node.kind === 'lesson') onStartUnit(node.id); // golden blooms aren't lessons
   }
 
   return (
@@ -43,10 +45,10 @@ export default function HomeScreen({ onStartLesson, tab, onTabChange }: HomeScre
       <HUD leaves={hud.leaves} gems={hud.gems} water={hud.water} />
 
       <main className="screen__body">
-        {course.map((section) => (
+        {sections.map((section) => (
           <section key={section.id} className="course-section">
             <SectionBanner section={section} />
-            <WindingPath nodes={sectionNodes(section)} onSelect={startLesson} />
+            <WindingPath nodes={sectionNodes(section)} onSelect={startUnit} />
           </section>
         ))}
       </main>

@@ -243,3 +243,26 @@ export const lesson = {
     },
   ] as Exercise[],
 };
+
+/* ---------------- Progress helpers ---------------- */
+
+/** Every unit id, in learning order (section 1 → 5). */
+const UNIT_ORDER = course.flatMap((s) => s.units.map((u) => u.id));
+
+/** The next unit to play: the first one not yet completed. */
+export function firstUnlockedUnit(completed: string[]): string | null {
+  return UNIT_ORDER.find((id) => !completed.includes(id)) ?? null;
+}
+
+/** The course with live statuses derived from which units are completed. */
+export function courseWithProgress(completed: string[]): Section[] {
+  const currentId = firstUnlockedUnit(completed);
+  const statusOf = (id: string): NodeStatus =>
+    completed.includes(id) ? 'done' : id === currentId ? 'current' : 'locked';
+  return course.map((s) => {
+    const units = s.units.map((u) => ({ ...u, status: statusOf(u.id) }));
+    const allDone = units.every((u) => u.status === 'done');
+    const anyOpen = units.some((u) => u.status !== 'locked');
+    return { ...s, status: allDone ? 'done' : anyOpen ? 'current' : 'locked', units };
+  });
+}

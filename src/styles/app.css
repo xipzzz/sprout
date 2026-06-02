@@ -494,6 +494,9 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .arrange__hint { color: var(--ink-muted); font-weight: 600; align-self: center; }
 .arrange__bank { display: flex; flex-wrap: wrap; gap: var(--s2); }
 .tile {
+  flex: 0 0 auto;        /* hug the text — don't stretch to fill the row */
+  align-self: flex-start;
+  width: fit-content;
   padding: 10px 14px;
   background: var(--surface);
   border: 2px solid var(--line);
