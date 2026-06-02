@@ -2,7 +2,6 @@
    5 sections, each with 7–8 unit nodes (plus a Golden Bloom milestone).
    Reads everything from src/data/course.ts. */
 
-import { useState } from 'react';
 import HUD from '../components/HUD';
 import SectionBanner from '../components/SectionBanner';
 import WindingPath from '../components/WindingPath';
@@ -12,6 +11,8 @@ import type { PathNode, Section } from '../data/course';
 
 interface HomeScreenProps {
   onStartLesson: () => void;
+  tab: TabKey;
+  onTabChange: (tab: TabKey) => void;
 }
 
 /** Turn a section's units into path nodes, plus a Golden Bloom at the end. */
@@ -31,9 +32,7 @@ function sectionNodes(section: Section): PathNode[] {
   return nodes;
 }
 
-export default function HomeScreen({ onStartLesson }: HomeScreenProps) {
-  const [tab, setTab] = useState<TabKey>('learn');
-
+export default function HomeScreen({ onStartLesson, tab, onTabChange }: HomeScreenProps) {
   // A tapped (unlocked) node opens the lesson flow.
   function startLesson(_node: PathNode) {
     onStartLesson();
@@ -52,7 +51,7 @@ export default function HomeScreen({ onStartLesson }: HomeScreenProps) {
         ))}
       </main>
 
-      <TabBar active={tab} onChange={setTab} />
+      <TabBar active={tab} onChange={onTabChange} />
     </div>
   );
 }
