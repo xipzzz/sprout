@@ -1350,6 +1350,130 @@ const directions = vocabLesson({
   fill: { before: 'Turn', after: ' at the corner.', answer: 'left', teach: { meaning: 'Finish the sentence.', inUse: 'Turn left at the corner.', tip: 'It is the opposite of right.' } },
 });
 
+/* A builder for word-based (grammar) lessons — no pictures: a few listen,
+   arrange, and fill exercises. For units like questions, plurals, past tense. */
+interface SentenceLessonSpec {
+  id: string;
+  title: string;
+  reward?: number;
+  listen?: { word: string; teach: Teach }[];
+  arranges: { prompt?: string; tiles: string[]; answer: string[]; teach: Teach }[];
+  fills: { before: string; after: string; answer: string; teach: Teach }[];
+}
+function sentenceLesson(spec: SentenceLessonSpec): Lesson {
+  const exercises: Exercise[] = [];
+  (spec.listen ?? []).forEach((l, i) => exercises.push({ kind: 'listen', id: `${spec.id}l${i + 1}`, word: l.word, teach: l.teach }));
+  spec.arranges.forEach((a, i) => exercises.push({ kind: 'arrange', id: `${spec.id}a${i + 1}`, prompt: a.prompt ?? 'Put the words in order:', tiles: a.tiles, answer: a.answer, teach: a.teach }));
+  spec.fills.forEach((f, i) => exercises.push({ kind: 'fill', id: `${spec.id}f${i + 1}`, before: f.before, after: f.after, answer: f.answer, teach: f.teach }));
+  return { id: spec.id, title: spec.title, reward: spec.reward ?? 12, exercises };
+}
+
+/* ---- Section 4: Telling Stories ---- */
+const doingWords = vocabLesson({
+  id: 's4u1', title: 'Doing Words',
+  words: [
+    { id: 'walk', emoji: '🚶', teach: { meaning: 'To walk is to move on your feet, step by step.', inUse: 'I walk to school.', tip: 'Walking is slower than running.' } },
+    { id: 'sing', emoji: '🎤', teach: { meaning: 'To sing is to make music with your voice.', inUse: 'I sing a happy song.', tip: 'You sing songs.' } },
+    { id: 'draw', emoji: '🎨', teach: { meaning: 'To draw is to make a picture.', inUse: 'I draw a cat.', tip: 'You draw with pencils.' } },
+    { id: 'cook', emoji: '🍳', teach: { meaning: 'To cook is to make food hot to eat.', inUse: 'I cook an egg.', tip: 'You cook in the kitchen.' } },
+  ],
+  arrange: { tiles: ['to', 'I', 'sing', 'like'], answer: ['I', 'like', 'to', 'sing'], teach: { meaning: 'A sentence about a thing you do.', inUse: 'I like to sing.', tip: 'Start with a capital letter.' } },
+  fill: { before: 'I', after: ' a picture.', answer: 'draw', teach: { meaning: 'Finish the sentence.', inUse: 'I draw a picture.', tip: 'You do it with crayons.' } },
+});
+const askingQuestions = sentenceLesson({
+  id: 's4u2', title: 'Asking Questions',
+  listen: [
+    { word: 'what', teach: { meaning: '"What" asks about a thing.', inUse: 'What is this?', tip: 'Use "what" to ask about things.' } },
+    { word: 'where', teach: { meaning: '"Where" asks about a place.', inUse: 'Where is it?', tip: 'Use "where" to ask about places.' } },
+  ],
+  arranges: [
+    { tiles: ['is', 'What', 'this'], answer: ['What', 'is', 'this'], teach: { meaning: 'A question about a thing.', inUse: 'What is this?', tip: 'Questions often start with "What".' } },
+    { tiles: ['the', 'Where', 'cat', 'is'], answer: ['Where', 'is', 'the', 'cat'], teach: { meaning: 'A question about a place.', inUse: 'Where is the cat?', tip: '"Where" asks about a place.' } },
+  ],
+  fills: [
+    { before: '', after: ' is your name?', answer: 'What', teach: { meaning: 'Ask someone their name.', inUse: 'What is your name?', tip: 'It asks about a thing — your name.' } },
+    { before: '', after: ' are you going?', answer: 'Where', teach: { meaning: 'Ask about a place.', inUse: 'Where are you going?', tip: 'It asks about a place.' } },
+  ],
+});
+const describing = vocabLesson({
+  id: 's4u3', title: 'Describing Things',
+  words: [
+    { id: 'big', emoji: '🐘', teach: { meaning: 'Big means large in size.', inUse: 'An elephant is big.', tip: 'The opposite of big is small.' } },
+    { id: 'small', emoji: '🐭', teach: { meaning: 'Small means little in size.', inUse: 'A mouse is small.', tip: 'The opposite of small is big.' } },
+    { id: 'hot', emoji: '🔥', teach: { meaning: 'Hot means very warm.', inUse: 'The fire is hot.', tip: 'The opposite of hot is cold.' } },
+    { id: 'cold', emoji: '🧊', teach: { meaning: 'Cold means not warm at all.', inUse: 'The ice is cold.', tip: 'The opposite of cold is hot.' } },
+  ],
+  arrange: { tiles: ['is', 'The', 'big', 'elephant'], answer: ['The', 'elephant', 'is', 'big'], teach: { meaning: 'A sentence that describes size.', inUse: 'The elephant is big.', tip: 'Start with a capital letter.' } },
+  fill: { before: 'Ice is very', after: '.', answer: 'cold', teach: { meaning: 'Finish the sentence.', inUse: 'Ice is very cold.', tip: 'The opposite of hot.' } },
+});
+const moreThanOne = sentenceLesson({
+  id: 's4u4', title: 'More Than One',
+  listen: [
+    { word: 'cats', teach: { meaning: '"Cats" means more than one cat.', inUse: 'Two cats play.', tip: 'Add "s" for more than one.' } },
+    { word: 'dogs', teach: { meaning: '"Dogs" means more than one dog.', inUse: 'The dogs run.', tip: 'Add "s" for more than one.' } },
+  ],
+  arranges: [
+    { tiles: ['two', 'I', 'cats', 'have'], answer: ['I', 'have', 'two', 'cats'], teach: { meaning: 'A sentence about more than one.', inUse: 'I have two cats.', tip: 'Many cats → "cats".' } },
+    { tiles: ['red', 'Three', 'apples'], answer: ['Three', 'red', 'apples'], teach: { meaning: 'Counting more than one.', inUse: 'Three red apples.', tip: 'Add "s": apple → apples.' } },
+  ],
+  fills: [
+    { before: 'One cat, two', after: '.', answer: 'cats', teach: { meaning: 'Make it more than one.', inUse: 'One cat, two cats.', tip: 'Add an "s".' } },
+    { before: 'I see three', after: '.', answer: 'dogs', teach: { meaning: 'More than one dog.', inUse: 'I see three dogs.', tip: 'Add an "s": dog → dogs.' } },
+  ],
+});
+const yesterday = sentenceLesson({
+  id: 's4u5', title: 'Yesterday',
+  listen: [
+    { word: 'played', teach: { meaning: '"Played" means you played before, in the past.', inUse: 'I played yesterday.', tip: 'Add "ed" for the past.' } },
+    { word: 'walked', teach: { meaning: '"Walked" means you walked in the past.', inUse: 'We walked home.', tip: 'Add "ed" for the past.' } },
+  ],
+  arranges: [
+    { tiles: ['yesterday', 'I', 'played'], answer: ['I', 'played', 'yesterday'], teach: { meaning: 'Talk about the past.', inUse: 'I played yesterday.', tip: 'play → played.' } },
+    { tiles: ['to', 'We', 'school', 'walked'], answer: ['We', 'walked', 'to', 'school'], teach: { meaning: 'Talk about the past.', inUse: 'We walked to school.', tip: 'walk → walked.' } },
+  ],
+  fills: [
+    { before: 'Yesterday I', after: ' a game.', answer: 'played', teach: { meaning: 'Past tense of "play".', inUse: 'Yesterday I played a game.', tip: 'Add "ed".' } },
+    { before: 'We', after: ' to the park.', answer: 'walked', teach: { meaning: 'Past tense of "walk".', inUse: 'We walked to the park.', tip: 'Add "ed".' } },
+  ],
+});
+const talkingTogether = sentenceLesson({
+  id: 's4u6', title: 'Talking Together',
+  listen: [
+    { word: 'please', teach: { meaning: '"Please" is a polite word when you ask.', inUse: 'Help me, please.', tip: 'Always ask with "please".' } },
+    { word: 'sorry', teach: { meaning: '"Sorry" is what you say when you make a mistake.', inUse: 'I am sorry.', tip: 'Saying sorry is kind.' } },
+  ],
+  arranges: [
+    { tiles: ['help', 'Can', 'me', 'you'], answer: ['Can', 'you', 'help', 'me'], teach: { meaning: 'A polite request for help.', inUse: 'Can you help me?', tip: 'Ask nicely.' } },
+    { tiles: ['I', 'Yes', 'can'], answer: ['Yes', 'I', 'can'], teach: { meaning: 'A friendly answer.', inUse: 'Yes, I can.', tip: 'A kind way to agree.' } },
+  ],
+  fills: [
+    { before: '', after: ' you very much.', answer: 'Thank', teach: { meaning: 'Show you are grateful.', inUse: 'Thank you very much.', tip: 'Say it when someone helps you.' } },
+    { before: 'I am very', after: '.', answer: 'sorry', teach: { meaning: 'Say it after a mistake.', inUse: 'I am very sorry.', tip: 'A kind, caring word.' } },
+  ],
+});
+const readingTime = vocabLesson({
+  id: 's4u7', title: 'Reading Time',
+  words: [
+    { id: 'book', emoji: '📖', teach: { meaning: 'A book has pages and a story to read.', inUse: 'I open my book.', tip: 'Books are full of words.' } },
+    { id: 'story', emoji: '📚', teach: { meaning: 'A story tells about people and things that happen.', inUse: 'I love this story.', tip: 'Stories can be real or pretend.' } },
+    { id: 'page', emoji: '📄', teach: { meaning: 'A page is one sheet in a book.', inUse: 'Turn the page.', tip: 'A book has many pages.' } },
+    { id: 'letter', emoji: '🔤', teach: { meaning: 'Letters make up the words we read.', inUse: 'A is a letter.', tip: 'There are 26 letters.' } },
+  ],
+  arrange: { tiles: ['a', 'I', 'story', 'read'], answer: ['I', 'read', 'a', 'story'], teach: { meaning: 'A sentence about reading.', inUse: 'I read a story.', tip: 'Start with a capital letter.' } },
+  fill: { before: 'Please turn the', after: '.', answer: 'page', teach: { meaning: 'Finish the sentence.', inUse: 'Please turn the page.', tip: 'It is one sheet in a book.' } },
+});
+const storyTime = vocabLesson({
+  id: 's4u8', title: 'Story Time',
+  words: [
+    { id: 'king', emoji: '🤴', teach: { meaning: 'A king rules a land in many stories.', inUse: 'The king is wise.', tip: 'A king wears a crown.' } },
+    { id: 'dragon', emoji: '🐉', teach: { meaning: 'A dragon is a big pretend animal that breathes fire.', inUse: 'The dragon flew away.', tip: 'Dragons live in stories.' } },
+    { id: 'castle', emoji: '🏰', teach: { meaning: 'A castle is a huge stone home for a king or queen.', inUse: 'They live in a castle.', tip: 'Castles have tall towers.' } },
+    { id: 'crown', emoji: '👑', teach: { meaning: 'A crown is worn on the head by a king or queen.', inUse: 'The crown is gold.', tip: 'A crown shows who rules.' } },
+  ],
+  arrange: { tiles: ['a', 'in', 'castle', 'They', 'live'], answer: ['They', 'live', 'in', 'a', 'castle'], teach: { meaning: 'A sentence from a story.', inUse: 'They live in a castle.', tip: 'Start with a capital letter.' } },
+  fill: { before: 'The king wears a gold', after: '.', answer: 'crown', teach: { meaning: 'Finish the sentence.', inUse: 'The king wears a gold crown.', tip: 'It sits on his head.' } },
+});
+
 /** Authored lessons, keyed by unit id. Units without an entry get a gentle review. */
 export const lessons: Record<string, Lesson> = {
   s1u1: greetings,
@@ -1374,6 +1498,14 @@ export const lessons: Record<string, Lesson> = {
   s3u5: peopleAtWork,
   s3u6: inNature,
   s3u7: directions,
+  s4u1: doingWords,
+  s4u2: askingQuestions,
+  s4u3: describing,
+  s4u4: moreThanOne,
+  s4u5: yesterday,
+  s4u6: talkingTogether,
+  s4u7: readingTime,
+  s4u8: storyTime,
 };
 
 /** Back-compat: the original single lesson export (Around the Home). */
