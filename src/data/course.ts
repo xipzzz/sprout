@@ -890,6 +890,346 @@ const weather: Lesson = {
   ] as Exercise[],
 };
 
+/* "Days & Time" — parts of the day. */
+const daysTime: Lesson = {
+  id: 's2u4',
+  title: 'Days & Time',
+  reward: 12,
+  exercises: [
+    {
+      kind: 'choice', id: 'dt1', word: 'morning', answerId: 'morning',
+      choices: [
+        { id: 'morning', label: 'morning', emoji: '🌅' },
+        { id: 'night', label: 'night', emoji: '🌙' },
+        { id: 'day', label: 'day', emoji: '☀️' },
+        { id: 'clock', label: 'clock', emoji: '🕐' },
+      ],
+      teach: { meaning: 'Morning is the start of the day.', inUse: 'Good morning!', tip: 'The sun rises in the morning.' },
+    },
+    {
+      kind: 'choice', id: 'dt2', word: 'night', answerId: 'night',
+      choices: [
+        { id: 'night', label: 'night', emoji: '🌙' },
+        { id: 'morning', label: 'morning', emoji: '🌅' },
+        { id: 'day', label: 'day', emoji: '☀️' },
+        { id: 'clock', label: 'clock', emoji: '🕐' },
+      ],
+      teach: { meaning: 'Night is when the sky is dark and we sleep.', inUse: 'Good night!', tip: 'The moon comes out at night.' },
+    },
+    {
+      kind: 'choice', id: 'dt3', word: 'clock', answerId: 'clock',
+      choices: [
+        { id: 'clock', label: 'clock', emoji: '🕐' },
+        { id: 'day', label: 'day', emoji: '☀️' },
+        { id: 'night', label: 'night', emoji: '🌙' },
+        { id: 'morning', label: 'morning', emoji: '🌅' },
+      ],
+      teach: { meaning: 'A clock tells us the time.', inUse: 'Look at the clock.', tip: 'A clock has hands that move.' },
+    },
+    {
+      kind: 'choice', id: 'dt4', word: 'day', answerId: 'day',
+      choices: [
+        { id: 'day', label: 'day', emoji: '☀️' },
+        { id: 'night', label: 'night', emoji: '🌙' },
+        { id: 'morning', label: 'morning', emoji: '🌅' },
+        { id: 'clock', label: 'clock', emoji: '🕐' },
+      ],
+      teach: { meaning: 'Day is when the sky is light.', inUse: 'Have a nice day!', tip: 'The sun is out during the day.' },
+    },
+    {
+      kind: 'arrange', id: 'dt5', prompt: 'Put the words in order:',
+      tiles: ['time', 'It', 'bed', 'is', 'for'], answer: ['It', 'is', 'time', 'for', 'bed'],
+      teach: { meaning: 'A way to say it is time to sleep.', inUse: 'It is time for bed.', tip: 'Start with a capital letter.' },
+    },
+    {
+      kind: 'match', id: 'dt6',
+      pairs: [
+        { id: 'morning', word: 'morning', emoji: '🌅' },
+        { id: 'night', word: 'night', emoji: '🌙' },
+        { id: 'day', word: 'day', emoji: '☀️' },
+        { id: 'clock', word: 'clock', emoji: '🕐' },
+      ],
+      teach: { meaning: 'You matched each time word to its picture.', inUse: 'morning · night · day · clock', tip: 'Say each one aloud as you match it.' },
+    },
+    {
+      kind: 'fill', id: 'dt7', before: 'Good', after: '!', answer: 'morning',
+      teach: { meaning: 'A kind thing to say when you wake up.', inUse: 'Good morning!', tip: 'You say it at the start of the day.' },
+    },
+  ] as Exercise[],
+};
+
+/* "At School" — things in the classroom. */
+const atSchool: Lesson = {
+  id: 's2u5',
+  title: 'At School',
+  reward: 12,
+  exercises: [
+    {
+      kind: 'choice', id: 'sc1', word: 'pencil', answerId: 'pencil',
+      choices: [
+        { id: 'pencil', label: 'pencil', emoji: '✏️' },
+        { id: 'book', label: 'book', emoji: '📖' },
+        { id: 'bag', label: 'bag', emoji: '🎒' },
+        { id: 'pen', label: 'pen', emoji: '🖊️' },
+      ],
+      teach: { meaning: 'You write and draw with a pencil.', inUse: 'I have a yellow pencil.', tip: 'A pencil has an eraser on the end.' },
+    },
+    {
+      kind: 'choice', id: 'sc2', word: 'book', answerId: 'book',
+      choices: [
+        { id: 'book', label: 'book', emoji: '📖' },
+        { id: 'pencil', label: 'pencil', emoji: '✏️' },
+        { id: 'bag', label: 'bag', emoji: '🎒' },
+        { id: 'pen', label: 'pen', emoji: '🖊️' },
+      ],
+      teach: { meaning: 'You read a book.', inUse: 'This book is fun.', tip: 'A book is full of words and pictures.' },
+    },
+    {
+      kind: 'choice', id: 'sc3', word: 'bag', answerId: 'bag',
+      choices: [
+        { id: 'bag', label: 'bag', emoji: '🎒' },
+        { id: 'book', label: 'book', emoji: '📖' },
+        { id: 'pencil', label: 'pencil', emoji: '✏️' },
+        { id: 'pen', label: 'pen', emoji: '🖊️' },
+      ],
+      teach: { meaning: 'A bag carries your things to school.', inUse: 'My bag is heavy.', tip: 'You wear a school bag on your back.' },
+    },
+    {
+      kind: 'choice', id: 'sc4', word: 'pen', answerId: 'pen',
+      choices: [
+        { id: 'pen', label: 'pen', emoji: '🖊️' },
+        { id: 'pencil', label: 'pencil', emoji: '✏️' },
+        { id: 'book', label: 'book', emoji: '📖' },
+        { id: 'bag', label: 'bag', emoji: '🎒' },
+      ],
+      teach: { meaning: 'A pen writes with ink.', inUse: 'I sign my name with a pen.', tip: 'Pen ink does not rub out.' },
+    },
+    {
+      kind: 'arrange', id: 'sc5', prompt: 'Put the words in order:',
+      tiles: ['a', 'I', 'book', 'read'], answer: ['I', 'read', 'a', 'book'],
+      teach: { meaning: 'A sentence about reading.', inUse: 'I read a book.', tip: 'Start with a capital letter.' },
+    },
+    {
+      kind: 'match', id: 'sc6',
+      pairs: [
+        { id: 'pencil', word: 'pencil', emoji: '✏️' },
+        { id: 'book', word: 'book', emoji: '📖' },
+        { id: 'bag', word: 'bag', emoji: '🎒' },
+        { id: 'pen', word: 'pen', emoji: '🖊️' },
+      ],
+      teach: { meaning: 'You matched each school word to its picture.', inUse: 'pencil · book · bag · pen', tip: 'Say each one aloud as you match it.' },
+    },
+    {
+      kind: 'fill', id: 'sc7', before: 'I write with a', after: '.', answer: 'pencil',
+      teach: { meaning: 'Finish the sentence with the right tool.', inUse: 'I write with a pencil.', tip: 'It has an eraser on top.' },
+    },
+  ] as Exercise[],
+};
+
+/* "Toys & Play" — fun things to play with. */
+const toysPlay: Lesson = {
+  id: 's2u6',
+  title: 'Toys & Play',
+  reward: 12,
+  exercises: [
+    {
+      kind: 'choice', id: 'tp1', word: 'ball', answerId: 'ball',
+      choices: [
+        { id: 'ball', label: 'ball', emoji: '⚽' },
+        { id: 'teddy', label: 'teddy', emoji: '🧸' },
+        { id: 'kite', label: 'kite', emoji: '🪁' },
+        { id: 'car', label: 'car', emoji: '🚗' },
+      ],
+      teach: { meaning: 'You kick or throw a ball.', inUse: 'I kick the ball.', tip: 'A ball is round.' },
+    },
+    {
+      kind: 'choice', id: 'tp2', word: 'teddy', answerId: 'teddy',
+      choices: [
+        { id: 'teddy', label: 'teddy', emoji: '🧸' },
+        { id: 'ball', label: 'ball', emoji: '⚽' },
+        { id: 'kite', label: 'kite', emoji: '🪁' },
+        { id: 'car', label: 'car', emoji: '🚗' },
+      ],
+      teach: { meaning: 'A teddy is a soft toy bear.', inUse: 'I hug my teddy.', tip: 'A teddy is cuddly and soft.' },
+    },
+    {
+      kind: 'choice', id: 'tp3', word: 'kite', answerId: 'kite',
+      choices: [
+        { id: 'kite', label: 'kite', emoji: '🪁' },
+        { id: 'ball', label: 'ball', emoji: '⚽' },
+        { id: 'teddy', label: 'teddy', emoji: '🧸' },
+        { id: 'car', label: 'car', emoji: '🚗' },
+      ],
+      teach: { meaning: 'A kite flies high in the wind.', inUse: 'My kite is in the sky.', tip: 'You need wind to fly a kite.' },
+    },
+    {
+      kind: 'choice', id: 'tp4', word: 'car', answerId: 'car',
+      choices: [
+        { id: 'car', label: 'car', emoji: '🚗' },
+        { id: 'ball', label: 'ball', emoji: '⚽' },
+        { id: 'teddy', label: 'teddy', emoji: '🧸' },
+        { id: 'kite', label: 'kite', emoji: '🪁' },
+      ],
+      teach: { meaning: 'A toy car has wheels and rolls.', inUse: 'My toy car is red.', tip: 'A car drives on its wheels.' },
+    },
+    {
+      kind: 'arrange', id: 'tp5', prompt: 'Put the words in order:',
+      tiles: ['my', 'I', 'with', 'play', 'ball'], answer: ['I', 'play', 'with', 'my', 'ball'],
+      teach: { meaning: 'A sentence about playing.', inUse: 'I play with my ball.', tip: 'Start with a capital letter.' },
+    },
+    {
+      kind: 'match', id: 'tp6',
+      pairs: [
+        { id: 'ball', word: 'ball', emoji: '⚽' },
+        { id: 'teddy', word: 'teddy', emoji: '🧸' },
+        { id: 'kite', word: 'kite', emoji: '🪁' },
+        { id: 'car', word: 'car', emoji: '🚗' },
+      ],
+      teach: { meaning: 'You matched each toy to its picture.', inUse: 'ball · teddy · kite · car', tip: 'Say each toy aloud as you match it.' },
+    },
+    {
+      kind: 'fill', id: 'tp7', before: "Let's", after: '!', answer: 'play',
+      teach: { meaning: 'A happy way to ask a friend to have fun.', inUse: "Let's play!", tip: 'It is what you do with toys.' },
+    },
+  ] as Exercise[],
+};
+
+/* "Feelings" — how we feel. */
+const feelings: Lesson = {
+  id: 's2u7',
+  title: 'Feelings',
+  reward: 12,
+  exercises: [
+    {
+      kind: 'choice', id: 'fe1', word: 'happy', answerId: 'happy',
+      choices: [
+        { id: 'happy', label: 'happy', emoji: '😀' },
+        { id: 'sad', label: 'sad', emoji: '😢' },
+        { id: 'angry', label: 'angry', emoji: '😠' },
+        { id: 'scared', label: 'scared', emoji: '😨' },
+      ],
+      teach: { meaning: 'Happy is the good feeling when you smile.', inUse: 'I am happy today.', tip: 'A happy face smiles.' },
+    },
+    {
+      kind: 'choice', id: 'fe2', word: 'sad', answerId: 'sad',
+      choices: [
+        { id: 'sad', label: 'sad', emoji: '😢' },
+        { id: 'happy', label: 'happy', emoji: '😀' },
+        { id: 'angry', label: 'angry', emoji: '😠' },
+        { id: 'scared', label: 'scared', emoji: '😨' },
+      ],
+      teach: { meaning: 'Sad is the feeling that can make you cry.', inUse: 'I feel sad.', tip: 'It is okay to feel sad sometimes.' },
+    },
+    {
+      kind: 'choice', id: 'fe3', word: 'angry', answerId: 'angry',
+      choices: [
+        { id: 'angry', label: 'angry', emoji: '😠' },
+        { id: 'happy', label: 'happy', emoji: '😀' },
+        { id: 'sad', label: 'sad', emoji: '😢' },
+        { id: 'scared', label: 'scared', emoji: '😨' },
+      ],
+      teach: { meaning: 'Angry is a hot, cross feeling.', inUse: 'He looks angry.', tip: 'Take a deep breath when you feel angry.' },
+    },
+    {
+      kind: 'choice', id: 'fe4', word: 'scared', answerId: 'scared',
+      choices: [
+        { id: 'scared', label: 'scared', emoji: '😨' },
+        { id: 'happy', label: 'happy', emoji: '😀' },
+        { id: 'sad', label: 'sad', emoji: '😢' },
+        { id: 'angry', label: 'angry', emoji: '😠' },
+      ],
+      teach: { meaning: 'Scared is the feeling of being afraid.', inUse: 'The loud noise made me scared.', tip: 'A hug helps when you feel scared.' },
+    },
+    {
+      kind: 'arrange', id: 'fe5', prompt: 'Put the words in order:',
+      tiles: ['very', 'I', 'happy', 'am'], answer: ['I', 'am', 'very', 'happy'],
+      teach: { meaning: 'A sentence about feeling good.', inUse: 'I am very happy.', tip: 'Start with a capital letter.' },
+    },
+    {
+      kind: 'match', id: 'fe6',
+      pairs: [
+        { id: 'happy', word: 'happy', emoji: '😀' },
+        { id: 'sad', word: 'sad', emoji: '😢' },
+        { id: 'angry', word: 'angry', emoji: '😠' },
+        { id: 'scared', word: 'scared', emoji: '😨' },
+      ],
+      teach: { meaning: 'You matched each feeling to its face.', inUse: 'happy · sad · angry · scared', tip: 'Make each face as you match it.' },
+    },
+    {
+      kind: 'fill', id: 'fe7', before: 'I feel', after: ' today.', answer: 'happy',
+      teach: { meaning: 'Finish the sentence about how you feel.', inUse: 'I feel happy today.', tip: 'It is the smiling feeling.' },
+    },
+  ] as Exercise[],
+};
+
+/* "Action Words" — things we do. */
+const actions: Lesson = {
+  id: 's2u8',
+  title: 'Action Words',
+  reward: 12,
+  exercises: [
+    {
+      kind: 'choice', id: 'ac1', word: 'run', answerId: 'run',
+      choices: [
+        { id: 'run', label: 'run', emoji: '🏃' },
+        { id: 'jump', label: 'jump', emoji: '🤸' },
+        { id: 'eat', label: 'eat', emoji: '🍽️' },
+        { id: 'sleep', label: 'sleep', emoji: '😴' },
+      ],
+      teach: { meaning: 'To run is to move fast on your feet.', inUse: 'I run in the park.', tip: 'You run faster than you walk.' },
+    },
+    {
+      kind: 'choice', id: 'ac2', word: 'jump', answerId: 'jump',
+      choices: [
+        { id: 'jump', label: 'jump', emoji: '🤸' },
+        { id: 'run', label: 'run', emoji: '🏃' },
+        { id: 'eat', label: 'eat', emoji: '🍽️' },
+        { id: 'sleep', label: 'sleep', emoji: '😴' },
+      ],
+      teach: { meaning: 'To jump is to push up off the ground.', inUse: 'I jump up high.', tip: 'Frogs jump too.' },
+    },
+    {
+      kind: 'choice', id: 'ac3', word: 'eat', answerId: 'eat',
+      choices: [
+        { id: 'eat', label: 'eat', emoji: '🍽️' },
+        { id: 'run', label: 'run', emoji: '🏃' },
+        { id: 'jump', label: 'jump', emoji: '🤸' },
+        { id: 'sleep', label: 'sleep', emoji: '😴' },
+      ],
+      teach: { meaning: 'To eat is to have food.', inUse: 'I eat my lunch.', tip: 'We eat when we are hungry.' },
+    },
+    {
+      kind: 'choice', id: 'ac4', word: 'sleep', answerId: 'sleep',
+      choices: [
+        { id: 'sleep', label: 'sleep', emoji: '😴' },
+        { id: 'run', label: 'run', emoji: '🏃' },
+        { id: 'jump', label: 'jump', emoji: '🤸' },
+        { id: 'eat', label: 'eat', emoji: '🍽️' },
+      ],
+      teach: { meaning: 'To sleep is to rest with your eyes closed.', inUse: 'I sleep in my bed.', tip: 'We sleep at night.' },
+    },
+    {
+      kind: 'arrange', id: 'ac5', prompt: 'Put the words in order:',
+      tiles: ['to', 'I', 'run', 'like'], answer: ['I', 'like', 'to', 'run'],
+      teach: { meaning: 'A sentence about an action you enjoy.', inUse: 'I like to run.', tip: 'Start with a capital letter.' },
+    },
+    {
+      kind: 'match', id: 'ac6',
+      pairs: [
+        { id: 'run', word: 'run', emoji: '🏃' },
+        { id: 'jump', word: 'jump', emoji: '🤸' },
+        { id: 'eat', word: 'eat', emoji: '🍽️' },
+        { id: 'sleep', word: 'sleep', emoji: '😴' },
+      ],
+      teach: { meaning: 'You matched each action to its picture.', inUse: 'run · jump · eat · sleep', tip: 'Act each one out as you match it.' },
+    },
+    {
+      kind: 'fill', id: 'ac7', before: 'I', after: ' at night.', answer: 'sleep',
+      teach: { meaning: 'Finish the sentence with the right action.', inUse: 'I sleep at night.', tip: 'It is what you do in bed.' },
+    },
+  ] as Exercise[],
+};
+
 /** Authored lessons, keyed by unit id. Units without an entry get a gentle review. */
 export const lessons: Record<string, Lesson> = {
   s1u1: greetings,
@@ -902,6 +1242,11 @@ export const lessons: Record<string, Lesson> = {
   s2u1: clothes,
   s2u2: body,
   s2u3: weather,
+  s2u4: daysTime,
+  s2u5: atSchool,
+  s2u6: toysPlay,
+  s2u7: feelings,
+  s2u8: actions,
 };
 
 /** Back-compat: the original single lesson export (Around the Home). */
