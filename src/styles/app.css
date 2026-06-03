@@ -540,7 +540,9 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   transition: transform 0.12s var(--ease);
 }
 .word-tile:not(:disabled):active { transform: translateY(1px); }
-.word-tile--placed { background: var(--green-tint); border-color: var(--green); }
+.word-tile--placed { background: var(--green-tint); border-color: var(--green); touch-action: none; cursor: grab; }
+.word-tile--dragging { transform: scale(1.08); box-shadow: var(--shadow-md); opacity: 0.92; z-index: 2; cursor: grabbing; }
+.arrange__tip { margin: var(--s5) 0 0; text-align: center; color: var(--ink-muted); font-weight: 600; font-size: var(--fs-caption); }
 
 /* ============================================================
    Match Pairs (word ↔ picture, two columns)
