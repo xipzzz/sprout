@@ -160,7 +160,15 @@ export interface FillExercise {
   teach: Teach;
 }
 
-export type Exercise = ChoiceExercise | ArrangeExercise | MatchExercise | FillExercise;
+/** Hear a word read aloud (text-to-speech) and type what you heard. */
+export interface ListenExercise {
+  kind: 'listen';
+  id: string;
+  word: string; // the word spoken aloud and the expected answer
+  teach: Teach;
+}
+
+export type Exercise = ChoiceExercise | ArrangeExercise | MatchExercise | FillExercise | ListenExercise;
 
 export interface Lesson {
   id: string;
@@ -175,6 +183,14 @@ const aroundTheHome: Lesson = {
   title: 'Around the Home',
   reward: 12, // 🍃 leaves earned on completion
   exercises: [
+    {
+      kind: 'listen', id: 'e0', word: 'door',
+      teach: {
+        meaning: 'Listen, then type the word you hear.',
+        inUse: 'Please close the door.',
+        tip: 'Tap the speaker to hear it again.',
+      },
+    },
     {
       kind: 'choice',
       id: 'e1',
@@ -389,6 +405,14 @@ const colors: Lesson = {
   reward: 12,
   exercises: [
     {
+      kind: 'listen', id: 'c0', word: 'red',
+      teach: {
+        meaning: 'Listen, then type the color you hear.',
+        inUse: 'The apple is red.',
+        tip: 'Tap the speaker to hear it again.',
+      },
+    },
+    {
       kind: 'choice', id: 'c1', word: 'red', answerId: 'red',
       choices: [
         { id: 'red', label: 'red', emoji: '🟥' },
@@ -456,6 +480,14 @@ const animals: Lesson = {
   title: 'Animals',
   reward: 12,
   exercises: [
+    {
+      kind: 'listen', id: 'a0', word: 'cat',
+      teach: {
+        meaning: 'Listen, then type the animal you hear.',
+        inUse: 'The cat is sleeping.',
+        tip: 'Tap the speaker to hear it again.',
+      },
+    },
     {
       kind: 'choice', id: 'a1', word: 'cat', answerId: 'cat',
       choices: [

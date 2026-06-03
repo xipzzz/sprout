@@ -889,3 +889,10 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 
 /* Calmer-motion preference — quiet all looping animations app-wide. */
 body.calm-motion *, body.calm-motion *::before, body.calm-motion *::after { animation-duration: 0.001s !important; animation-iteration-count: 1 !important; transition-duration: 0.001s !important; }
+
+/* ---- Type what you hear (audio exercise) ---- */
+.listen { display: flex; flex-direction: column; align-items: center; text-align: center; padding: var(--s6) var(--s4); }
+.listen__play { width: 120px; height: 120px; border-radius: 50%; display: grid; place-items: center; margin: var(--s4) 0 var(--s6); background: linear-gradient(180deg, var(--green) 0%, var(--green-strong) 100%); box-shadow: 0 6px 0 var(--green-deep), var(--shadow-md); transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease); }
+.listen__play:active { transform: translateY(3px); box-shadow: 0 3px 0 var(--green-deep), var(--shadow-md); }
+.listen__play-icon { font-size: 3rem; line-height: 1; }
+.listen__input { width: 100%; max-width: 320px; text-align: center; padding: 13px var(--s4); background: var(--surface); border-radius: var(--r-lg); box-shadow: var(--shadow-sm); font-size: var(--fs-h2); }

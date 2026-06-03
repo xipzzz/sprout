@@ -26,7 +26,7 @@ Legend: ✅ done · 🔨 partial · ⬜ to build
 - _All buildable design screens are shipped._ 🎉 Remaining work needs your input (below).
 
 ## ⬜ Remaining — needs your input / integration
-- **Audio exercises** (Type / Speak What You Hear) — needs text-to-speech + microphone
+- **Audio exercises** — ✅ **Type what you hear** built (free built-in browser speech, woven into 3 Section-1 lessons); **Speak out loud** still needs a mic-permission decision
 - **Accounts + payments** (Save your garden, Log in, Plans/paywall) — needs a backend + payment provider; the parked `feat/accounts-payments-lessons` branch has a Spanish draft to revisit (in English)
 - **Deploy** — one decision from you: make the repo public (free GitHub Pages) or a free Vercel/Netlify token (private). Build is ready.
 
