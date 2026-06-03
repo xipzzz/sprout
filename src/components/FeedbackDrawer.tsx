@@ -18,6 +18,7 @@ export default function FeedbackDrawer({ result, ex, onContinue }: FeedbackDrawe
   if (ex.kind === 'choice') answerLabel = ex.choices.find((c) => c.id === ex.answerId)?.label ?? '';
   else if (ex.kind === 'arrange') answerLabel = ex.answer.join(' ');
   else if (ex.kind === 'fill') answerLabel = ex.answer;
+  else if (ex.kind === 'listen') answerLabel = ex.word;
 
   return (
     <div className={`drawer drawer--${result}`} role="status" aria-live="polite">
