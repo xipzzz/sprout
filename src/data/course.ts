@@ -1474,6 +1474,124 @@ const storyTime = vocabLesson({
   fill: { before: 'The king wears a gold', after: '.', answer: 'crown', teach: { meaning: 'Finish the sentence.', inUse: 'The king wears a gold crown.', tip: 'It sits on his head.' } },
 });
 
+/* ---- Section 5: Confident English ---- */
+const opinions = sentenceLesson({
+  id: 's5u1', title: 'Opinions',
+  listen: [
+    { word: 'think', teach: { meaning: '"I think" tells your idea.', inUse: 'I think it is good.', tip: 'Use "I think" to share an idea.' } },
+    { word: 'good', teach: { meaning: '"Good" means you like it.', inUse: 'This is good.', tip: 'The opposite of good is bad.' } },
+  ],
+  arranges: [
+    { tiles: ['it', 'I', 'good', 'think', 'is'], answer: ['I', 'think', 'it', 'is', 'good'], teach: { meaning: 'Share what you think.', inUse: 'I think it is good.', tip: 'Start with "I think".' } },
+    { tiles: ['the', 'This', 'best', 'is'], answer: ['This', 'is', 'the', 'best'], teach: { meaning: 'A strong opinion.', inUse: 'This is the best.', tip: '"Best" means better than all.' } },
+  ],
+  fills: [
+    { before: 'I', after: ' it is fun.', answer: 'think', teach: { meaning: 'Share your idea.', inUse: 'I think it is fun.', tip: 'Use it to give an opinion.' } },
+    { before: 'In my opinion, it is', after: '.', answer: 'good', teach: { meaning: 'Say what you feel about it.', inUse: 'In my opinion, it is good.', tip: 'The opposite of bad.' } },
+  ],
+});
+const myPlans = sentenceLesson({
+  id: 's5u2', title: 'My Plans',
+  listen: [
+    { word: 'will', teach: { meaning: '"Will" talks about the future.', inUse: 'I will play.', tip: 'Use "will" for things to come.' } },
+    { word: 'tomorrow', teach: { meaning: '"Tomorrow" is the day after today.', inUse: 'See you tomorrow.', tip: 'Tomorrow has not happened yet.' } },
+  ],
+  arranges: [
+    { tiles: ['play', 'I', 'tomorrow', 'will'], answer: ['I', 'will', 'play', 'tomorrow'], teach: { meaning: 'A plan for the future.', inUse: 'I will play tomorrow.', tip: '"will" + an action.' } },
+    { tiles: ['go', 'We', 'home', 'will'], answer: ['We', 'will', 'go', 'home'], teach: { meaning: 'A plan to do something.', inUse: 'We will go home.', tip: 'Use "will" for the future.' } },
+  ],
+  fills: [
+    { before: 'Tomorrow I', after: ' read a book.', answer: 'will', teach: { meaning: 'Talk about the future.', inUse: 'Tomorrow I will read a book.', tip: 'It comes before the action.' } },
+    { before: 'I will see you', after: '.', answer: 'tomorrow', teach: { meaning: 'The day after today.', inUse: 'I will see you tomorrow.', tip: 'Not today — the next day.' } },
+  ],
+});
+const likesDislikes = sentenceLesson({
+  id: 's5u3', title: 'Likes & Dislikes',
+  listen: [
+    { word: 'like', teach: { meaning: '"Like" means it makes you happy.', inUse: 'I like apples.', tip: 'The opposite is "do not like".' } },
+    { word: 'love', teach: { meaning: '"Love" is to like something a lot.', inUse: 'I love my family.', tip: 'Love is even more than like.' } },
+  ],
+  arranges: [
+    { tiles: ['to', 'I', 'read', 'like'], answer: ['I', 'like', 'to', 'read'], teach: { meaning: 'Say what you enjoy.', inUse: 'I like to read.', tip: 'Use "like" for things you enjoy.' } },
+    { tiles: ['not', 'I', 'rain', 'do', 'like'], answer: ['I', 'do', 'not', 'like', 'rain'], teach: { meaning: 'Say what you do not enjoy.', inUse: 'I do not like rain.', tip: '"do not like" = dislike.' } },
+  ],
+  fills: [
+    { before: 'I', after: ' ice cream.', answer: 'like', teach: { meaning: 'Say you enjoy it.', inUse: 'I like ice cream.', tip: 'It makes you happy.' } },
+    { before: 'I', after: ' my family.', answer: 'love', teach: { meaning: 'Like a lot.', inUse: 'I love my family.', tip: 'More than "like".' } },
+  ],
+});
+const comparing = sentenceLesson({
+  id: 's5u4', title: 'Comparing',
+  listen: [
+    { word: 'bigger', teach: { meaning: '"Bigger" means more big than another.', inUse: 'A bus is bigger than a car.', tip: 'big → bigger.' } },
+    { word: 'taller', teach: { meaning: '"Taller" means more tall than another.', inUse: 'A tree is taller than me.', tip: 'tall → taller.' } },
+  ],
+  arranges: [
+    { tiles: ['is', 'A', 'taller', 'tree'], answer: ['A', 'tree', 'is', 'taller'], teach: { meaning: 'Compare two things.', inUse: 'A tree is taller.', tip: 'Add "er" to compare.' } },
+    { tiles: ['is', 'This', 'bigger', 'one'], answer: ['This', 'one', 'is', 'bigger'], teach: { meaning: 'Compare sizes.', inUse: 'This one is bigger.', tip: 'big → bigger.' } },
+  ],
+  fills: [
+    { before: 'An elephant is', after: ' than a mouse.', answer: 'bigger', teach: { meaning: 'Compare sizes.', inUse: 'An elephant is bigger than a mouse.', tip: 'big → bigger.' } },
+    { before: 'He is', after: ' than me.', answer: 'taller', teach: { meaning: 'Compare heights.', inUse: 'He is taller than me.', tip: 'tall → taller.' } },
+  ],
+});
+const joiningIdeas = sentenceLesson({
+  id: 's5u5', title: 'Joining Ideas',
+  listen: [
+    { word: 'and', teach: { meaning: '"And" joins two things together.', inUse: 'cats and dogs', tip: 'Use "and" to add.' } },
+    { word: 'because', teach: { meaning: '"Because" tells the reason why.', inUse: 'I am happy because it is sunny.', tip: 'Use "because" to give a reason.' } },
+  ],
+  arranges: [
+    { tiles: ['and', 'I', 'dogs', 'cats', 'like'], answer: ['I', 'like', 'cats', 'and', 'dogs'], teach: { meaning: 'Join two ideas.', inUse: 'I like cats and dogs.', tip: '"and" joins them.' } },
+    { tiles: ['but', 'It', 'strong', 'small', 'is'], answer: ['It', 'is', 'small', 'but', 'strong'], teach: { meaning: 'Join two opposite ideas.', inUse: 'It is small but strong.', tip: '"but" shows a surprise.' } },
+  ],
+  fills: [
+    { before: 'I am happy', after: ' it is sunny.', answer: 'because', teach: { meaning: 'Give a reason.', inUse: 'I am happy because it is sunny.', tip: 'It tells why.' } },
+    { before: 'I like tea', after: ' juice.', answer: 'and', teach: { meaning: 'Add another thing.', inUse: 'I like tea and juice.', tip: 'It joins two things.' } },
+  ],
+});
+const retelling = sentenceLesson({
+  id: 's5u6', title: 'Retelling',
+  listen: [
+    { word: 'first', teach: { meaning: '"First" means at the start.', inUse: 'First, I wake up.', tip: 'First comes before then.' } },
+    { word: 'then', teach: { meaning: '"Then" means next, after that.', inUse: 'Then I eat.', tip: 'Then comes after first.' } },
+  ],
+  arranges: [
+    { tiles: ['I', 'First', 'up', 'wake'], answer: ['First', 'I', 'wake', 'up'], teach: { meaning: 'Tell the first step.', inUse: 'First I wake up.', tip: 'Start a story with "First".' } },
+    { tiles: ['I', 'Then', 'breakfast', 'eat'], answer: ['Then', 'I', 'eat', 'breakfast'], teach: { meaning: 'Tell the next step.', inUse: 'Then I eat breakfast.', tip: '"Then" comes next.' } },
+  ],
+  fills: [
+    { before: '', after: ' I wake up.', answer: 'First', teach: { meaning: 'The first step.', inUse: 'First I wake up.', tip: 'It starts the order.' } },
+    { before: '', after: ' I brush my teeth.', answer: 'Then', teach: { meaning: 'The next step.', inUse: 'Then I brush my teeth.', tip: 'It comes after first.' } },
+  ],
+});
+const everydayChat = sentenceLesson({
+  id: 's5u7', title: 'Everyday Chat',
+  listen: [
+    { word: 'fine', teach: { meaning: '"Fine" means okay or well.', inUse: 'I am fine, thank you.', tip: 'A kind answer to "how are you?"' } },
+    { word: 'name', teach: { meaning: 'Your name is what you are called.', inUse: 'My name is Pip.', tip: 'Everyone has a name.' } },
+  ],
+  arranges: [
+    { tiles: ['are', 'How', 'today', 'you'], answer: ['How', 'are', 'you', 'today'], teach: { meaning: 'A friendly question.', inUse: 'How are you today?', tip: 'Ask to be kind.' } },
+    { tiles: ['name', 'My', 'Pip', 'is'], answer: ['My', 'name', 'is', 'Pip'], teach: { meaning: 'Tell someone your name.', inUse: 'My name is Pip.', tip: 'Use it to introduce yourself.' } },
+  ],
+  fills: [
+    { before: 'How are', after: '?', answer: 'you', teach: { meaning: 'Ask how someone feels.', inUse: 'How are you?', tip: 'A kind question.' } },
+    { before: 'I am', after: ', thank you.', answer: 'fine', teach: { meaning: 'Answer that you are okay.', inUse: 'I am fine, thank you.', tip: 'A polite reply.' } },
+  ],
+});
+const bigWords = vocabLesson({
+  id: 's5u8', title: 'Big Words',
+  words: [
+    { id: 'beautiful', emoji: '🌷', teach: { meaning: 'Beautiful means very, very pretty.', inUse: 'The flower is beautiful.', tip: 'A big word for pretty.' } },
+    { id: 'gigantic', emoji: '🦖', teach: { meaning: 'Gigantic means very, very big.', inUse: 'The dinosaur is gigantic.', tip: 'A big word for huge.' } },
+    { id: 'delicious', emoji: '🍰', teach: { meaning: 'Delicious means it tastes very good.', inUse: 'The cake is delicious.', tip: 'A big word for yummy.' } },
+    { id: 'sparkly', emoji: '✨', teach: { meaning: 'Sparkly means shining with little lights.', inUse: 'The stars are sparkly.', tip: 'A big word for shiny.' } },
+  ],
+  arrange: { tiles: ['is', 'The', 'beautiful', 'flower'], answer: ['The', 'flower', 'is', 'beautiful'], teach: { meaning: 'Use a big describing word.', inUse: 'The flower is beautiful.', tip: 'Start with a capital letter.' } },
+  fill: { before: 'The cake is', after: '.', answer: 'delicious', teach: { meaning: 'Finish with a big word.', inUse: 'The cake is delicious.', tip: 'A fancy word for yummy.' } },
+});
+
 /** Authored lessons, keyed by unit id. Units without an entry get a gentle review. */
 export const lessons: Record<string, Lesson> = {
   s1u1: greetings,
@@ -1506,6 +1624,14 @@ export const lessons: Record<string, Lesson> = {
   s4u6: talkingTogether,
   s4u7: readingTime,
   s4u8: storyTime,
+  s5u1: opinions,
+  s5u2: myPlans,
+  s5u3: likesDislikes,
+  s5u4: comparing,
+  s5u5: joiningIdeas,
+  s5u6: retelling,
+  s5u7: everydayChat,
+  s5u8: bigWords,
 };
 
 /** Back-compat: the original single lesson export (Around the Home). */
