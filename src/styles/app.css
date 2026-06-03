@@ -277,6 +277,12 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .tab--active { color: var(--green-strong); }
 .tab__icon { width: 26px; height: 26px; }
 .tab__label { font-size: 0.7rem; font-weight: 800; }
+/* Desktop "device card": keep the tab bar INSIDE the card. (This must come
+   after the base `.tabbar { position: fixed }` above, or source-order makes
+   fixed win and the bar floats detached below the card.) */
+@media (min-width: 480px) {
+  .tabbar { position: static; max-width: none; margin: 0; }
+}
 
 /* ============================================================
    Lesson flow
@@ -543,21 +549,23 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .match__grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s3); margin-top: var(--s4); }
 .match__col { display: flex; flex-direction: column; gap: var(--s3); }
 .match-card {
-  min-height: 60px;
+  height: 80px;            /* fixed height → left & right rows line up exactly */
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--s4);
+  padding: var(--s3) var(--s4);
   background: var(--surface);
   border: 2px solid var(--line);
-  border-bottom-width: 3px;
+  border-bottom-width: 4px;
   border-radius: var(--r-lg);
   font-weight: 800;
+  font-size: 1.1rem;       /* bigger, easier to read/tap */
   box-shadow: var(--shadow-sm);
-  transition: border-color 0.12s var(--ease), background 0.12s var(--ease), opacity 0.2s var(--ease);
+  transition: border-color 0.12s var(--ease), background 0.12s var(--ease), opacity 0.2s var(--ease), transform 0.12s var(--ease);
 }
-.match-card:not(:disabled):active { transform: translateY(1px); }
-.match-card__emoji { font-size: 2rem; line-height: 1; }
+.match-card:not(:disabled):active { transform: translateY(2px); border-bottom-width: 2px; }
+.match-card__emoji { font-size: 2.5rem; line-height: 1; }
 .match-card--selected { border-color: var(--green); background: var(--green-tint); }
 .match-card--matched { opacity: 0.35; }
 .match-card--wrong { border-color: var(--clay); background: var(--clay-tint); }
@@ -568,19 +576,21 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .fill { padding: var(--s2) var(--s4) var(--s6); }
 .fill__sentence { margin-top: var(--s5); font-size: var(--fs-h2); font-weight: 800; line-height: 1.9; }
 .fill__input {
-  width: 7ch;
-  padding: 4px 10px;
+  min-width: 104px;
+  padding: 8px 14px;
   font: inherit;
   font-weight: 800;
   color: var(--ink);
   text-align: center;
   background: var(--surface);
-  border: none;
-  border-bottom: 3px solid var(--green);
-  border-radius: var(--r-sm);
+  border: 2px solid var(--line);
+  border-bottom: 4px solid var(--green);
+  border-radius: var(--r-md);
   outline: none;
+  vertical-align: middle;
 }
-.fill__input:focus { background: var(--green-tint); }
+.fill__input::placeholder { color: var(--ink-muted); }
+.fill__input:focus { background: var(--green-tint); border-color: var(--green); border-bottom-color: var(--green-strong); }
 .fill__input:disabled { opacity: 1; }
 
 /* ============================================================
