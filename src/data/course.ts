@@ -1230,6 +1230,126 @@ const actions: Lesson = {
   ] as Exercise[],
 };
 
+/* A compact builder for picture-vocabulary lessons: 4 picture choices (each
+   word is the answer once, the other three are distractors), then arrange,
+   match, and fill. Keeps later sections terse and consistent. */
+interface VocabWordSpec { id: string; emoji: string; teach: Teach }
+interface VocabLessonSpec {
+  id: string;
+  title: string;
+  reward?: number;
+  words: VocabWordSpec[];
+  arrange: { prompt?: string; tiles: string[]; answer: string[]; teach: Teach };
+  fill: { before: string; after: string; answer: string; teach: Teach };
+  matchTip?: string;
+}
+function vocabLesson(spec: VocabLessonSpec): Lesson {
+  const choices: Choice[] = spec.words.map((w) => ({ id: w.id, label: w.id, emoji: w.emoji }));
+  const exercises: Exercise[] = [
+    ...spec.words.map((w, i): Exercise => ({
+      kind: 'choice', id: `${spec.id}c${i + 1}`, word: w.id, answerId: w.id, choices, teach: w.teach,
+    })),
+    {
+      kind: 'arrange', id: `${spec.id}a`,
+      prompt: spec.arrange.prompt ?? 'Put the words in order:',
+      tiles: spec.arrange.tiles, answer: spec.arrange.answer, teach: spec.arrange.teach,
+    },
+    {
+      kind: 'match', id: `${spec.id}m`,
+      pairs: spec.words.map((w) => ({ id: w.id, word: w.id, emoji: w.emoji })),
+      teach: {
+        meaning: 'You matched each word to its picture.',
+        inUse: spec.words.map((w) => w.id).join(' · '),
+        tip: spec.matchTip ?? 'Say each one aloud as you match it.',
+      },
+    },
+    {
+      kind: 'fill', id: `${spec.id}f`,
+      before: spec.fill.before, after: spec.fill.after, answer: spec.fill.answer, teach: spec.fill.teach,
+    },
+  ];
+  return { id: spec.id, title: spec.title, reward: spec.reward ?? 12, exercises };
+}
+
+/* ---- Section 3: Out and About ---- */
+const park = vocabLesson({
+  id: 's3u1', title: 'The Park',
+  words: [
+    { id: 'tree', emoji: '🌳', teach: { meaning: 'A tree is a tall plant with a trunk and leaves.', inUse: 'The tree gives cool shade.', tip: 'Trees grow very tall.' } },
+    { id: 'flower', emoji: '🌸', teach: { meaning: 'A flower is the pretty, colorful part of a plant.', inUse: 'I smell the flower.', tip: 'Flowers smell sweet.' } },
+    { id: 'slide', emoji: '🛝', teach: { meaning: 'A slide is fun to slide down at the park.', inUse: 'I go down the slide.', tip: 'Climb up, then slide down.' } },
+    { id: 'grass', emoji: '🌿', teach: { meaning: 'Grass is the green plant that covers the ground.', inUse: 'I sit on the grass.', tip: 'Grass is soft and green.' } },
+  ],
+  arrange: { tiles: ['at', 'I', 'the', 'play', 'park'], answer: ['I', 'play', 'at', 'the', 'park'], teach: { meaning: 'A sentence about the park.', inUse: 'I play at the park.', tip: 'Start with a capital letter.' } },
+  fill: { before: 'I sit on the green', after: '.', answer: 'grass', teach: { meaning: 'Finish the sentence.', inUse: 'I sit on the green grass.', tip: 'It is soft and green underfoot.' } },
+});
+const town = vocabLesson({
+  id: 's3u2', title: 'Around Town',
+  words: [
+    { id: 'house', emoji: '🏠', teach: { meaning: 'A house is a building where people live.', inUse: 'I live in a house.', tip: 'A home keeps you warm and safe.' } },
+    { id: 'shop', emoji: '🏪', teach: { meaning: 'A shop is where you buy things.', inUse: 'I go to the shop.', tip: 'You buy food at a shop.' } },
+    { id: 'school', emoji: '🏫', teach: { meaning: 'A school is where children learn.', inUse: 'I walk to school.', tip: 'You learn and play at school.' } },
+    { id: 'park', emoji: '🏞️', teach: { meaning: 'A park is a green place to play outside.', inUse: 'We run in the park.', tip: 'Parks have grass and trees.' } },
+  ],
+  arrange: { tiles: ['in', 'I', 'a', 'live', 'house'], answer: ['I', 'live', 'in', 'a', 'house'], teach: { meaning: 'A sentence about where you live.', inUse: 'I live in a house.', tip: 'Start with a capital letter.' } },
+  fill: { before: 'I buy food at the', after: '.', answer: 'shop', teach: { meaning: 'Finish the sentence.', inUse: 'I buy food at the shop.', tip: 'It is where you go shopping.' } },
+});
+const gettingThere = vocabLesson({
+  id: 's3u3', title: 'Getting There',
+  words: [
+    { id: 'bus', emoji: '🚌', teach: { meaning: 'A bus carries many people on roads.', inUse: 'I ride the bus to school.', tip: 'A bus is big and stops often.' } },
+    { id: 'bike', emoji: '🚲', teach: { meaning: 'A bike has two wheels and pedals.', inUse: 'I ride my bike.', tip: 'You pedal a bike with your feet.' } },
+    { id: 'train', emoji: '🚆', teach: { meaning: 'A train runs along tracks.', inUse: 'The train is fast.', tip: 'Trains have many cars joined together.' } },
+    { id: 'car', emoji: '🚗', teach: { meaning: 'A car drives on the road.', inUse: 'We go by car.', tip: 'A car has four wheels.' } },
+  ],
+  arrange: { tiles: ['by', 'I', 'bus', 'go'], answer: ['I', 'go', 'by', 'bus'], teach: { meaning: 'A sentence about travel.', inUse: 'I go by bus.', tip: 'Start with a capital letter.' } },
+  fill: { before: 'I ride my', after: ' to the park.', answer: 'bike', teach: { meaning: 'Finish the sentence.', inUse: 'I ride my bike to the park.', tip: 'It has two wheels and pedals.' } },
+});
+const shopping = vocabLesson({
+  id: 's3u4', title: 'Shopping',
+  words: [
+    { id: 'money', emoji: '💵', teach: { meaning: 'Money is what we use to buy things.', inUse: 'I pay with money.', tip: 'You keep money in a wallet.' } },
+    { id: 'cart', emoji: '🛒', teach: { meaning: 'A cart holds your shopping.', inUse: 'I push the cart.', tip: 'A cart has wheels.' } },
+    { id: 'gift', emoji: '🎁', teach: { meaning: 'A gift is a present you give someone.', inUse: 'I wrap a gift.', tip: 'We give gifts on birthdays.' } },
+    { id: 'bag', emoji: '🛍️', teach: { meaning: 'A bag carries the things you buy.', inUse: 'I fill my bag.', tip: 'You carry shopping in a bag.' } },
+  ],
+  arrange: { tiles: ['a', 'I', 'gift', 'buy'], answer: ['I', 'buy', 'a', 'gift'], teach: { meaning: 'A sentence about shopping.', inUse: 'I buy a gift.', tip: 'Start with a capital letter.' } },
+  fill: { before: 'I pay with', after: '.', answer: 'money', teach: { meaning: 'Finish the sentence.', inUse: 'I pay with money.', tip: 'It is what you buy things with.' } },
+});
+const peopleAtWork = vocabLesson({
+  id: 's3u5', title: 'People at Work',
+  words: [
+    { id: 'doctor', emoji: '👩‍⚕️', teach: { meaning: 'A doctor helps people who are sick.', inUse: 'The doctor is kind.', tip: 'You see a doctor when you are ill.' } },
+    { id: 'teacher', emoji: '🧑‍🏫', teach: { meaning: 'A teacher helps children learn.', inUse: 'My teacher is nice.', tip: 'You meet your teacher at school.' } },
+    { id: 'chef', emoji: '🧑‍🍳', teach: { meaning: 'A chef cooks food.', inUse: 'The chef makes soup.', tip: 'A chef works in a kitchen.' } },
+    { id: 'farmer', emoji: '🧑‍🌾', teach: { meaning: 'A farmer grows food and cares for animals.', inUse: 'The farmer grows corn.', tip: 'Farmers work on a farm.' } },
+  ],
+  arrange: { tiles: ['a', 'She', 'doctor', 'is'], answer: ['She', 'is', 'a', 'doctor'], teach: { meaning: 'A sentence about a job.', inUse: 'She is a doctor.', tip: 'Start with a capital letter.' } },
+  fill: { before: 'A', after: ' helps sick people.', answer: 'doctor', teach: { meaning: 'Finish the sentence.', inUse: 'A doctor helps sick people.', tip: 'You see them when you are ill.' } },
+});
+const inNature = vocabLesson({
+  id: 's3u6', title: 'In Nature',
+  words: [
+    { id: 'mountain', emoji: '⛰️', teach: { meaning: 'A mountain is a very tall hill.', inUse: 'The mountain is high.', tip: 'Mountains can have snow on top.' } },
+    { id: 'star', emoji: '⭐', teach: { meaning: 'A star shines in the night sky.', inUse: 'I see a star.', tip: 'Stars come out at night.' } },
+    { id: 'rainbow', emoji: '🌈', teach: { meaning: 'A rainbow has many colors in the sky.', inUse: 'Look at the rainbow!', tip: 'Rainbows come after rain.' } },
+    { id: 'leaf', emoji: '🍃', teach: { meaning: 'A leaf is the flat green part of a plant.', inUse: 'A leaf fell down.', tip: 'Leaves grow on trees.' } },
+  ],
+  arrange: { tiles: ['is', 'The', 'high', 'mountain'], answer: ['The', 'mountain', 'is', 'high'], teach: { meaning: 'A sentence about nature.', inUse: 'The mountain is high.', tip: 'Start with a capital letter.' } },
+  fill: { before: 'A', after: ' has many colors.', answer: 'rainbow', teach: { meaning: 'Finish the sentence.', inUse: 'A rainbow has many colors.', tip: 'You see it after the rain.' } },
+});
+const directions = vocabLesson({
+  id: 's3u7', title: 'Directions',
+  words: [
+    { id: 'up', emoji: '⬆️', teach: { meaning: 'Up means toward the sky.', inUse: 'Look up!', tip: 'The opposite of up is down.' } },
+    { id: 'down', emoji: '⬇️', teach: { meaning: 'Down means toward the ground.', inUse: 'Sit down, please.', tip: 'The opposite of down is up.' } },
+    { id: 'left', emoji: '⬅️', teach: { meaning: 'Left is one side — the side of your left hand.', inUse: 'Turn left here.', tip: 'The opposite of left is right.' } },
+    { id: 'right', emoji: '➡️', teach: { meaning: 'Right is the other side — the side of your right hand.', inUse: 'Look to the right.', tip: 'The opposite of right is left.' } },
+  ],
+  arrange: { tiles: ['up', 'Look', 'the', 'at', 'sky'], answer: ['Look', 'up', 'at', 'the', 'sky'], teach: { meaning: 'A sentence using a direction.', inUse: 'Look up at the sky.', tip: 'Start with a capital letter.' } },
+  fill: { before: 'Turn', after: ' at the corner.', answer: 'left', teach: { meaning: 'Finish the sentence.', inUse: 'Turn left at the corner.', tip: 'It is the opposite of right.' } },
+});
+
 /** Authored lessons, keyed by unit id. Units without an entry get a gentle review. */
 export const lessons: Record<string, Lesson> = {
   s1u1: greetings,
@@ -1247,6 +1367,13 @@ export const lessons: Record<string, Lesson> = {
   s2u6: toysPlay,
   s2u7: feelings,
   s2u8: actions,
+  s3u1: park,
+  s3u2: town,
+  s3u3: gettingThere,
+  s3u4: shopping,
+  s3u5: peopleAtWork,
+  s3u6: inNature,
+  s3u7: directions,
 };
 
 /** Back-compat: the original single lesson export (Around the Home). */
