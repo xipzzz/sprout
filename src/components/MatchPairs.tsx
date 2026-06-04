@@ -31,9 +31,31 @@ function speak(word: string) {
   }
 }
 
+/* Deterministic shuffle of the picture column — stable per exercise and never
+   identical to the word column, so matching isn't a fixed mirror pattern. */
+function shuffleDistinct(pairs: Pair[]): Pair[] {
+  const seed = pairs.map((p) => p.id).join('-');
+  let h = 2166136261;
+  for (let i = 0; i < seed.length; i++) { h ^= seed.charCodeAt(i); h = Math.imul(h, 16777619); }
+  let s = h >>> 0;
+  const rand = () => {
+    s = (s + 0x6d2b79f5) | 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  const a = pairs.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  if (a.length > 1 && a.every((x, i) => x.id === pairs[i].id)) a.push(a.shift()!);
+  return a;
+}
+
 export default function MatchPairs({ pairs, revealed, audio, onChange }: MatchPairsProps) {
   const words = pairs;
-  const [emojis] = useState(() => [...pairs].reverse()); // stable, different order from words
+  const [emojis] = useState(() => shuffleDistinct(pairs)); // stable, shuffled (not a mirror of words)
   const [selWord, setSelWord] = useState<string | null>(null);
   const [selEmoji, setSelEmoji] = useState<string | null>(null);
   const [matched, setMatched] = useState<string[]>([]);
