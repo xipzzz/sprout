@@ -81,4 +81,30 @@ export const tales: Tale[] = [
       { scene: '😴', text: 'He curled up in the sun and went to sleep.' },
     ],
   },
+  {
+    id: 'grandpa',
+    cover: '👴',
+    title: "Grandpa's Garden",
+    blurb: 'Little seeds, lots of love.',
+    pages: [
+      { scene: '👴', text: 'Grandpa loved his little garden very much.' },
+      { scene: '🌱', text: 'Each morning he planted one tiny seed.' },
+      { scene: '💧', text: 'He gave every plant a cool drink of water.' },
+      { scene: '🌻', text: 'Soon tall yellow flowers grew in a row.' },
+      { scene: '😊', text: 'Grandpa and the busy bees were both happy.' },
+    ],
+  },
+  {
+    id: 'frog',
+    cover: '🐸',
+    title: 'The Happy Frog',
+    blurb: 'Sunshine, rain, and a smile.',
+    pages: [
+      { scene: '🐸', text: 'A little green frog sat by the quiet pond.' },
+      { scene: '☀️', text: 'The warm sun made him feel very happy.' },
+      { scene: '🌧️', text: 'Then grey clouds came and it began to rain.' },
+      { scene: '🍃', text: 'The frog hid under a big green leaf.' },
+      { scene: '🌈', text: 'After the rain, a rainbow made him smile again.' },
+    ],
+  },
 ];
