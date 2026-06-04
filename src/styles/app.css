@@ -1001,6 +1001,16 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .switch__knob { width: 24px; height: 24px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: transform var(--dur) var(--ease); }
 .switch--on .switch__knob { transform: translateX(22px); }
 .settings__section { margin: 0 0 var(--s3); font-size: var(--fs-h2); font-weight: 800; color: var(--ink); }
+/* Reminder settings (revealed when gentle reminders are on) */
+.settings__reminder { margin: 0 0 var(--s6); padding: var(--s4); background: var(--surface); border-radius: var(--r-lg); box-shadow: var(--shadow-sm); }
+.settings__reminder-label { margin: 0 0 var(--s2); font-weight: 800; font-size: var(--fs-caption); color: var(--ink-muted); }
+.settings__chips { display: flex; flex-wrap: wrap; gap: var(--s2); margin-bottom: var(--s4); }
+.chip-opt { display: inline-flex; align-items: center; gap: 5px; padding: 8px 14px; border-radius: var(--r-pill); border: 2px solid var(--line); background: var(--bg); font-weight: 800; font-size: var(--fs-caption); color: var(--ink); }
+.chip-opt--on { border-color: var(--green); background: var(--green-tint); color: var(--green-deep); }
+.seg { display: flex; background: var(--bg-soft); border-radius: var(--r-pill); padding: 3px; }
+.seg__opt { flex: 1; padding: 9px; border-radius: var(--r-pill); font-weight: 800; font-size: var(--fs-caption); color: var(--ink-muted); }
+.seg__opt--on { background: var(--surface); color: var(--green-deep); box-shadow: var(--shadow-sm); }
+.settings__reminder-foot { margin: var(--s3) 0 0; color: var(--ink-muted); font-weight: 600; font-size: var(--fs-caption); }
 .settings__reset { width: 100%; padding: 13px; border-radius: var(--r-pill); font-weight: 800; color: var(--clay-deep); background: var(--clay-tint); }
 .settings__reset--go { color: #fff; background: var(--clay); box-shadow: 0 3px 0 var(--clay-deep); }
 .settings__confirm { background: var(--surface); border-radius: var(--r-lg); padding: var(--s4); box-shadow: var(--shadow-sm); }

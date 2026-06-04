@@ -8,8 +8,11 @@ interface SettingsScreenProps {
   onBack: () => void;
 }
 
-type Prefs = { sound: boolean; reminders: boolean; calmMotion: boolean };
-const DEFAULTS: Prefs = { sound: true, reminders: true, calmMotion: false };
+type ReminderTime = 'morning' | 'afternoon' | 'evening';
+type ReminderCadence = 'gentle' | 'daily';
+type Prefs = { sound: boolean; reminders: boolean; calmMotion: boolean; reminderTime: ReminderTime; reminderCadence: ReminderCadence };
+type BoolPref = 'sound' | 'reminders' | 'calmMotion';
+const DEFAULTS: Prefs = { sound: true, reminders: true, calmMotion: false, reminderTime: 'evening', reminderCadence: 'gentle' };
 
 function loadPrefs(): Prefs {
   try {
@@ -19,21 +22,36 @@ function loadPrefs(): Prefs {
   }
 }
 
-const ROWS: { key: keyof Prefs; label: string; hint: string }[] = [
+const ROWS: { key: BoolPref; label: string; hint: string }[] = [
   { key: 'sound', label: 'Sound effects', hint: 'Gentle chimes during lessons' },
   { key: 'reminders', label: 'Gentle reminders', hint: 'A soft nudge — never nagging' },
   { key: 'calmMotion', label: 'Calmer motion', hint: 'Reduce gentle animations' },
+];
+const TIMES: { id: ReminderTime; emoji: string; label: string }[] = [
+  { id: 'morning', emoji: '☀️', label: 'Morning' },
+  { id: 'afternoon', emoji: '🌤️', label: 'Afternoon' },
+  { id: 'evening', emoji: '🌙', label: 'Evening' },
+];
+const CADENCES: { id: ReminderCadence; label: string }[] = [
+  { id: 'gentle', label: 'Gentle' },
+  { id: 'daily', label: 'Daily' },
 ];
 
 export default function SettingsScreen({ onBack }: SettingsScreenProps) {
   const [prefs, setPrefs] = useState<Prefs>(loadPrefs);
   const [confirmReset, setConfirmReset] = useState(false);
 
-  function toggle(key: keyof Prefs) {
-    const next = { ...prefs, [key]: !prefs[key] };
+  function persist(next: Prefs) {
     setPrefs(next);
     try { localStorage.setItem('sprout.prefs', JSON.stringify(next)); } catch { /* ignore */ }
+  }
+  function toggle(key: BoolPref) {
+    const next = { ...prefs, [key]: !prefs[key] };
+    persist(next);
     if (key === 'calmMotion') document.body.classList.toggle('calm-motion', next.calmMotion);
+  }
+  function update(patch: Partial<Prefs>) {
+    persist({ ...prefs, ...patch });
   }
 
   function resetProgress() {
@@ -74,6 +92,40 @@ export default function SettingsScreen({ onBack }: SettingsScreenProps) {
             </li>
           ))}
         </ul>
+
+        {prefs.reminders && (
+          <div className="settings__reminder">
+            <p className="settings__reminder-label">When should Pip nudge you?</p>
+            <div className="settings__chips">
+              {TIMES.map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  className={`chip-opt${prefs.reminderTime === t.id ? ' chip-opt--on' : ''}`}
+                  aria-pressed={prefs.reminderTime === t.id}
+                  onClick={() => update({ reminderTime: t.id })}
+                >
+                  <span aria-hidden="true">{t.emoji}</span> {t.label}
+                </button>
+              ))}
+            </div>
+            <p className="settings__reminder-label">How often?</p>
+            <div className="seg" role="group" aria-label="Reminder cadence">
+              {CADENCES.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  className={`seg__opt${prefs.reminderCadence === c.id ? ' seg__opt--on' : ''}`}
+                  aria-pressed={prefs.reminderCadence === c.id}
+                  onClick={() => update({ reminderCadence: c.id })}
+                >
+                  {c.label}
+                </button>
+              ))}
+            </div>
+            <p className="settings__reminder-foot">Reminders are gentle and never guilt you for a day off. 🌱</p>
+          </div>
+        )}
 
         <h2 className="settings__section">Your garden</h2>
         {!confirmReset ? (
