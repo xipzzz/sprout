@@ -25,13 +25,14 @@ green `#58CC42` — used only as the viewer's own chrome, not the app.)
   words · Type what you hear · Match pairs · Fill in blank · Correct/Wrong feedback · Daily
   goal met · Golden Bloom · Streak calendar · Shop · Out of water · Offline · Insights ·
   Monthly Blooms · Year in Bloom · Customize · Search · Invite a friend · Garden Tales ·
-  Tale complete · Quests · Settings · Grove (calm league) · Lesson complete (basic)
+  Tale complete · Quests · Settings · Grove (calm league) · Lesson complete (tiered) ·
+  Comeback greeting · Type-what-you-hear (audio)
 - **Needs your input / backend:** Save your garden · Log in · Sprout Family (paywall) ·
   Grown-ups summary / parent dashboard · Speak out loud (mic)
 - **Buildable, not yet:** Welcome flow (multi-step) · Reminder priming · Tap-what-you-hear
-  (tile variant) · Match pairs · audio · Fill · type variant · Streak repair / saved /
-  comeback · Streak milestones (7/30/100/365) · Golden Bloom gate/retry · Activity inbox ·
-  iOS widgets · Loading screens (path/garden/Pip) · Practice offline · Lesson-complete tiers
+  (tile variant) · Match pairs · audio · Fill · type variant · Streak repair / saved ·
+  Streak milestones (7/30/100/365) · Golden Bloom gate/retry · Activity inbox ·
+  iOS widgets · Loading screens (path/garden/Pip) · Practice offline
 - **Intentionally dropped (calm thesis):** competitive League w/ demotion (→ cooperative
   Grove) · Moonlit/dark mode (light only for now) · gambling "Garden Bet" / SAVE pressure
 
