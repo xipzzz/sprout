@@ -23,3 +23,6 @@ dist-ssr
 *.sln
 *.sw?
 .gstack/
+
+# stray screenshots dropped at repo root (keep design art under design/)
+/*.png
