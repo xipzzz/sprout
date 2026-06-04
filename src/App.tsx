@@ -19,6 +19,7 @@ import SettingsScreen from './screens/SettingsScreen';
 import OnboardingSplash from './screens/OnboardingSplash';
 import ComebackScreen from './screens/ComebackScreen';
 import Modal from './components/Modal';
+import Pip from './components/Pip';
 import { loadCompleted, saveCompleted } from './state/progress';
 import { firstUnlockedUnit, hud, sectionCompletedByUnit } from './data/course';
 
@@ -234,11 +235,11 @@ export default function App() {
 
       {offline && (
         <Modal onClose={() => setOffline(false)}>
-          <div className="wmodal">
-            <span className="wmodal__icon" aria-hidden="true">🌙</span>
+          <div className="wmodal wmodal--offline">
+            <Pip className="wmodal__pip" />
             <h2 className="wmodal__title">You're offline</h2>
-            <p className="wmodal__body">Your garden is safe — everything you've done is saved. Reconnect to grow more.</p>
-            <button type="button" className="btn-primary" onClick={() => setOffline(false)}>Okay</button>
+            <p className="wmodal__body">Your garden is safe — everything is saved. Pip will be right here when you reconnect. 🌱</p>
+            <button type="button" className="btn-primary" onClick={() => setOffline(!navigator.onLine)}>Try again</button>
           </div>
         </Modal>
       )}
