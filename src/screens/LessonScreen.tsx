@@ -180,6 +180,7 @@ export default function LessonScreen({ onExit, onComplete, unitId }: LessonScree
           <MatchPairs
             key={ex.id}
             pairs={ex.pairs}
+            audio={ex.audio}
             revealed={phase === 'feedback'}
             onChange={setAnswer}
           />

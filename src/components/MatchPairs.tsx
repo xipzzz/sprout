@@ -1,6 +1,7 @@
 /* MatchPairs — match each word (left) to its picture (right).
    Tap a word then its picture: a correct pair locks in (green, fades);
-   a wrong pair flashes warm clay and clears. Done when all pairs are found. */
+   a wrong pair flashes warm clay and clears. Done when all pairs are found.
+   In audio mode each word also plays aloud (🔊) when tapped — hear it as you match. */
 
 import { useState } from 'react';
 
@@ -13,10 +14,24 @@ interface Pair {
 interface MatchPairsProps {
   pairs: Pair[];
   revealed: boolean;
+  audio?: boolean;
   onChange: (matchedIds: string[]) => void;
 }
 
-export default function MatchPairs({ pairs, revealed, onChange }: MatchPairsProps) {
+function speak(word: string) {
+  try {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(word);
+    u.lang = 'en-US';
+    u.rate = 0.9;
+    window.speechSynthesis.speak(u);
+  } catch {
+    /* speech unavailable */
+  }
+}
+
+export default function MatchPairs({ pairs, revealed, audio, onChange }: MatchPairsProps) {
   const words = pairs;
   const [emojis] = useState(() => [...pairs].reverse()); // stable, different order from words
   const [selWord, setSelWord] = useState<string | null>(null);
@@ -44,6 +59,7 @@ export default function MatchPairs({ pairs, revealed, onChange }: MatchPairsProp
 
   function pickWord(id: string) {
     if (revealed || matched.includes(id) || wrong.length) return;
+    if (audio) { const p = words.find((w) => w.id === id); if (p) speak(p.word); }
     setSelWord(id);
     evaluate(id, selEmoji);
   }
@@ -63,7 +79,7 @@ export default function MatchPairs({ pairs, revealed, onChange }: MatchPairsProp
 
   return (
     <div className="match">
-      <p className="mc__cue">Match the words to their pictures</p>
+      <p className="mc__cue">{audio ? 'Match the words — tap to hear them' : 'Match the words to their pictures'}</p>
       <div className="match__grid">
         <div className="match__col">
           {words.map((w) => (
@@ -75,6 +91,7 @@ export default function MatchPairs({ pairs, revealed, onChange }: MatchPairsProp
               onClick={() => pickWord(w.id)}
             >
               {w.word}
+              {audio && <span className="match-card__spk" aria-hidden="true">🔊</span>}
             </button>
           ))}
         </div>

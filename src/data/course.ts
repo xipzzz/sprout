@@ -147,6 +147,7 @@ export interface MatchExercise {
   kind: 'match';
   id: string;
   pairs: { id: string; word: string; emoji: string }[];
+  audio?: boolean; // if set → words also play aloud on tap
   teach: Teach;
 }
 
@@ -535,7 +536,7 @@ const animals: Lesson = {
       teach: { meaning: 'A sentence about having a pet.', inUse: 'I have a pet cat.', tip: 'A pet is an animal you care for.' },
     },
     {
-      kind: 'match', id: 'a6',
+      kind: 'match', id: 'a6', audio: true,
       pairs: [
         { id: 'cat', word: 'cat', emoji: '🐱' },
         { id: 'dog', word: 'dog', emoji: '🐶' },
