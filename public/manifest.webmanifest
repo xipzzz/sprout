@@ -1,0 +1,14 @@
+{
+  "name": "Sprout — grow a language, gently",
+  "short_name": "Sprout",
+  "description": "A calm way for kids to grow a language, one little garden at a time.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f5f0e7",
+  "theme_color": "#6fbf5e",
+  "icons": [
+    { "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
