@@ -710,6 +710,14 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .words__empty { text-align: center; padding: var(--s10) var(--s6); color: var(--ink-muted); font-weight: 600; }
 .words__empty-icon { font-size: 2.4rem; display: block; margin-bottom: var(--s3); }
 .words__empty p { margin: 0; }
+/* Word meaning sheet (tap a word card) */
+.wordinfo { display: flex; flex-direction: column; align-items: center; text-align: center; gap: var(--s2); }
+.wordinfo__emoji { font-size: 3.4rem; line-height: 1; }
+.wordinfo__word { margin: 0; font-size: var(--fs-h1); font-weight: 900; color: var(--ink); }
+.wordinfo__meaning { margin: 0; color: var(--ink-soft); font-weight: 600; line-height: 1.5; }
+.wordinfo__use { margin: var(--s1) 0 var(--s3); color: var(--ink-muted); font-weight: 600; font-size: var(--fs-caption); line-height: 1.5; }
+.wordinfo__use-lbl { font-weight: 800; color: var(--green-deep); margin-right: 4px; }
+.wordinfo .btn-primary { width: 100%; max-width: 280px; }
 
 /* ============================================================
    Grove (cooperative shared garden)
@@ -862,6 +870,165 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .wmodal__title { margin: 0; font-size: var(--fs-h1); font-weight: 900; }
 .wmodal__body { margin: 0 0 var(--s3); color: var(--ink-soft); font-weight: 600; }
 .wmodal__dismiss { margin-top: var(--s2); color: var(--ink-muted); font-weight: 800; padding: var(--s2); }
+
+/* Account gate */
+.account-gate {
+  min-height: 100dvh;
+  padding: calc(var(--s5) + env(safe-area-inset-top)) var(--s5) calc(var(--s5) + env(safe-area-inset-bottom));
+  background:
+    radial-gradient(70% 42% at 50% 15%, rgba(164, 220, 118, 0.34), transparent 72%),
+    linear-gradient(180deg, #fffaf0 0%, #f5f0df 100%);
+}
+.account-gate__nav {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-soft);
+  font-weight: 900;
+}
+.account-gate__nav--right { justify-content: flex-end; }
+.account-gate__back {
+  position: absolute;
+  left: var(--s4);
+  top: calc(var(--s5) + env(safe-area-inset-top));
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--green-deep);
+  box-shadow: var(--shadow-sm);
+  font-size: 2rem;
+  line-height: 1;
+}
+.account-gate__skip {
+  padding: var(--s2) var(--s3);
+  border-radius: var(--r-pill);
+  background: rgba(255,255,255,.72);
+  color: var(--ink-muted);
+  font-weight: 900;
+  box-shadow: var(--shadow-sm);
+}
+.account-gate__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s3);
+  text-align: center;
+  padding-bottom: var(--s3);
+}
+.account-gate__pip {
+  width: 132px;
+  height: 132px;
+  filter: drop-shadow(0 12px 18px rgba(65, 94, 43, .16));
+}
+.account-gate__pip--small { width: 104px; height: 104px; }
+.account-gate__eyebrow {
+  margin: var(--s2) 0 0;
+  color: var(--green-deep);
+  font-size: var(--fs-eyebrow);
+  font-weight: 900;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+.account-gate__title {
+  margin: 0;
+  max-width: 10ch;
+  color: var(--ink);
+  font-size: clamp(2.35rem, 12vw, 3.35rem);
+  font-weight: 950;
+  letter-spacing: -0.04em;
+  line-height: .95;
+}
+.account-gate__copy {
+  margin: 0;
+  max-width: 29ch;
+  color: var(--ink-soft);
+  font-size: var(--fs-body);
+  font-weight: 700;
+  line-height: 1.45;
+}
+.account-gate__chips {
+  display: flex;
+  gap: var(--s2);
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: var(--s1) 0;
+}
+.account-gate__chips span {
+  padding: 8px 13px;
+  border-radius: var(--r-pill);
+  background: #fff;
+  color: var(--green-deep);
+  font-size: var(--fs-caption);
+  font-weight: 900;
+  box-shadow: var(--shadow-sm);
+}
+.account-gate__providers {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  margin-top: var(--s2);
+}
+.account-gate__provider {
+  width: 100%;
+  min-height: 54px;
+  border-radius: var(--r-pill);
+  background: #fff;
+  color: var(--ink);
+  box-shadow: 0 4px 0 rgba(86, 67, 42, .14), var(--shadow-sm);
+  font-weight: 900;
+}
+.account-gate__provider--email,
+.account-gate__cta {
+  background: linear-gradient(180deg, var(--green) 0%, var(--green-strong) 100%);
+  color: #fff;
+}
+.account-gate__login,
+.account-gate__promise {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: var(--fs-caption);
+  font-weight: 800;
+}
+.account-gate__login button { color: var(--green-deep); font-weight: 950; text-decoration: underline; text-underline-offset: 3px; }
+.account-gate__form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  margin-top: var(--s1);
+}
+.account-gate__form label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  text-align: left;
+  color: var(--ink-soft);
+  font-size: var(--fs-caption);
+  font-weight: 900;
+}
+.account-gate__form input {
+  width: 100%;
+  height: 52px;
+  padding: 0 var(--s4);
+  border: 2px solid var(--line);
+  border-radius: var(--r-md);
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 800;
+}
+.account-gate__forgot {
+  align-self: flex-end;
+  color: var(--green-deep);
+  font-size: var(--fs-caption);
+  font-weight: 900;
+}
+.account-gate--login .account-gate__body { justify-content: flex-start; padding-top: var(--s5); }
 
 .guide { display: flex; flex-direction: column; gap: var(--s4); max-height: min(74vh, 620px); min-height: 0; }
 .guide__head { display: flex; align-items: center; gap: var(--s3); }
