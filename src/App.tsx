@@ -162,7 +162,7 @@ export default function App() {
   if (showQuests) {
     return (
       <div className="app">
-        <QuestsScreen onBack={() => setShowQuests(false)} />
+        <QuestsScreen onBack={() => setShowQuests(false)} completed={completed} />
       </div>
     );
   }

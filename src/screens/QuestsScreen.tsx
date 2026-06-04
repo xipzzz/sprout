@@ -1,17 +1,27 @@
-/* QuestsScreen — gentle goals, done at your own pace (calm, no pressure). */
+/* QuestsScreen — gentle goals, done at your own pace (calm, no pressure).
+   Progress is now real: words & blooms come from your actual progress, and the
+   daily quests reflect today's checklist on the Home card. */
+
+import { courseWithProgress } from '../data/course';
 
 interface QuestsScreenProps {
   onBack: () => void;
+  completed: string[];
 }
 
-const quests = [
-  { id: 'today', emoji: '🌱', title: 'Practice today', have: 1, need: 1, reward: '🍃 10' },
-  { id: 'words', emoji: '📖', title: 'Learn 5 new words', have: 3, need: 5, reward: '💎 20' },
-  { id: 'blooms', emoji: '🌸', title: 'Grow 3 blooms this week', have: 1, need: 3, reward: '🍃 30' },
-  { id: 'garden', emoji: '🌳', title: 'Visit your garden', have: 0, need: 1, reward: '🍃 5' },
-];
+export default function QuestsScreen({ onBack, completed }: QuestsScreenProps) {
+  const words = completed.length * 4; // rough estimate until per-unit vocab is tracked
+  const blooms = courseWithProgress(completed).filter((s) => s.status === 'done').length;
+  let todayDone: string[] = [];
+  try { todayDone = JSON.parse(localStorage.getItem(`sprout.today.${new Date().toDateString()}`) || '[]'); } catch { /* ignore */ }
 
-export default function QuestsScreen({ onBack }: QuestsScreenProps) {
+  const quests = [
+    { id: 'today', emoji: '🌱', title: 'Practice today', have: todayDone.includes('lesson') ? 1 : 0, need: 1, reward: '🍃 10' },
+    { id: 'words', emoji: '📖', title: 'Grow 5 new words', have: words, need: 5, reward: '💎 20' },
+    { id: 'blooms', emoji: '🌸', title: 'Grow 3 blooms', have: blooms, need: 3, reward: '🍃 30' },
+    { id: 'garden', emoji: '🌳', title: 'Visit your garden today', have: todayDone.includes('garden') ? 1 : 0, need: 1, reward: '🍃 5' },
+  ];
+
   return (
     <div className="screen quests">
       <header className="streak__top">
@@ -28,6 +38,7 @@ export default function QuestsScreen({ onBack }: QuestsScreenProps) {
         <p className="quests__intro">Gentle goals — do them at your own pace 🌱</p>
         <ul className="quests__list">
           {quests.map((q) => {
+            const have = Math.min(q.have, q.need);
             const done = q.have >= q.need;
             const pct = Math.min(100, Math.round((q.have / q.need) * 100));
             return (
@@ -36,7 +47,7 @@ export default function QuestsScreen({ onBack }: QuestsScreenProps) {
                 <span className="quest__body">
                   <span className="quest__title">{q.title}</span>
                   <span className="quest__bar"><span className="progress__fill" style={{ width: `${pct}%` }} /></span>
-                  <span className="quest__meta">{q.have}/{q.need}</span>
+                  <span className="quest__meta">{have}/{q.need}</span>
                 </span>
                 <span className="quest__reward">{q.reward}</span>
               </li>
