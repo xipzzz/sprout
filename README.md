@@ -1,73 +1,75 @@
-# React + TypeScript + Vite
+# 🌱 Sprout
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A **calm**, kid-friendly way to learn **English** — a Duolingo-style path, deliberately
+free of pressure. No red, no streak-guilt, no demotion. A wrong answer is just *warm clay*
+to reshape. You grow a little garden as you learn, guided by **Pip**, a friendly sprout.
 
-Currently, two official plugins are available:
+**Live:** https://xipzzz.github.io/sprout/ · **Stack:** Vite + React 19 + TypeScript + plain CSS.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+---
 
-## React Compiler
+## Run it locally
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install        # once
+npm run dev        # dev server → http://localhost:5173  (also on your phone via LAN/Tailscale)
+npm run build      # production build → dist/
+npm run preview    # preview the production build
+npx tsc -b         # type-check
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+The dev server listens on all interfaces, so a phone on the same network (or Tailscale)
+can open it too — handy for on-device review.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## How it's organized
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
 ```
+src/
+  App.tsx              # the router: tabs + full-screen overlays (a small state machine)
+  main.tsx             # entry; mounts <App/> + the QA flag
+  screens/             # one file per screen (Home, Lesson, Garden, Words, Grove, Me, …)
+  components/          # reusable pieces (HUD, WindingPath, MultipleChoice, Pip, TabBar, …)
+  data/course.ts       # ALL course content + types (the single source of content truth)
+  state/progress.ts    # localStorage progress (which units are done)
+  styles/
+    tokens.css         # design tokens — colors, spacing, radii, type scale (calm palette)
+    app.css            # every component/screen style, reading from the tokens
+```
+
+## How content works (`src/data/course.ts`)
+
+- The course is **5 sections × 7–8 units** (38 units), all authored in English.
+- Each lesson is a list of **exercises** — a discriminated union by `kind`:
+  `choice` (tap the picture) · `arrange` (build a sentence, drag to reorder) ·
+  `match` (word ↔ picture, optional audio) · `fill` (type the word) ·
+  `listen` (type/tap what you hear, via the browser's speech).
+- Two builders keep it terse: **`vocabLesson()`** (picture units) and
+  **`sentenceLesson()`** (grammar units). `getLesson(unitId)` returns a unit's lesson,
+  falling back to a gentle review so every tap is always playable.
+- The **Words** tab vocabulary is derived automatically from the authored lessons.
+
+## Review tool — the QA flag
+
+Add `?qa=1` to the URL once (it persists) to show a floating 🚩 button on every screen.
+Tap it to capture the **current screen name + a note** and copy a tidy report to the
+clipboard (or capture an image to share). Turn it off with `?qa=0`. Hidden for learners.
+
+## Deploy
+
+Every merge to `main` auto-deploys to **GitHub Pages** via
+`.github/workflows/deploy.yml` (build → Pages, ~1 min). The production `base` is
+`/sprout/` (see `vite.config.ts`); dev stays at `/`.
+
+## Design fidelity
+
+The visual source of truth is **`design/Sprout-Viewer.html`** (a React/JSX design
+prototype). **`design/DESIGN-NOTES.md`** tracks the palette match, the 66-screen
+inventory with build status, the design's intent log, and the remaining divergence
+backlog.
+
+## Calm principles (please keep these)
+
+- **Light mode only**, no red, no streak-guilt, no demotion — wrong = warm clay.
+- **English only** content.
+- Small, reusable components; **content as data** in `course.ts`.
+- Ship each change as its own **branch → PR → squash-merge** to `main`.
