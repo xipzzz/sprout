@@ -8,7 +8,7 @@ import SectionBanner from '../components/SectionBanner';
 import WindingPath from '../components/WindingPath';
 import TabBar, { type TabKey } from '../components/TabBar';
 import Pip from '../components/Pip';
-import { courseWithProgress, firstUnlockedUnit, hud } from '../data/course';
+import { courseWithProgress, firstUnlockedUnit, hud, leavesFor } from '../data/course';
 import type { PathNode, Section } from '../data/course';
 
 interface HomeScreenProps {
@@ -83,7 +83,7 @@ export default function HomeScreen({ completed, focusTarget, onFocusSettled, onS
 
   return (
     <div className="screen">
-      <HUD leaves={hud.leaves} gems={hud.gems} water={hud.water} onOpenShop={onOpenShop} onOpenWater={onOpenWater} />
+      <HUD leaves={leavesFor(completed)} gems={hud.gems} water={hud.water} onOpenShop={onOpenShop} onOpenWater={onOpenWater} />
 
       <main className="screen__body">
         <section className="today">

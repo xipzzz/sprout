@@ -1677,6 +1677,11 @@ export function getLesson(unitId: string | null): Lesson {
   return fallbackLesson(unitId ?? 's1u2');
 }
 
+/** Real leaf count: the leaves earned from every completed unit's lesson reward. */
+export function leavesFor(completed: string[]): number {
+  return completed.reduce((sum, id) => sum + getLesson(id).reward, 0);
+}
+
 /* ---------------- Vocabulary ----------------
    Derived from the authored lessons so the Words hub always reflects real
    content (and grows automatically as more lessons are added). Only words
