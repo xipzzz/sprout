@@ -18,10 +18,12 @@ import TalesScreen from './screens/TalesScreen';
 import SettingsScreen from './screens/SettingsScreen';
 import OnboardingSplash from './screens/OnboardingSplash';
 import ComebackScreen from './screens/ComebackScreen';
+import AccountGateScreen from './screens/AccountGateScreen';
 import Modal from './components/Modal';
 import Pip from './components/Pip';
 import { loadCompleted, saveCompleted } from './state/progress';
-import { firstUnlockedUnit, hud, sectionCompletedByUnit } from './data/course';
+import { recordPractice } from './state/practice';
+import { firstUnlockedUnit, getLesson, hud, sectionCompletedByUnit } from './data/course';
 
 export default function App() {
   const [tab, setTab] = useState<TabKey>('learn');
@@ -37,6 +39,7 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showDailyGoal, setShowDailyGoal] = useState(false);
   const [dailyGoalShown, setDailyGoalShown] = useState(false);
+  const [showAccountGate, setShowAccountGate] = useState(false);
   const [goldenBloom, setGoldenBloom] = useState<string | null>(null);
   const [showShop, setShowShop] = useState(false);
   const [showWater, setShowWater] = useState(false);
@@ -68,7 +71,9 @@ export default function App() {
       const KEY = 'sprout.lastVisit';
       const last = Number(localStorage.getItem(KEY) || '0');
       const now = Date.now();
-      if (onboarded && last && now - last > 18 * 3600 * 1000) setShowComeback(true);
+      if (onboarded && last && now - last > 18 * 3600 * 1000) {
+        window.setTimeout(() => setShowComeback(true), 0);
+      }
       localStorage.setItem(KEY, String(now));
     } catch { /* ignore */ }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -82,7 +87,17 @@ export default function App() {
       const next = [...completed, unit];
       setCompleted(next);
       saveCompleted(next);
+      recordPractice(getLesson(unit).reward); // log today's leaves for the weekly chart
       setPendingPathFocus(firstUnlockedUnit(next) ?? null);
+      if (next.length === 1) {
+        try {
+          const accountSeen = localStorage.getItem('sprout.accountGateSeen') === '1';
+          if (!accountSeen) {
+            setShowAccountGate(true);
+            return;
+          }
+        } catch { /* ignore */ }
+      }
       // Finishing a whole section is a special golden moment — it takes
       // precedence over (and replaces) the daily-goal celebration here.
       const finishedSection = sectionCompletedByUnit(unit, next);
@@ -123,6 +138,19 @@ export default function App() {
     return (
       <div className="app">
         <LessonScreen onExit={() => setLessonUnit(null)} onComplete={completeLesson} unitId={lessonUnit} />
+      </div>
+    );
+  }
+
+  if (showAccountGate) {
+    const closeAccountGate = () => {
+      try { localStorage.setItem('sprout.accountGateSeen', '1'); } catch { /* ignore */ }
+      setShowAccountGate(false);
+    };
+
+    return (
+      <div className="app">
+        <AccountGateScreen onSaved={closeAccountGate} onSkip={closeAccountGate} />
       </div>
     );
   }
