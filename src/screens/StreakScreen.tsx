@@ -1,26 +1,14 @@
-/* StreakScreen — a calm month grid. Practiced days are soft green leaf-dots;
-   missed days are neutral (never red); an auto-applied freeze is shown warmly. */
+/* StreakScreen — a calm month grid of real practice. Practiced days are soft
+   green leaf-dots; missed days are neutral (never red). A milestone rail
+   (Sprout → Sapling → Tree → Bloom) shows where this streak is heading. */
+
+import { practicedDates, currentStreak } from '../state/practice';
 
 interface StreakScreenProps {
   onBack: () => void;
 }
 
 const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-const OFFSET = 4; // month starts mid-week (mock data)
-const DAYS = 30;
-const PRACTICED = new Set([1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12]);
-const FREEZE = 6;
-const TODAY = 12;
-
-function dayClass(d: number): string {
-  if (d === TODAY) return 'sday sday--today';
-  if (d === FREEZE) return 'sday sday--freeze';
-  if (PRACTICED.has(d)) return 'sday sday--done';
-  if (d > TODAY) return 'sday sday--future';
-  return 'sday';
-}
-
-const STREAK = TODAY; // current streak length (days)
 const MILES = [
   { days: 1, emoji: '🌱', label: 'Sprout' },
   { days: 7, emoji: '🌿', label: 'Sapling' },
@@ -29,8 +17,26 @@ const MILES = [
 ];
 
 export default function StreakScreen({ onBack }: StreakScreenProps) {
-  const current = [...MILES].reverse().find((m) => STREAK >= m.days) ?? MILES[0];
-  const next = MILES.find((m) => m.days > STREAK) ?? null;
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const todayDate = now.getDate();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const offset = new Date(year, month, 1).getDay(); // weekday the month starts on
+  const done = practicedDates();
+  const streak = currentStreak();
+
+  const current = [...MILES].reverse().find((m) => streak >= m.days) ?? MILES[0];
+  const next = MILES.find((m) => m.days > streak) ?? null;
+
+  function dayClass(day: number): string {
+    const isDone = done.has(new Date(year, month, day).toDateString());
+    if (day === todayDate) return `sday sday--today${isDone ? ' sday--done' : ''}`;
+    if (isDone) return 'sday sday--done';
+    if (day > todayDate) return 'sday sday--future';
+    return 'sday';
+  }
+
   return (
     <div className="screen streak">
       <header className="streak__top">
@@ -45,14 +51,14 @@ export default function StreakScreen({ onBack }: StreakScreenProps) {
 
       <main className="screen__body">
         <div className="streak__summary">
-          <span className="streak__count">🍃 {STREAK}</span>
-          <span className="streak__label">day streak — your garden grew every day</span>
+          <span className="streak__count">🍃 {streak}</span>
+          <span className="streak__label">{streak === 1 ? 'day streak — lovely start 🌱' : 'day streak — keep it growing 🌱'}</span>
         </div>
 
         <div className="srail" aria-label="Streak milestones">
           {MILES.map((m) => {
-            const reached = STREAK >= m.days;
-            const here = m.label === current.label;
+            const reached = streak >= m.days;
+            const here = m.label === current.label && reached;
             return (
               <div key={m.label} className={`srail__node${reached ? ' srail__node--done' : ''}${here ? ' srail__node--here' : ''}`}>
                 <span className="srail__emoji" aria-hidden="true">{m.emoji}</span>
@@ -63,7 +69,7 @@ export default function StreakScreen({ onBack }: StreakScreenProps) {
           })}
         </div>
         <p className="srail__nudge">
-          {next ? `${next.days - STREAK} more days to a ${next.label} ${next.emoji} — keep growing, gently.` : `You've grown a full ${current.label}! 🌸`}
+          {next ? `${next.days - streak} more day${next.days - streak === 1 ? '' : 's'} to a ${next.label} ${next.emoji} — keep growing, gently.` : `You've grown a full ${current.label}! 🌸`}
         </p>
 
         <div className="cal">
@@ -71,17 +77,19 @@ export default function StreakScreen({ onBack }: StreakScreenProps) {
             {WEEKDAYS.map((w, i) => <span key={i} className="cal__wd">{w}</span>)}
           </div>
           <div className="cal__grid">
-            {Array.from({ length: OFFSET }).map((_, i) => (
+            {Array.from({ length: offset }).map((_, i) => (
               <span key={`b${i}`} className="sday sday--blank" aria-hidden="true" />
             ))}
-            {Array.from({ length: DAYS }).map((_, i) => {
+            {Array.from({ length: daysInMonth }).map((_, i) => {
               const d = i + 1;
               return <span key={d} className={dayClass(d)}>{d}</span>;
             })}
           </div>
         </div>
 
-        <p className="streak__note">🍃 A leaf kept your garden safe on day {FREEZE} — no streak lost.</p>
+        <p className="streak__note">
+          {streak > 0 ? '🍃 Every day you practice adds a green leaf here.' : '🌱 Practice a little today to plant your first leaf.'}
+        </p>
       </main>
     </div>
   );
