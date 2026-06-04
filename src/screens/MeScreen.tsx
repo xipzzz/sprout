@@ -3,7 +3,7 @@
 
 import TabBar, { type TabKey } from '../components/TabBar';
 import Pip from '../components/Pip';
-import { hud } from '../data/course';
+import { leavesFor } from '../data/course';
 
 interface MeScreenProps {
   tab: TabKey;
@@ -41,7 +41,7 @@ export default function MeScreen({ tab, onTabChange, completed, onOpenStreak, on
 
       <main className="screen__body">
         <div className="me__tiles">
-          <div className="tile"><span className="tile__icon" aria-hidden="true">🍃</span><span className="tile__num">{hud.leaves}</span><span className="tile__lbl">Leaves</span></div>
+          <div className="tile"><span className="tile__icon" aria-hidden="true">🍃</span><span className="tile__num">{leavesFor(completed)}</span><span className="tile__lbl">Leaves</span></div>
           <div className="tile"><span className="tile__icon" aria-hidden="true">🌳</span><span className="tile__num">{units}</span><span className="tile__lbl">Units</span></div>
           <div className="tile"><span className="tile__icon" aria-hidden="true">📖</span><span className="tile__num">{words}</span><span className="tile__lbl">Words</span></div>
         </div>
