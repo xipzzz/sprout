@@ -171,6 +171,7 @@ export default function LessonScreen({ onExit, onComplete, unitId }: LessonScree
           <ListenType
             key={ex.id}
             word={ex.word}
+            options={ex.options}
             value={typeof answer === 'string' ? answer : ''}
             revealed={phase === 'feedback'}
             onChange={setAnswer}

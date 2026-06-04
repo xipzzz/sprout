@@ -165,6 +165,7 @@ export interface ListenExercise {
   kind: 'listen';
   id: string;
   word: string; // the word spoken aloud and the expected answer
+  options?: string[]; // if set → "tap what you hear" tiles instead of typing
   teach: Teach;
 }
 
@@ -405,7 +406,7 @@ const colors: Lesson = {
   reward: 12,
   exercises: [
     {
-      kind: 'listen', id: 'c0', word: 'red',
+      kind: 'listen', id: 'c0', word: 'red', options: ['red', 'blue', 'green', 'yellow'],
       teach: {
         meaning: 'Listen, then type the color you hear.',
         inUse: 'The apple is red.',
@@ -481,7 +482,7 @@ const animals: Lesson = {
   reward: 12,
   exercises: [
     {
-      kind: 'listen', id: 'a0', word: 'cat',
+      kind: 'listen', id: 'a0', word: 'cat', options: ['cat', 'dog', 'bird', 'fish'],
       teach: {
         meaning: 'Listen, then type the animal you hear.',
         inUse: 'The cat is sleeping.',

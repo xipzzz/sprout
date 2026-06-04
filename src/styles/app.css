@@ -1019,6 +1019,11 @@ body.calm-motion *, body.calm-motion *::before, body.calm-motion *::after { anim
 .listen__play:active { transform: translateY(3px); box-shadow: 0 3px 0 var(--green-deep), var(--shadow-md); }
 .listen__play-icon { font-size: 3rem; line-height: 1; }
 .listen__input { width: 100%; max-width: 320px; text-align: center; padding: 13px var(--s4); background: var(--surface); border-radius: var(--r-lg); box-shadow: var(--shadow-sm); font-size: var(--fs-h2); }
+/* Tap-what-you-hear tiles (easier audio variant) */
+.listen__tiles { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--s3); max-width: 340px; }
+.listen__tile { padding: 12px var(--s5); border-radius: var(--r-pill); background: var(--surface); border: 2px solid var(--line); border-bottom-width: 4px; font-weight: 800; font-size: 1.05rem; color: var(--ink); box-shadow: var(--shadow-sm); transition: transform 0.12s var(--ease), background 0.12s var(--ease), border-color 0.12s var(--ease); }
+.listen__tile--sel { border-color: var(--water); background: var(--water-tint); }
+.listen__tile:not(:disabled):active { transform: translateY(2px); border-bottom-width: 2px; }
 
 /* ---- Report / flag button (review tool, shown only with ?qa=1) ---- */
 .report-fab { position: fixed; right: 14px; bottom: calc(96px + env(safe-area-inset-bottom)); z-index: 60; width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; font-size: 1.4rem; background: var(--surface); box-shadow: var(--shadow-md); border: 2px solid var(--line); }
