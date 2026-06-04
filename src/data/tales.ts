@@ -120,4 +120,17 @@ export const tales: Tale[] = [
       { scene: '😴', text: 'Soon Pip was fast asleep. Good night!' },
     ],
   },
+  {
+    id: 'friends',
+    cover: '🐰',
+    title: 'Two Little Friends',
+    blurb: 'Good friends wait for each other.',
+    pages: [
+      { scene: '🐰', text: 'A rabbit and a turtle were best friends.' },
+      { scene: '🌳', text: 'Every day they played in the green park.' },
+      { scene: '🐢', text: 'The turtle was slow, but the rabbit waited.' },
+      { scene: '🤝', text: 'Good friends always wait for each other.' },
+      { scene: '😊', text: 'They were happy, together. The end.' },
+    ],
+  },
 ];
