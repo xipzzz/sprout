@@ -1003,10 +1003,12 @@ body.calm-motion *, body.calm-motion *::before, body.calm-motion *::after { anim
 .report-fab { position: fixed; right: 14px; bottom: calc(96px + env(safe-area-inset-bottom)); z-index: 60; width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; font-size: 1.4rem; background: var(--surface); box-shadow: var(--shadow-md); border: 2px solid var(--line); }
 .report-fab:active { transform: translateY(1px); }
 .report-sheet { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 61; width: min(420px, calc(100vw - 24px)); background: var(--surface); border-radius: var(--r-lg); box-shadow: var(--shadow-md); padding: var(--s4); }
-.report-sheet__title { margin: 0 0 var(--s3); font-weight: 800; color: var(--ink); }
+.report-sheet__title { margin: 0 0 var(--s2); font-weight: 800; color: var(--ink); }
+.report-screen { margin: 0 0 var(--s3); font-weight: 800; font-size: var(--fs-caption); color: var(--green-deep); }
 .report-note { width: 100%; resize: none; padding: var(--s3); border: 2px solid var(--line); border-radius: var(--r-md); font: inherit; font-weight: 600; color: var(--ink); background: var(--bg); outline: none; }
 .report-note:focus { border-color: var(--green); }
-.report-row { display: flex; gap: var(--s3); margin-top: var(--s3); align-items: center; }
-.report-cancel { flex: none; padding: 13px var(--s5); border-radius: var(--r-pill); font-weight: 800; color: var(--ink-soft); background: var(--bg); }
-.report-send { flex: 1; }
+.report-row { display: flex; flex-wrap: wrap; gap: var(--s2); margin-top: var(--s3); align-items: center; }
+.report-send { flex: 1 1 100%; order: -1; }                /* "Copy report" full-width, on top */
+.report-cancel { flex: 1; padding: 12px var(--s4); border-radius: var(--r-pill); font-weight: 800; color: var(--ink-soft); background: var(--bg); }
+.report-cap { flex: 1; padding: 12px var(--s4); border-radius: var(--r-pill); font-weight: 800; color: var(--ink-soft); background: var(--bg); }
 .report-toast { position: fixed; left: 50%; bottom: calc(96px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 62; background: var(--ink); color: #fff; font-weight: 700; padding: 10px 18px; border-radius: var(--r-pill); box-shadow: var(--shadow-md); }
