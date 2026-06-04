@@ -42,7 +42,7 @@ ONE start point (path node) · daily-goal celebration · tabular figures · ligh
 earned-gem economy w/ real money behind a parent gate · Garden living seedling hero.
 
 ## Known divergences to close next (fidelity backlog)
-1. Pip-led **quit confirmation** + **segmented** progress bar on the lesson chrome.
+1. ✅ **Done** — Pip-led quit confirmation + segmented progress bar on the lesson chrome.
 2. Path: per-node **mastery petals** + active-node **pulsing halo** + dotted stepping-stone
    connectors within a unit.
 3. Lesson Complete: tiered headline + garden-tier stat tiles + seed ledger.

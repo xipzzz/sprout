@@ -342,6 +342,21 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   border-radius: var(--r-pill);
   transition: width 0.3s var(--ease);
 }
+/* Lesson: a SEGMENTED progress bar (one segment per exercise) — per the design.
+   Scoped to the lesson header so Grove's single-bar .progress is unaffected. */
+.lesson__top .progress { display: flex; gap: 5px; height: 10px; background: transparent; border-radius: 0; overflow: visible; }
+.progress__seg { flex: 1; height: 100%; border-radius: var(--r-pill); background: var(--bg-soft); transition: background 0.25s var(--ease), opacity 0.25s var(--ease); }
+.progress__seg--done { background: var(--green); }
+.progress__seg--current { background: var(--green); opacity: 0.5; }
+
+/* Pip-led quit confirmation (calm bottom sheet, not an abrupt exit). */
+.quit { position: fixed; inset: 0; z-index: 50; display: flex; align-items: flex-end; justify-content: center; background: rgba(42, 35, 32, 0.45); padding: var(--s4); }
+.quit__sheet { width: 100%; max-width: 420px; background: var(--surface); border-radius: var(--r-lg); padding: var(--s6) var(--s5) calc(var(--s5) + env(safe-area-inset-bottom)); text-align: center; box-shadow: var(--shadow-md); }
+.quit__pip { width: 84px; height: 84px; }
+.quit__title { margin: var(--s3) 0 var(--s2); font-size: var(--fs-h1); font-weight: 800; color: var(--ink); }
+.quit__sub { margin: 0 0 var(--s5); color: var(--ink-soft); font-weight: 600; line-height: 1.45; }
+.quit__stay { width: 100%; }
+.quit__leave { width: 100%; margin-top: var(--s3); padding: 12px; font-weight: 800; color: var(--ink-muted); background: transparent; }
 
 .lesson__foot {
   position: fixed;
