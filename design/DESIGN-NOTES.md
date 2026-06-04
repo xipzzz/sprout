@@ -26,7 +26,7 @@ green `#58CC42` — used only as the viewer's own chrome, not the app.)
   goal met · Golden Bloom · Streak calendar · Shop · Out of water · Offline · Insights ·
   Monthly Blooms · Year in Bloom · Customize · Search · Invite a friend · Garden Tales ·
   Tale complete · Quests · Settings · Grove (calm league) · Lesson complete (tiered) ·
-  Comeback greeting · Type-what-you-hear (audio)
+  Comeback greeting · Type-what-you-hear (audio) · Tap-what-you-hear (tiles) · Streak milestone rail
 - **Needs your input / backend:** Save your garden · Log in · Sprout Family (paywall) ·
   Grown-ups summary / parent dashboard · Speak out loud (mic)
 - **Buildable, not yet:** Welcome flow (multi-step) · Reminder priming · Tap-what-you-hear
