@@ -738,6 +738,17 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .streak__summary { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: var(--s4) var(--s4) var(--s6); }
 .streak__count { font-size: var(--fs-display); font-weight: 900; font-variant-numeric: tabular-nums; }
 .streak__label { color: var(--ink-soft); font-weight: 600; }
+
+/* Streak milestone rail — Sprout → Sapling → Tree → Bloom, with you-are-here. */
+.srail { position: relative; display: flex; justify-content: space-between; margin: 0 var(--s4) var(--s3); }
+.srail::before { content: ""; position: absolute; top: 22px; left: 14%; right: 14%; height: 3px; background: var(--bg-soft); border-radius: 999px; z-index: 0; }
+.srail__node { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; flex: 1; }
+.srail__emoji { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; background: var(--surface); box-shadow: var(--shadow-sm); font-size: 1.4rem; opacity: 0.55; filter: grayscale(0.6); transition: transform var(--dur) var(--ease); }
+.srail__node--done .srail__emoji { opacity: 1; filter: none; box-shadow: 0 0 0 2px var(--green), var(--shadow-sm); }
+.srail__node--here .srail__emoji { box-shadow: 0 0 0 3px var(--green-strong), var(--shadow-md); transform: scale(1.08); }
+.srail__label { font-size: var(--fs-caption); font-weight: 800; color: var(--ink); }
+.srail__days { font-size: 0.68rem; font-weight: 700; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+.srail__nudge { margin: 0 var(--s4) var(--s5); text-align: center; color: var(--green-deep); font-weight: 700; font-size: var(--fs-caption); }
 .cal { padding: 0 var(--s4); }
 .cal__week, .cal__grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: var(--s2); }
 .cal__week { margin-bottom: var(--s2); }
