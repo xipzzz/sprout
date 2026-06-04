@@ -13,6 +13,7 @@ import FillBlank from '../components/FillBlank';
 import ListenType from '../components/ListenType';
 import FeedbackDrawer from '../components/FeedbackDrawer';
 import LessonComplete from '../components/LessonComplete';
+import Pip from '../components/Pip';
 
 interface LessonScreenProps {
   onExit: () => void;
@@ -48,6 +49,7 @@ export default function LessonScreen({ onExit, onComplete, unitId }: LessonScree
   const [phase, setPhase] = useState<Phase>('answering');
   const [result, setResult] = useState<'correct' | 'wrong'>('correct');
   const [correctCount, setCorrectCount] = useState(0);
+  const [confirmQuit, setConfirmQuit] = useState(false);
 
   const ex = exercises[index];
 
@@ -102,12 +104,13 @@ export default function LessonScreen({ onExit, onComplete, unitId }: LessonScree
   return (
     <div className="screen lesson">
       <header className="lesson__top">
-        <button type="button" className="lesson__close" onClick={onExit} aria-label="Close lesson">
+        <button type="button" className="lesson__close" onClick={() => setConfirmQuit(true)} aria-label="Close lesson">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor"
                strokeWidth="2.4" strokeLinecap="round">
             <path d="M6 6l12 12M18 6L6 18" />
           </svg>
         </button>
+        {/* Segmented progress — one segment per exercise (per the design). */}
         <div
           className="progress"
           role="progressbar"
@@ -115,9 +118,26 @@ export default function LessonScreen({ onExit, onComplete, unitId }: LessonScree
           aria-valuemax={total}
           aria-valuenow={index}
         >
-          <div className="progress__fill" style={{ width: `${(index / total) * 100}%` }} />
+          {exercises.map((_, i) => (
+            <span
+              key={i}
+              className={`progress__seg${i < index ? ' progress__seg--done' : i === index ? ' progress__seg--current' : ''}`}
+            />
+          ))}
         </div>
       </header>
+
+      {confirmQuit && (
+        <div className="quit" role="dialog" aria-label="Leave the lesson?">
+          <div className="quit__sheet">
+            <Pip className="quit__pip" />
+            <h2 className="quit__title">Leave the lesson?</h2>
+            <p className="quit__sub">Your sprout keeps what you've grown so far. 🌱</p>
+            <button type="button" className="btn-primary quit__stay" onClick={() => setConfirmQuit(false)}>Keep going</button>
+            <button type="button" className="quit__leave" onClick={onExit}>Leave for now</button>
+          </div>
+        </div>
+      )}
 
       <main className="screen__body">
         {ex.kind === 'choice' ? (
