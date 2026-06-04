@@ -20,7 +20,17 @@ function dayClass(d: number): string {
   return 'sday';
 }
 
+const STREAK = TODAY; // current streak length (days)
+const MILES = [
+  { days: 1, emoji: '🌱', label: 'Sprout' },
+  { days: 7, emoji: '🌿', label: 'Sapling' },
+  { days: 30, emoji: '🌳', label: 'Tree' },
+  { days: 100, emoji: '🌸', label: 'Bloom' },
+];
+
 export default function StreakScreen({ onBack }: StreakScreenProps) {
+  const current = [...MILES].reverse().find((m) => STREAK >= m.days) ?? MILES[0];
+  const next = MILES.find((m) => m.days > STREAK) ?? null;
   return (
     <div className="screen streak">
       <header className="streak__top">
@@ -35,9 +45,26 @@ export default function StreakScreen({ onBack }: StreakScreenProps) {
 
       <main className="screen__body">
         <div className="streak__summary">
-          <span className="streak__count">🍃 12</span>
+          <span className="streak__count">🍃 {STREAK}</span>
           <span className="streak__label">day streak — your garden grew every day</span>
         </div>
+
+        <div className="srail" aria-label="Streak milestones">
+          {MILES.map((m) => {
+            const reached = STREAK >= m.days;
+            const here = m.label === current.label;
+            return (
+              <div key={m.label} className={`srail__node${reached ? ' srail__node--done' : ''}${here ? ' srail__node--here' : ''}`}>
+                <span className="srail__emoji" aria-hidden="true">{m.emoji}</span>
+                <span className="srail__label">{m.label}</span>
+                <span className="srail__days">{m.days}d</span>
+              </div>
+            );
+          })}
+        </div>
+        <p className="srail__nudge">
+          {next ? `${next.days - STREAK} more days to a ${next.label} ${next.emoji} — keep growing, gently.` : `You've grown a full ${current.label}! 🌸`}
+        </p>
 
         <div className="cal">
           <div className="cal__week">
