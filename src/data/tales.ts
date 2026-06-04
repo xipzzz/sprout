@@ -107,4 +107,17 @@ export const tales: Tale[] = [
       { scene: '🌈', text: 'After the rain, a rainbow made him smile again.' },
     ],
   },
+  {
+    id: 'sheep',
+    cover: '🐑',
+    title: 'Counting Sheep',
+    blurb: 'One, two, three… off to sleep.',
+    pages: [
+      { scene: '🌙', text: 'It was night, and Pip could not fall asleep.' },
+      { scene: '🐑', text: 'So Pip counted one fluffy white sheep.' },
+      { scene: '🐑', text: 'Then two more sheep hopped over the fence.' },
+      { scene: '😌', text: 'Three, four, five… Pip\'s eyes grew heavy.' },
+      { scene: '😴', text: 'Soon Pip was fast asleep. Good night!' },
+    ],
+  },
 ];
