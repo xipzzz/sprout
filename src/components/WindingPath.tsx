@@ -79,10 +79,12 @@ export default function WindingPath({ nodes, onSelect }: WindingPathProps) {
                 type="button"
                 className={`node node--${node.kind === 'golden' ? 'golden' : node.status}`}
                 style={{ transform: `translateX(${dx}px)` }}
+                data-path-node-id={node.id}
                 disabled={isLocked}
                 aria-label={ariaLabel(node)}
                 onClick={() => !isLocked && onSelect?.(node)}
               >
+                {node.status === 'current' && <span className="node__halo" aria-hidden="true" />}
                 {node.status === 'current' && <span className="start-bubble">START</span>}
                 <span className="node__disc">{nodeIcon(node)}</span>
                 {node.status === 'current' && (

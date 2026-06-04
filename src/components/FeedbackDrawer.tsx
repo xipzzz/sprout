@@ -2,7 +2,7 @@
    correct = green + celebratory; wrong = warm clay + kind copy (never red).
    Always teaches via Meaning / In use / Why, and offers a flag-an-issue control. */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Exercise } from '../data/course';
 
 interface FeedbackDrawerProps {
@@ -14,6 +14,18 @@ interface FeedbackDrawerProps {
 export default function FeedbackDrawer({ result, ex, onContinue }: FeedbackDrawerProps) {
   const [flagged, setFlagged] = useState(false);
   const correct = result === 'correct';
+
+  useEffect(() => {
+    function handleHiddenShortcut(event: KeyboardEvent) {
+      const isContinueShortcut = event.code === 'Space' || event.key === 'Enter';
+      if (!isContinueShortcut || event.repeat) return;
+      event.preventDefault();
+      onContinue();
+    }
+
+    window.addEventListener('keydown', handleHiddenShortcut);
+    return () => window.removeEventListener('keydown', handleHiddenShortcut);
+  }, [onContinue]);
   let answerLabel = '';
   if (ex.kind === 'choice') answerLabel = ex.choices.find((c) => c.id === ex.answerId)?.label ?? '';
   else if (ex.kind === 'arrange') answerLabel = ex.answer.join(' ');

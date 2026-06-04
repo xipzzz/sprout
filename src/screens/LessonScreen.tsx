@@ -3,7 +3,7 @@
    Handles multiple exercise kinds (choice, arrange). Calm: a wrong answer
    teaches kindly and you move on — no lives lost. */
 
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { getLesson } from '../data/course';
 import type { Exercise } from '../data/course';
 import MultipleChoice from '../components/MultipleChoice';
@@ -51,13 +51,31 @@ export default function LessonScreen({ onExit, onComplete, unitId }: LessonScree
 
   const ex = exercises[index];
 
-  function check() {
+  const check = useCallback(() => {
     if (!isComplete(ex, answer)) return;
     const ok = isCorrect(ex, answer);
     setResult(ok ? 'correct' : 'wrong');
     if (ok) setCorrectCount((c) => c + 1);
     setPhase('feedback');
-  }
+  }, [answer, ex]);
+
+  useEffect(() => {
+    if (phase !== 'answering' || !isComplete(ex, answer)) return;
+
+    function submitFromKeyboard(event: KeyboardEvent) {
+      const target = event.target as HTMLElement | null;
+      const tagName = target?.tagName.toLowerCase();
+      const isTextInput = tagName === 'input' || tagName === 'textarea' || target?.isContentEditable;
+      const isSubmitKey = event.key === 'Enter' || (event.key === ' ' && !isTextInput);
+      if (!isSubmitKey) return;
+
+      event.preventDefault();
+      check();
+    }
+
+    window.addEventListener('keydown', submitFromKeyboard, { capture: true });
+    return () => window.removeEventListener('keydown', submitFromKeyboard, { capture: true });
+  }, [answer, check, ex, phase]);
 
   function next() {
     if (index + 1 >= total) {

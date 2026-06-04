@@ -1737,3 +1737,65 @@ export function sectionCompletedByUnit(unitId: string, completed: string[]): Sec
   if (!section) return null;
   return section.units.every((u) => completed.includes(u.id)) ? section : null;
 }
+
+/* ---------------- Guidebook ----------------
+   A calm reference for one unit: a handful of key words (with pictures) and a
+   couple of example phrases, pulled straight from the unit's lesson. The
+   section banner's guidebook previews these so a learner (or parent) can peek
+   at what a unit teaches. Always reflects real authored content. */
+
+export interface UnitGuide {
+  unitId: string;
+  title: string;
+  words: VocabWord[];
+  phrases: string[];
+}
+
+/** The key words and phrases for one unit, ready to preview. */
+export function unitGuide(unitId: string): UnitGuide {
+  const lessonContent = getLesson(unitId);
+  const title =
+    course.flatMap((s) => s.units).find((u) => u.id === unitId)?.title ?? lessonContent.title;
+
+  const words = new Map<string, string>(); // word (lowercased) → emoji
+  const phrases: string[] = [];
+  const seenPhrase = new Set<string>();
+  const addPhrase = (raw: string) => {
+    const text = raw.replace(/\s+/g, ' ').trim();
+    const key = text.toLowerCase();
+    if (text && !seenPhrase.has(key)) {
+      seenPhrase.add(key);
+      phrases.push(text);
+    }
+  };
+
+  for (const ex of lessonContent.exercises) {
+    if (ex.kind === 'choice') {
+      for (const c of ex.choices) {
+        const key = c.label.toLowerCase();
+        if (!words.has(key)) words.set(key, c.emoji);
+      }
+    } else if (ex.kind === 'match') {
+      for (const p of ex.pairs) {
+        const key = p.word.toLowerCase();
+        if (!words.has(key)) words.set(key, p.emoji);
+      }
+    } else if (ex.kind === 'arrange') {
+      addPhrase(ex.answer.join(' '));
+    } else if (ex.kind === 'fill') {
+      addPhrase(`${ex.before} ${ex.answer}${ex.after}`);
+    }
+  }
+
+  return {
+    unitId,
+    title,
+    words: [...words.entries()].slice(0, 6).map(([word, emoji]) => ({ word, emoji })),
+    phrases: phrases.slice(0, 3),
+  };
+}
+
+/** The guidebook for a whole section: one entry per unit. */
+export function sectionGuide(section: Section): UnitGuide[] {
+  return section.units.map((u) => unitGuide(u.id));
+}

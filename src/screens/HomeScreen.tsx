@@ -2,6 +2,7 @@
    5 sections, each with 7–8 unit nodes (plus a Golden Bloom milestone).
    Statuses are derived live from the learner's progress. */
 
+import { useEffect } from 'react';
 import HUD from '../components/HUD';
 import SectionBanner from '../components/SectionBanner';
 import WindingPath from '../components/WindingPath';
@@ -12,6 +13,8 @@ import type { PathNode, Section } from '../data/course';
 
 interface HomeScreenProps {
   completed: string[];
+  focusTarget?: string | null;
+  onFocusSettled?: () => void;
   onStartUnit: (unitId: string) => void;
   onOpenShop: () => void;
   onOpenWater: () => void;
@@ -36,13 +39,24 @@ function sectionNodes(section: Section): PathNode[] {
   return nodes;
 }
 
-export default function HomeScreen({ completed, onStartUnit, onOpenShop, onOpenWater, tab, onTabChange }: HomeScreenProps) {
+export default function HomeScreen({ completed, focusTarget, onFocusSettled, onStartUnit, onOpenShop, onOpenWater, tab, onTabChange }: HomeScreenProps) {
   const sections = courseWithProgress(completed);
 
   // The "Today Card": a calm pointer to the next lesson (or a rested state).
   const currentId = firstUnlockedUnit(completed);
   const allUnits = sections.flatMap((s) => s.units.map((u) => ({ id: u.id, title: u.title, section: s.title })));
   const current = allUnits.find((u) => u.id === currentId);
+
+  useEffect(() => {
+    if (!focusTarget) return;
+    const targetId = focusTarget === 'next-unlocked' ? currentId : focusTarget;
+    const timer = window.setTimeout(() => {
+      const target = document.querySelector<HTMLElement>(`[data-path-node-id="${targetId}"]`);
+      target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      onFocusSettled?.();
+    }, 180);
+    return () => window.clearTimeout(timer);
+  }, [currentId, focusTarget, onFocusSettled]);
 
   function startUnit(node: PathNode) {
     if (node.kind === 'lesson') onStartUnit(node.id); // golden blooms aren't lessons
