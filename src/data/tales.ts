@@ -55,4 +55,30 @@ export const tales: Tale[] = [
       { scene: '🌈', text: 'A big rainbow filled the sky. What a lovely day!' },
     ],
   },
+  {
+    id: 'park',
+    cover: '🌳',
+    title: 'A Walk in the Park',
+    blurb: 'A sunny day full of little joys.',
+    pages: [
+      { scene: '🌳', text: 'Maya went to the park on a warm, sunny day.' },
+      { scene: '🛝', text: 'First, she went down the big green slide.' },
+      { scene: '🌸', text: 'Then she smelled a pretty pink flower.' },
+      { scene: '🐦', text: 'A little bird sang high up in a tall tree.' },
+      { scene: '😊', text: 'Maya had so much fun. What a happy day!' },
+    ],
+  },
+  {
+    id: 'cat',
+    cover: '🐱',
+    title: 'The Hungry Cat',
+    blurb: 'Breakfast, then a cozy nap.',
+    pages: [
+      { scene: '🐱', text: 'Tom the cat woke up very, very hungry.' },
+      { scene: '🥛', text: 'He drank a bowl of cool, white milk.' },
+      { scene: '🐟', text: 'Then he ate one little silver fish.' },
+      { scene: '😺', text: 'Now Tom was full and happy.' },
+      { scene: '😴', text: 'He curled up in the sun and went to sleep.' },
+    ],
+  },
 ];
