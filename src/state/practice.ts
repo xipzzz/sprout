@@ -40,3 +40,23 @@ export function practiceWeek(): DayBar[] {
 export function hasPractice(): boolean {
   return Object.keys(load()).length > 0;
 }
+
+/** The set of date strings on which the learner practiced. */
+export function practicedDates(): Set<string> {
+  const log = load();
+  return new Set(Object.keys(log).filter((d) => log[d] > 0));
+}
+
+/** Consecutive days practiced, counting back from today (or yesterday if today
+    isn't done yet, so the streak isn't "lost" before the day is over). */
+export function currentStreak(): number {
+  const log = load();
+  const d = new Date();
+  if (!((log[d.toDateString()] || 0) > 0)) d.setDate(d.getDate() - 1);
+  let streak = 0;
+  while ((log[d.toDateString()] || 0) > 0) {
+    streak += 1;
+    d.setDate(d.getDate() - 1);
+  }
+  return streak;
+}
