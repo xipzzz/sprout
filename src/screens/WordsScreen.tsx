@@ -1,10 +1,11 @@
-/* WordsScreen — a calm vocab hub: every word you've grown, with its picture,
-   plus a gentle search to find one quickly. Vocabulary comes from the real
-   lesson content, so it grows as more lessons are added. */
+/* WordsScreen — a calm vocab hub: every word you've grown, with its picture.
+   Search to find one; tap a word to see what it means + an example. Vocabulary
+   and meanings come from the real lesson content. */
 
 import { useState } from 'react';
 import TabBar, { type TabKey } from '../components/TabBar';
-import { vocabulary } from '../data/course';
+import Modal from '../components/Modal';
+import { vocabulary, wordInfo, type VocabWord } from '../data/course';
 
 interface WordsScreenProps {
   tab: TabKey;
@@ -13,8 +14,10 @@ interface WordsScreenProps {
 
 export default function WordsScreen({ tab, onTabChange }: WordsScreenProps) {
   const [query, setQuery] = useState('');
+  const [sel, setSel] = useState<VocabWord | null>(null);
   const q = query.trim().toLowerCase();
   const shown = q ? vocabulary.filter((w) => w.word.includes(q)) : vocabulary;
+  const info = sel ? wordInfo[sel.word] : undefined;
 
   return (
     <div className="screen words">
@@ -44,7 +47,7 @@ export default function WordsScreen({ tab, onTabChange }: WordsScreenProps) {
         {shown.length > 0 ? (
           <div className="word-grid">
             {shown.map((w) => (
-              <button key={w.word} type="button" className="word-card" aria-label={w.word}>
+              <button key={w.word} type="button" className="word-card" aria-label={`${w.word} — what does it mean?`} onClick={() => setSel(w)}>
                 <span className="word-card__emoji" aria-hidden="true">{w.emoji}</span>
                 <span className="word-card__label">{w.word}</span>
               </button>
@@ -57,6 +60,20 @@ export default function WordsScreen({ tab, onTabChange }: WordsScreenProps) {
           </div>
         )}
       </main>
+
+      {sel && (
+        <Modal onClose={() => setSel(null)}>
+          <div className="wordinfo">
+            <span className="wordinfo__emoji" aria-hidden="true">{sel.emoji}</span>
+            <h2 className="wordinfo__word">{sel.word}</h2>
+            <p className="wordinfo__meaning">{info ? info.meaning : "A word you're growing. 🌱"}</p>
+            {info && (
+              <p className="wordinfo__use"><span className="wordinfo__use-lbl">In use</span> {info.inUse}</p>
+            )}
+            <button type="button" className="btn-primary" onClick={() => setSel(null)}>Got it</button>
+          </div>
+        </Modal>
+      )}
 
       <TabBar active={tab} onChange={onTabChange} />
     </div>

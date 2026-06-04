@@ -1714,6 +1714,22 @@ export const vocabulary: VocabWord[] = (() => {
     .sort((a, b) => a.word.localeCompare(b.word));
 })();
 
+/** Per-word meaning + example, harvested from the lessons' teaching copy, so the
+    Words hub can show what each word means when tapped. */
+export interface WordInfo { meaning: string; inUse: string; }
+export const wordInfo: Record<string, WordInfo> = (() => {
+  const map: Record<string, WordInfo> = {};
+  for (const l of Object.values(lessons)) {
+    for (const ex of l.exercises) {
+      if (ex.kind === 'choice') {
+        const key = ex.word.toLowerCase();
+        if (!map[key]) map[key] = { meaning: ex.teach.meaning, inUse: ex.teach.inUse };
+      }
+    }
+  }
+  return map;
+})();
+
 /* ---------------- Progress helpers ---------------- */
 
 /** Every unit id, in learning order (section 1 → 5). */
