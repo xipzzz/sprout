@@ -188,7 +188,20 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .node__disc svg { width: 30px; height: 30px; }
 
 .node--done    .node__disc { background: var(--green);  box-shadow: 0 5px 0 var(--green-deep); }
-.node--current .node__disc { background: var(--green);  box-shadow: 0 6px 0 var(--green-deep), 0 0 0 7px var(--green-tint); }
+.node--current { transform: translateY(-4px); }
+.node--current .node__disc {
+  position: relative;
+  z-index: 2;
+  background: linear-gradient(180deg, #7ed35b 0%, var(--green) 100%);
+  box-shadow: 0 8px 0 var(--green-deep), 0 0 0 8px rgba(120, 199, 86, 0.22), var(--shadow-md);
+}
+.node__halo {
+  position: absolute;
+  inset: -16px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(120, 199, 86, 0.30) 0%, rgba(120, 199, 86, 0.12) 45%, rgba(120, 199, 86, 0) 72%);
+  pointer-events: none;
+}
 .node--locked  .node__disc { background: var(--locked); color: var(--locked-ink); box-shadow: 0 5px 0 var(--locked-edge); }
 .node--golden  .node__disc { background: linear-gradient(180deg, #f2c75a, var(--gold)); box-shadow: 0 5px 0 var(--gold-deep); }
 
@@ -235,11 +248,21 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 
 @media (prefers-reduced-motion: no-preference) {
   .start-bubble { animation: bob 1.9s var(--ease) infinite; }
+  .node__halo { animation: nodeHaloPulse 2.2s ease-in-out infinite; }
+  .node--current .node__disc { animation: currentNodeBreath 2.2s ease-in-out infinite; }
   .pip { animation: sway 3.4s ease-in-out infinite; }
 }
 @keyframes bob {
   0%, 100% { transform: translateX(-50%) translateY(0); }
   50%      { transform: translateX(-50%) translateY(-5px); }
+}
+@keyframes nodeHaloPulse {
+  0%, 100% { opacity: .55; transform: scale(.96); }
+  50%      { opacity: 1; transform: scale(1.05); }
+}
+@keyframes currentNodeBreath {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50%      { transform: translateY(-2px) scale(1.03); }
 }
 @keyframes sway {
   0%, 100% { transform: rotate(-3deg); }
@@ -360,20 +383,33 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   align-items: center;
   justify-content: center;
   gap: var(--s2);
-  min-height: 104px;
-  padding: var(--s5) var(--s3);
+  min-height: 118px;
+  padding: var(--s3) var(--s2);
   background: var(--surface);
   border: 2px solid var(--line);
   border-radius: var(--r-lg);
   box-shadow: var(--shadow-sm);
+  position: relative;
   transition: border-color 0.12s var(--ease), background 0.12s var(--ease), transform 0.12s var(--ease);
 }
 .choice:not(:disabled):active { transform: translateY(1px); }
-.choice__emoji { font-size: 2.8rem; line-height: 1; }
+.choice__art {
+  width: min(94px, 76%);
+  height: auto;
+  display: block;
+  filter: drop-shadow(0 2px 0 rgba(87, 58, 38, 0.14));
+}
+.choice__emoji { font-size: 4.35rem; line-height: 1; }
 .choice__label { font-weight: 800; }
-.choice--selected { border-color: var(--green); background: var(--green-tint); }
+/* Selection is SKY-tinted (per design) — distinct from the green "correct"
+   reveal, so picking ≠ being right. */
+.choice--selected { border-color: var(--water); background: var(--water-tint); }
 .choice--correct { border-color: var(--green); background: var(--green-tint); }
 .choice--wrong { border-color: var(--clay); background: var(--clay-tint); }
+/* Color-blind-safe state badges on reveal (✓ on the answer, ✗ on a wrong pick). */
+.choice__badge { position: absolute; top: 8px; right: 8px; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-weight: 900; font-size: 0.95rem; line-height: 1; box-shadow: var(--shadow-sm); }
+.choice__badge--ok { background: var(--green-strong); }
+.choice__badge--no { background: var(--clay); }
 
 /* feedback drawer */
 .drawer {
@@ -454,6 +490,20 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   opacity: 0.85;
 }
 .section-banner__title { margin: 0; font-size: var(--fs-h1); font-weight: 800; }
+.section-banner__guide {
+  flex: none;
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: rgba(255,255,255,.18);
+  border-radius: 16px;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.18);
+  transition: transform var(--dur) var(--ease), background var(--dur) var(--ease);
+}
+.section-banner__guide:hover { background: rgba(255,255,255,.26); }
+.section-banner__guide:active { transform: translateY(1px); }
 .section-banner__lock { flex: none; opacity: 0.9; }
 .section-banner--locked {
   color: var(--locked-ink);
@@ -461,6 +511,12 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   box-shadow: 0 4px 0 var(--locked-edge);
 }
 .section-banner--locked .section-banner__eyebrow { opacity: 0.7; }
+.section-banner--locked .section-banner__guide {
+  color: var(--locked-ink);
+  background: rgba(255,255,255,.72);
+  cursor: not-allowed;
+  opacity: 0.72;
+}
 /* dim a locked section's path slightly so the eye rests on the active section */
 .section-banner--locked + .path { opacity: 0.8; }
 
@@ -739,6 +795,8 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .modal {
   width: 100%;
   max-width: 400px;
+  max-height: calc(100vh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  overflow: hidden;
   padding: var(--s6) var(--s5) calc(var(--s5) + env(safe-area-inset-bottom));
   background: var(--surface);
   border-radius: var(--r-lg);
@@ -750,6 +808,23 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .wmodal__title { margin: 0; font-size: var(--fs-h1); font-weight: 900; }
 .wmodal__body { margin: 0 0 var(--s3); color: var(--ink-soft); font-weight: 600; }
 .wmodal__dismiss { margin-top: var(--s2); color: var(--ink-muted); font-weight: 800; padding: var(--s2); }
+
+.guide { display: flex; flex-direction: column; gap: var(--s4); max-height: min(74vh, 620px); min-height: 0; }
+.guide__head { display: flex; align-items: center; gap: var(--s3); }
+.guide__icon { width: 48px; height: 48px; display: grid; place-items: center; font-size: 1.8rem; background: var(--green-tint); border-radius: 16px; }
+.guide__eyebrow { margin: 0 0 2px; color: var(--green-deep); font-size: var(--fs-eyebrow); font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+.guide__title { margin: 0; color: var(--ink); font-size: var(--fs-h2); font-weight: 900; }
+.guide__intro { margin: 0; color: var(--ink-soft); font-weight: 650; line-height: 1.45; }
+.guide__units { overflow: auto; display: grid; gap: var(--s3); min-height: 0; max-height: 42vh; padding-right: 2px; padding-bottom: 2px; }
+.guide-unit { padding: var(--s4); background: var(--bg); border-radius: var(--r-lg); border: 1px solid var(--line); }
+.guide-unit__title { margin: 0 0 var(--s3); font-size: 1rem; font-weight: 900; color: var(--ink); }
+.guide-unit__words, .guide-unit__phrases { list-style: none; margin: 0; padding: 0; }
+.guide-unit__words { display: flex; flex-wrap: wrap; gap: 8px; }
+.guide-word { display: inline-flex; align-items: center; gap: 6px; padding: 7px 10px; border-radius: var(--r-pill); background: var(--surface); box-shadow: var(--shadow-sm); font-weight: 800; }
+.guide-word__emoji { line-height: 1; }
+.guide-unit__phrases { display: grid; gap: 7px; margin-top: var(--s3); }
+.guide-phrase { padding: 9px 11px; border-radius: var(--r-md); background: var(--green-tint); color: var(--green-deep); font-weight: 750; line-height: 1.35; }
+.guide__done { margin-top: var(--s1); }
 
 /* ============================================================
    Quests (gentle goals)

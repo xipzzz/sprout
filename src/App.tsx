@@ -19,12 +19,13 @@ import SettingsScreen from './screens/SettingsScreen';
 import OnboardingSplash from './screens/OnboardingSplash';
 import Modal from './components/Modal';
 import { loadCompleted, saveCompleted } from './state/progress';
-import { hud, sectionCompletedByUnit } from './data/course';
+import { firstUnlockedUnit, hud, sectionCompletedByUnit } from './data/course';
 
 export default function App() {
   const [tab, setTab] = useState<TabKey>('learn');
   const [completed, setCompleted] = useState<string[]>(loadCompleted);
   const [lessonUnit, setLessonUnit] = useState<string | null>(null);
+  const [pendingPathFocus, setPendingPathFocus] = useState<string | null>(null);
   const [showStreak, setShowStreak] = useState(false);
   const [showQuests, setShowQuests] = useState(false);
   const [showCustomize, setShowCustomize] = useState(false);
@@ -67,6 +68,7 @@ export default function App() {
       const next = [...completed, unit];
       setCompleted(next);
       saveCompleted(next);
+      setPendingPathFocus(firstUnlockedUnit(next) ?? null);
       // Finishing a whole section is a special golden moment — it takes
       // precedence over (and replaces) the daily-goal celebration here.
       const finishedSection = sectionCompletedByUnit(unit, next);
@@ -186,7 +188,7 @@ export default function App() {
   return (
     <div className="app">
       {tab === 'learn' && (
-        <HomeScreen tab={tab} onTabChange={setTab} completed={completed} onStartUnit={setLessonUnit} onOpenShop={() => setShowShop(true)} onOpenWater={() => setShowWater(true)} />
+        <HomeScreen tab={tab} onTabChange={setTab} completed={completed} focusTarget={pendingPathFocus} onFocusSettled={() => setPendingPathFocus(null)} onStartUnit={setLessonUnit} onOpenShop={() => setShowShop(true)} onOpenWater={() => setShowWater(true)} />
       )}
       {tab === 'garden' && <GardenScreen tab={tab} onTabChange={setTab} completed={completed} onOpenTales={() => setShowTales(true)} />}
       {tab === 'words' && <WordsScreen tab={tab} onTabChange={setTab} />}
