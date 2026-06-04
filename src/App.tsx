@@ -17,6 +17,7 @@ import InsightsScreen from './screens/InsightsScreen';
 import TalesScreen from './screens/TalesScreen';
 import SettingsScreen from './screens/SettingsScreen';
 import OnboardingSplash from './screens/OnboardingSplash';
+import ComebackScreen from './screens/ComebackScreen';
 import Modal from './components/Modal';
 import { loadCompleted, saveCompleted } from './state/progress';
 import { firstUnlockedUnit, hud, sectionCompletedByUnit } from './data/course';
@@ -59,6 +60,18 @@ export default function App() {
   const [onboarded, setOnboarded] = useState(() => {
     try { return localStorage.getItem('sprout.onboarded') === '1'; } catch { return false; }
   });
+  const [showComeback, setShowComeback] = useState(false);
+  // Warm "welcome back" when returning after a gap (>18h). Best-effort, once.
+  useEffect(() => {
+    try {
+      const KEY = 'sprout.lastVisit';
+      const last = Number(localStorage.getItem(KEY) || '0');
+      const now = Date.now();
+      if (onboarded && last && now - last > 18 * 3600 * 1000) setShowComeback(true);
+      localStorage.setItem(KEY, String(now));
+    } catch { /* ignore */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Finishing a lesson marks its unit complete → the next unit unlocks.
   function completeLesson() {
@@ -93,6 +106,14 @@ export default function App() {
             setOnboarded(true);
           }}
         />
+      </div>
+    );
+  }
+
+  if (showComeback) {
+    return (
+      <div className="app">
+        <ComebackScreen onContinue={() => setShowComeback(false)} />
       </div>
     );
   }
