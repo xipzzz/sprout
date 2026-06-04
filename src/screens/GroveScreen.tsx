@@ -1,15 +1,17 @@
 /* GroveScreen — a calm, cooperative grove: a few people grow a shared garden.
-   No ranks, no loss framing. A friendly leaderboard is opt-in (Settings). */
+   No ranks, no loss framing. A friendly leaderboard is opt-in (Settings).
+   "You" reflects your real earned leaves; the rest of the grove is sample data. */
 
 import TabBar, { type TabKey } from '../components/TabBar';
+import { leavesFor } from '../data/course';
 
 interface GroveScreenProps {
   tab: TabKey;
   onTabChange: (tab: TabKey) => void;
+  completed: string[];
 }
 
-const members = [
-  { id: 'you', name: 'You', emoji: '🌱', leaves: 34 },
+const FRIENDS = [
   { id: 'm1', name: 'Mia', emoji: '🌼', leaves: 52 },
   { id: 'm2', name: 'Leo', emoji: '🌿', leaves: 41 },
   { id: 'm3', name: 'Ava', emoji: '🌸', leaves: 28 },
@@ -17,7 +19,8 @@ const members = [
 ];
 const GOAL = 250;
 
-export default function GroveScreen({ tab, onTabChange }: GroveScreenProps) {
+export default function GroveScreen({ tab, onTabChange, completed }: GroveScreenProps) {
+  const members = [{ id: 'you', name: 'You', emoji: '🌱', leaves: leavesFor(completed) }, ...FRIENDS];
   const total = members.reduce((sum, m) => sum + m.leaves, 0);
   const pct = Math.min(100, Math.round((total / GOAL) * 100));
 
@@ -25,7 +28,7 @@ export default function GroveScreen({ tab, onTabChange }: GroveScreenProps) {
     <div className="screen grove">
       <header className="grove__head">
         <h1>Grove</h1>
-        <p>You + {members.length - 1} friends growing a shared garden 🌳</p>
+        <p>You + {FRIENDS.length} friends growing a shared garden 🌳</p>
       </header>
 
       <main className="screen__body">
