@@ -1134,6 +1134,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .insights__card { margin-top: var(--s5); padding: var(--s5); background: var(--surface); border-radius: var(--r-lg); box-shadow: var(--shadow-sm); }
 .insights__card-title { margin: 0 0 var(--s4); font-size: var(--fs-h2); font-weight: 800; color: var(--ink); }
 .insights__chart { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--s2); height: 140px; }
+.insights__empty { margin: var(--s5) 0; text-align: center; color: var(--ink-muted); font-weight: 600; line-height: 1.5; }
 .insights__bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; }
 .insights__bar-track { flex: 1; width: 100%; display: flex; align-items: flex-end; }
 .insights__bar { width: 60%; margin: 0 auto; min-height: 6px; background: var(--green); border-radius: var(--r-pill); transition: height var(--dur) var(--ease); }

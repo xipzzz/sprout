@@ -3,22 +3,21 @@
 
 import Pip from '../components/Pip';
 import { hud } from '../data/course';
+import { practiceWeek, hasPractice } from '../state/practice';
 
 interface InsightsScreenProps {
   onBack: () => void;
   completed: string[];
 }
 
-// A gentle representative week of leaves earned (Mon→Sun, today last).
-const WEEK = [3, 5, 2, 6, 4, 7, 5];
-const DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-
 export default function InsightsScreen({ onBack, completed }: InsightsScreenProps) {
   const units = completed.length;
   const words = units * 4; // rough estimate until per-unit vocab is tracked
-  const weekTotal = WEEK.reduce((a, b) => a + b, 0);
-  const best = Math.max(...WEEK);
-  const max = Math.max(...WEEK, 1);
+  const week = practiceWeek(); // real last-7-days leaves
+  const has = hasPractice();
+  const weekTotal = week.reduce((a, b) => a + b.value, 0);
+  const best = Math.max(...week.map((d) => d.value));
+  const max = Math.max(...week.map((d) => d.value), 1);
 
   const stats = [
     { icon: '📖', num: words, label: 'Words grown' },
@@ -52,19 +51,23 @@ export default function InsightsScreen({ onBack, completed }: InsightsScreenProp
 
         <section className="insights__card">
           <h2 className="insights__card-title">This week</h2>
-          <div className="insights__chart" role="img" aria-label={`Leaves earned each day this week, ${weekTotal} in total`}>
-            {WEEK.map((v, i) => (
-              <div key={i} className="insights__bar-col">
-                <div className="insights__bar-track">
-                  <div
-                    className={`insights__bar${v === best ? ' insights__bar--best' : ''}`}
-                    style={{ height: `${Math.round((v / max) * 100)}%` }}
-                  />
+          {has ? (
+            <div className="insights__chart" role="img" aria-label={`Leaves earned each day this week, ${weekTotal} in total`}>
+              {week.map((d, i) => (
+                <div key={i} className="insights__bar-col">
+                  <div className="insights__bar-track">
+                    <div
+                      className={`insights__bar${d.value > 0 && d.value === best ? ' insights__bar--best' : ''}`}
+                      style={{ height: `${Math.round((d.value / max) * 100)}%` }}
+                    />
+                  </div>
+                  <span className="insights__bar-day">{d.label}</span>
                 </div>
-                <span className="insights__bar-day">{DAYS[i]}</span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <p className="insights__empty">Your week starts growing here as you practice. 🌱</p>
+          )}
         </section>
 
         <div className="insights__note">
