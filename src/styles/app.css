@@ -143,6 +143,13 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .today .today__pip { width: 58px; height: 58px; flex: none; }
 .today__cta { width: 100%; margin-top: var(--s4); background: #fff; color: var(--green-deep); box-shadow: 0 4px 0 rgba(0,0,0,.12); }
 .today__cta:active { box-shadow: 0 1px 0 rgba(0,0,0,.12); }
+/* Today card — a gentle daily checklist that closes out live */
+.today__checklist { list-style: none; margin: var(--s4) 0 0; padding: 0; display: flex; flex-direction: column; gap: var(--s2); }
+.today__task { display: flex; align-items: center; gap: var(--s3); width: 100%; padding: 9px 11px; border-radius: var(--r-md); background: rgba(255, 255, 255, 0.16); color: #fff; font-weight: 700; text-align: left; transition: background var(--dur) var(--ease); }
+.today__task:active { background: rgba(255, 255, 255, 0.24); }
+.today__check { width: 22px; height: 22px; flex: none; display: grid; place-items: center; border-radius: 50%; background: rgba(255, 255, 255, 0.28); color: #fff; font-weight: 900; font-size: 0.8rem; line-height: 1; }
+.today__task--done .today__check { background: #fff; color: var(--green-deep); }
+.today__task--done .today__task-label { text-decoration: line-through; opacity: 0.8; }
 
 /* ============================================================
    Winding path — a vine of lesson nodes
