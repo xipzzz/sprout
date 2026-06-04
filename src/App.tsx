@@ -214,7 +214,7 @@ export default function App() {
       )}
       {tab === 'garden' && <GardenScreen tab={tab} onTabChange={setTab} completed={completed} onOpenTales={() => setShowTales(true)} />}
       {tab === 'words' && <WordsScreen tab={tab} onTabChange={setTab} />}
-      {tab === 'grove' && <GroveScreen tab={tab} onTabChange={setTab} />}
+      {tab === 'grove' && <GroveScreen tab={tab} onTabChange={setTab} completed={completed} />}
       {tab === 'me' && <MeScreen tab={tab} onTabChange={setTab} completed={completed} onOpenStreak={() => setShowStreak(true)} onOpenQuests={() => setShowQuests(true)} onOpenCustomize={() => setShowCustomize(true)} onOpenInvite={() => setShowInvite(true)} onOpenInsights={() => setShowInsights(true)} onOpenSettings={() => setShowSettings(true)} />}
 
       {showWater && (
