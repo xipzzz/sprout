@@ -2,7 +2,7 @@
    5 sections, each with 7–8 unit nodes (plus a Golden Bloom milestone).
    Statuses are derived live from the learner's progress. */
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import HUD from '../components/HUD';
 import SectionBanner from '../components/SectionBanner';
 import WindingPath from '../components/WindingPath';
@@ -39,6 +39,17 @@ function sectionNodes(section: Section): PathNode[] {
   return nodes;
 }
 
+/* A gentle daily plan on the Today card — checks off live, resets each day.
+   No penalty for unfinished items; it's an invitation, not a chore. */
+const TODAY_TASKS = [
+  { id: 'lesson', label: 'Tend a lesson' },
+  { id: 'tale', label: 'Read a Garden Tale' },
+  { id: 'garden', label: 'Visit your garden' },
+];
+function loadTodayDone(key: string): string[] {
+  try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch { return []; }
+}
+
 export default function HomeScreen({ completed, focusTarget, onFocusSettled, onStartUnit, onOpenShop, onOpenWater, tab, onTabChange }: HomeScreenProps) {
   const sections = courseWithProgress(completed);
 
@@ -46,6 +57,14 @@ export default function HomeScreen({ completed, focusTarget, onFocusSettled, onS
   const currentId = firstUnlockedUnit(completed);
   const allUnits = sections.flatMap((s) => s.units.map((u) => ({ id: u.id, title: u.title, section: s.title })));
   const current = allUnits.find((u) => u.id === currentId);
+
+  const todayKey = `sprout.today.${new Date().toDateString()}`;
+  const [doneTasks, setDoneTasks] = useState<string[]>(() => loadTodayDone(todayKey));
+  function toggleTask(id: string) {
+    const next = doneTasks.includes(id) ? doneTasks.filter((x) => x !== id) : [...doneTasks, id];
+    setDoneTasks(next);
+    try { localStorage.setItem(todayKey, JSON.stringify(next)); } catch { /* ignore */ }
+  }
 
   useEffect(() => {
     if (!focusTarget) return;
@@ -85,6 +104,24 @@ export default function HomeScreen({ completed, focusTarget, onFocusSettled, onS
           >
             {current ? "Start today's lesson" : 'Practice a lesson'}
           </button>
+          <ul className="today__checklist" aria-label="Today's plan">
+            {TODAY_TASKS.map((t) => {
+              const checked = doneTasks.includes(t.id);
+              return (
+                <li key={t.id}>
+                  <button
+                    type="button"
+                    className={`today__task${checked ? ' today__task--done' : ''}`}
+                    aria-pressed={checked}
+                    onClick={() => toggleTask(t.id)}
+                  >
+                    <span className="today__check" aria-hidden="true">{checked ? '✓' : ''}</span>
+                    <span className="today__task-label">{t.label}</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
         </section>
 
         {sections.map((section) => (
