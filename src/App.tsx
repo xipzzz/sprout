@@ -23,7 +23,9 @@ import Modal from './components/Modal';
 import Pip from './components/Pip';
 import { loadCompleted, saveCompleted } from './state/progress';
 import { recordPractice } from './state/practice';
+import { markTodayDone } from './state/today';
 import { firstUnlockedUnit, getLesson, hud, sectionCompletedByUnit } from './data/course';
+import { playSproutFeedback } from './utils/feedback';
 
 export default function App() {
   const [tab, setTab] = useState<TabKey>('learn');
@@ -78,6 +80,8 @@ export default function App() {
     } catch { /* ignore */ }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  // Visiting the Garden tab auto-ticks the Today checklist's 'garden' task.
+  useEffect(() => { if (tab === 'garden') markTodayDone('garden'); }, [tab]);
 
   // Finishing a lesson marks its unit complete → the next unit unlocks.
   function completeLesson() {
@@ -88,8 +92,11 @@ export default function App() {
       setCompleted(next);
       saveCompleted(next);
       recordPractice(getLesson(unit).reward); // log today's leaves for the weekly chart
+      markTodayDone('lesson'); // auto-tick the Today checklist + the daily Quest
+      playSproutFeedback('gardenGrowth');
       setPendingPathFocus(firstUnlockedUnit(next) ?? null);
-      if (next.length === 1) {
+      const isFirstPlayableLesson = completed.length <= 1 && next.length <= 2;
+      if (isFirstPlayableLesson) {
         try {
           const accountSeen = localStorage.getItem('sprout.accountGateSeen') === '1';
           if (!accountSeen) {
@@ -238,7 +245,7 @@ export default function App() {
   return (
     <div className="app">
       {tab === 'learn' && (
-        <HomeScreen tab={tab} onTabChange={setTab} completed={completed} focusTarget={pendingPathFocus} onFocusSettled={() => setPendingPathFocus(null)} onStartUnit={setLessonUnit} onOpenShop={() => setShowShop(true)} onOpenWater={() => setShowWater(true)} />
+        <HomeScreen tab={tab} onTabChange={setTab} completed={completed} focusTarget={pendingPathFocus} onFocusSettled={() => setPendingPathFocus(null)} onStartUnit={setLessonUnit} onOpenShop={() => setShowShop(true)} onOpenWater={() => { playSproutFeedback('waterOpen'); setShowWater(true); }} />
       )}
       {tab === 'garden' && <GardenScreen tab={tab} onTabChange={setTab} completed={completed} onOpenTales={() => setShowTales(true)} />}
       {tab === 'words' && <WordsScreen tab={tab} onTabChange={setTab} />}
@@ -246,17 +253,17 @@ export default function App() {
       {tab === 'me' && <MeScreen tab={tab} onTabChange={setTab} completed={completed} onOpenStreak={() => setShowStreak(true)} onOpenQuests={() => setShowQuests(true)} onOpenCustomize={() => setShowCustomize(true)} onOpenInvite={() => setShowInvite(true)} onOpenInsights={() => setShowInsights(true)} onOpenSettings={() => setShowSettings(true)} />}
 
       {showWater && (
-        <Modal onClose={() => setShowWater(false)}>
+        <Modal onClose={() => { playSproutFeedback('modalClose'); setShowWater(false); }}>
           <div className="wmodal">
             <span className="wmodal__icon" aria-hidden="true">💧</span>
             <h2 className="wmodal__title">Water</h2>
             <p className="wmodal__body">
               Water powers your lessons — you have {hud.water} left. Each lesson uses one drop, and it refills over time.
             </p>
-            <button type="button" className="btn-primary" onClick={() => { setShowWater(false); setShowShop(true); }}>
+            <button type="button" className="btn-primary" onClick={() => { playSproutFeedback('modalClose'); setShowWater(false); setShowShop(true); }}>
               Top up in the Shop
             </button>
-            <button type="button" className="wmodal__dismiss" onClick={() => setShowWater(false)}>Maybe later</button>
+            <button type="button" className="wmodal__dismiss" onClick={() => { playSproutFeedback('modalClose'); setShowWater(false); }}>Maybe later</button>
           </div>
         </Modal>
       )}
