@@ -3,7 +3,7 @@
 
 import TabBar, { type TabKey } from '../components/TabBar';
 import Pip from '../components/Pip';
-import { leavesFor } from '../data/course';
+import { leavesFor, wordsGrown } from '../data/course';
 
 interface MeScreenProps {
   tab: TabKey;
@@ -29,7 +29,7 @@ const links = [
 
 export default function MeScreen({ tab, onTabChange, completed, onOpenStreak, onOpenQuests, onOpenCustomize, onOpenInvite, onOpenInsights, onOpenSettings }: MeScreenProps) {
   const units = completed.length;
-  const words = units * 4; // rough estimate until per-unit vocab is tracked
+  const words = wordsGrown(completed); // real unique vocab from completed units
 
   return (
     <div className="screen me">

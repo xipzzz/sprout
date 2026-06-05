@@ -2,7 +2,7 @@
    no "you're behind" — just a gentle picture of how the garden is growing. */
 
 import Pip from '../components/Pip';
-import { hud } from '../data/course';
+import { hud, wordsGrown } from '../data/course';
 import { practiceWeek, hasPractice } from '../state/practice';
 
 interface InsightsScreenProps {
@@ -12,7 +12,7 @@ interface InsightsScreenProps {
 
 export default function InsightsScreen({ onBack, completed }: InsightsScreenProps) {
   const units = completed.length;
-  const words = units * 4; // rough estimate until per-unit vocab is tracked
+  const words = wordsGrown(completed); // real unique vocab from completed units
   const week = practiceWeek(); // real last-7-days leaves
   const has = hasPractice();
   const weekTotal = week.reduce((a, b) => a + b.value, 0);
