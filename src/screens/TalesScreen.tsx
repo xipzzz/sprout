@@ -2,10 +2,11 @@
    page-by-page reader, and a gentle "Tale complete" moment. One component,
    three views (library → reader → complete) driven by local state. */
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Pip from '../components/Pip';
 import { tales, type Tale } from '../data/tales';
 import { markTaleRead, talesRead } from '../state/tales';
+import { markTodayDone } from '../state/today';
 
 interface TalesScreenProps {
   onBack: () => void;
@@ -27,16 +28,15 @@ export default function TalesScreen({ onBack }: TalesScreenProps) {
 
   function openTale(t: Tale) { setSelected(t); setPage(0); }
   function closeTale() { setSelected(null); setPage(0); }
+  function finishTale() {
+    if (!selected) return;
+    markTaleRead(selected.id);
+    setRead(talesRead());
+    markTodayDone('tale'); // auto-tick the Today checklist for reading a tale
+    setPage(selected.pages.length);
+  }
 
-  // When the reader hits the end, record the tale as read.
-  useEffect(() => {
-    if (selected && page >= selected.pages.length) {
-      markTaleRead(selected.id);
-      setRead(talesRead());
-    }
-  }, [selected, page]);
-
-  // ---- Library ----
+  // Library
   if (!selected) {
     return (
       <div className="screen tales">
@@ -111,7 +111,7 @@ export default function TalesScreen({ onBack }: TalesScreenProps) {
         <button type="button" className="tale-read__back" onClick={() => setPage((n) => Math.max(0, n - 1))} disabled={page === 0}>
           Back
         </button>
-        <button type="button" className="btn-primary tale-read__next" onClick={() => setPage((n) => n + 1)}>
+        <button type="button" className="btn-primary tale-read__next" onClick={() => { if (last) finishTale(); else setPage((n) => n + 1); }}>
           {last ? 'Finish' : 'Next'}
         </button>
       </footer>
