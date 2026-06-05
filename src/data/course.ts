@@ -1682,6 +1682,21 @@ export function leavesFor(completed: string[]): number {
   return completed.reduce((sum, id) => sum + getLesson(id).reward, 0);
 }
 
+/** Real "words grown": the count of unique vocabulary words introduced by all
+    completed units' lessons (picture choices + match pairs). Honest count, not
+    a units×N estimate. */
+export function wordsGrown(completed: string[]): number {
+  const seen = new Set<string>();
+  for (const id of completed) {
+    const l = getLesson(id);
+    for (const ex of l.exercises) {
+      if (ex.kind === 'choice') for (const c of ex.choices) seen.add(c.label.toLowerCase());
+      else if (ex.kind === 'match') for (const p of ex.pairs) seen.add(p.word.toLowerCase());
+    }
+  }
+  return seen.size;
+}
+
 /* ---------------- Vocabulary ----------------
    Derived from the authored lessons so the Words hub always reflects real
    content (and grows automatically as more lessons are added). Only words
