@@ -150,6 +150,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .today__check { width: 22px; height: 22px; flex: none; display: grid; place-items: center; border-radius: 50%; background: rgba(255, 255, 255, 0.28); color: #fff; font-weight: 900; font-size: 0.8rem; line-height: 1; }
 .today__task--done .today__check { background: #fff; color: var(--green-deep); }
 .today__task--done .today__task-label { text-decoration: line-through; opacity: 0.8; }
+.today__alldone { margin: var(--s3) 0 0; text-align: center; color: #fff; font-weight: 800; font-size: var(--fs-caption); opacity: 0.92; }
 
 /* ============================================================
    Winding path — a vine of lesson nodes
