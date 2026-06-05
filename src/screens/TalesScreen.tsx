@@ -2,9 +2,10 @@
    page-by-page reader, and a gentle "Tale complete" moment. One component,
    three views (library → reader → complete) driven by local state. */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Pip from '../components/Pip';
 import { tales, type Tale } from '../data/tales';
+import { markTaleRead, talesRead } from '../state/tales';
 
 interface TalesScreenProps {
   onBack: () => void;
@@ -22,9 +23,18 @@ function BackIcon() {
 export default function TalesScreen({ onBack }: TalesScreenProps) {
   const [selected, setSelected] = useState<Tale | null>(null);
   const [page, setPage] = useState(0);
+  const [read, setRead] = useState<Set<string>>(() => talesRead());
 
   function openTale(t: Tale) { setSelected(t); setPage(0); }
   function closeTale() { setSelected(null); setPage(0); }
+
+  // When the reader hits the end, record the tale as read.
+  useEffect(() => {
+    if (selected && page >= selected.pages.length) {
+      markTaleRead(selected.id);
+      setRead(talesRead());
+    }
+  }, [selected, page]);
 
   // ---- Library ----
   if (!selected) {
@@ -35,20 +45,24 @@ export default function TalesScreen({ onBack }: TalesScreenProps) {
           <h1 className="streak__title">Garden Tales</h1>
         </header>
         <main className="screen__body tales__body">
-          <p className="tales__intro">Short stories to read together. 🌿</p>
+          <p className="tales__intro">Short stories to read together. 🌿 <span className="tales__count">{read.size} of {tales.length} read</span></p>
           <ul className="tales__list">
-            {tales.map((t) => (
-              <li key={t.id}>
-                <button type="button" className="tale-card" onClick={() => openTale(t)}>
-                  <span className="tale-card__cover" aria-hidden="true">{t.cover}</span>
-                  <span className="tale-card__text">
-                    <span className="tale-card__title">{t.title}</span>
-                    <span className="tale-card__blurb">{t.blurb}</span>
-                  </span>
-                  <span className="tale-card__chev" aria-hidden="true">›</span>
-                </button>
-              </li>
-            ))}
+            {tales.map((t) => {
+              const done = read.has(t.id);
+              return (
+                <li key={t.id}>
+                  <button type="button" className={`tale-card${done ? ' tale-card--done' : ''}`} onClick={() => openTale(t)} aria-label={`${t.title}${done ? ' — read' : ''}`}>
+                    <span className="tale-card__cover" aria-hidden="true">{t.cover}</span>
+                    <span className="tale-card__text">
+                      <span className="tale-card__title">{t.title}</span>
+                      <span className="tale-card__blurb">{t.blurb}</span>
+                    </span>
+                    {done && <span className="tale-card__read" aria-hidden="true">✓</span>}
+                    <span className="tale-card__chev" aria-hidden="true">›</span>
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         </main>
       </div>

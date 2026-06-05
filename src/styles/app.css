@@ -158,18 +158,6 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   position: relative;
   padding: var(--s8) 0 var(--s12);
 }
-/* the soft central "vine" */
-.path::before {
-  content: "";
-  position: absolute;
-  top: var(--s6); bottom: var(--s8);
-  left: 50%;
-  width: 5px;
-  transform: translateX(-50%);
-  background: var(--green-tint-2);
-  border-radius: 999px;
-  opacity: .7;
-}
 .path__nodes {
   position: relative;
   display: flex;
@@ -1163,6 +1151,9 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .tale-card__title { font-weight: 800; color: var(--ink); }
 .tale-card__blurb { font-size: var(--fs-caption); font-weight: 600; color: var(--ink-muted); }
 .tale-card__chev { font-size: 1.5rem; color: var(--ink-soft); font-weight: 800; }
+.tale-card__read { width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; background: var(--green); color: #fff; font-size: 0.8rem; font-weight: 900; line-height: 1; margin-right: var(--s1); }
+.tale-card--done .tale-card__title { color: var(--green-deep); }
+.tales__count { display: inline-block; margin-left: var(--s2); padding: 2px 9px; border-radius: var(--r-pill); background: var(--green-tint); color: var(--green-deep); font-size: var(--fs-caption); font-weight: 800; }
 
 .tale-read__dots { display: flex; justify-content: center; gap: 7px; padding: var(--s3) 0 var(--s1); }
 .tale-read__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green-tint-2); transition: transform var(--dur) var(--ease), background var(--dur); }
