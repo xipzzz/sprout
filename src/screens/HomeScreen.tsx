@@ -10,6 +10,7 @@ import TabBar, { type TabKey } from '../components/TabBar';
 import Pip from '../components/Pip';
 import { courseWithProgress, firstUnlockedUnit, hud, leavesFor } from '../data/course';
 import type { PathNode, Section } from '../data/course';
+import { playSproutFeedback } from '../utils/feedback';
 
 interface HomeScreenProps {
   completed: string[];
@@ -64,6 +65,7 @@ export default function HomeScreen({ completed, focusTarget, onFocusSettled, onS
     const next = doneTasks.includes(id) ? doneTasks.filter((x) => x !== id) : [...doneTasks, id];
     setDoneTasks(next);
     try { localStorage.setItem(todayKey, JSON.stringify(next)); } catch { /* ignore */ }
+    if (!doneTasks.includes(id)) playSproutFeedback('gardenGrowth');
   }
 
   useEffect(() => {
@@ -122,6 +124,9 @@ export default function HomeScreen({ completed, focusTarget, onFocusSettled, onS
               );
             })}
           </ul>
+          {doneTasks.length >= TODAY_TASKS.length && (
+            <p className="today__alldone" role="status">All done for today 🌱 — rest if you like.</p>
+          )}
         </section>
 
         {sections.map((section) => (
