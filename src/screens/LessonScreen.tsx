@@ -3,7 +3,7 @@
    Handles multiple exercise kinds (choice, arrange). Calm: a wrong answer
    teaches kindly and you move on — no lives lost. */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { getLesson } from '../data/course';
 import type { Exercise } from '../data/course';
 import MultipleChoice from '../components/MultipleChoice';
@@ -14,11 +14,13 @@ import ListenType from '../components/ListenType';
 import FeedbackDrawer from '../components/FeedbackDrawer';
 import LessonComplete from '../components/LessonComplete';
 import Pip from '../components/Pip';
+import { playSproutFeedback } from '../utils/feedback';
 
 interface LessonScreenProps {
   onExit: () => void;
   onComplete: () => void;
   unitId: string | null;
+  firstLesson?: boolean;
 }
 
 type Phase = 'answering' | 'feedback' | 'complete';
@@ -39,7 +41,7 @@ function isCorrect(ex: Exercise, a: Answer): boolean {
   return true; // match: completing it means every pair was matched correctly
 }
 
-export default function LessonScreen({ onExit, onComplete, unitId }: LessonScreenProps) {
+export default function LessonScreen({ onExit, onComplete, unitId, firstLesson }: LessonScreenProps) {
   const lesson = getLesson(unitId);
   const exercises = lesson.exercises;
   const total = exercises.length;
@@ -53,13 +55,14 @@ export default function LessonScreen({ onExit, onComplete, unitId }: LessonScree
 
   const ex = exercises[index];
 
-  const check = useCallback(() => {
+  function check() {
     if (!isComplete(ex, answer)) return;
     const ok = isCorrect(ex, answer);
     setResult(ok ? 'correct' : 'wrong');
     if (ok) setCorrectCount((c) => c + 1);
+    if (ok) playSproutFeedback('correct');
     setPhase('feedback');
-  }, [answer, ex]);
+  }
 
   useEffect(() => {
     if (phase !== 'answering' || !isComplete(ex, answer)) return;
@@ -72,15 +75,21 @@ export default function LessonScreen({ onExit, onComplete, unitId }: LessonScree
       if (!isSubmitKey) return;
 
       event.preventDefault();
-      check();
+      if (!isComplete(ex, answer)) return;
+      const ok = isCorrect(ex, answer);
+      setResult(ok ? 'correct' : 'wrong');
+      if (ok) setCorrectCount((c) => c + 1);
+      if (ok) playSproutFeedback('correct');
+      setPhase('feedback');
     }
 
     window.addEventListener('keydown', submitFromKeyboard, { capture: true });
     return () => window.removeEventListener('keydown', submitFromKeyboard, { capture: true });
-  }, [answer, check, ex, phase]);
+  }, [answer, ex, phase]);
 
   function next() {
     if (index + 1 >= total) {
+      playSproutFeedback('complete');
       setPhase('complete');
     } else {
       setIndex((i) => i + 1);
@@ -91,11 +100,16 @@ export default function LessonScreen({ onExit, onComplete, unitId }: LessonScree
 
   if (phase === 'complete') {
     const accuracy = Math.round((correctCount / total) * 100);
+    // Pull the actual vocab words taught by this lesson (choice exercises' word field)
+    const learnedWords = Array.from(new Set(
+      exercises.flatMap((e) => (e.kind === 'choice' ? [e.word] : []))
+    )).slice(0, 8);
     return (
       <LessonComplete
         leaves={lesson.reward}
         accuracy={accuracy}
-        words={total}
+        words={learnedWords}
+        firstLesson={firstLesson}
         onContinue={onComplete}
       />
     );
@@ -104,7 +118,7 @@ export default function LessonScreen({ onExit, onComplete, unitId }: LessonScree
   return (
     <div className="screen lesson">
       <header className="lesson__top">
-        <button type="button" className="lesson__close" onClick={() => setConfirmQuit(true)} aria-label="Close lesson">
+        <button type="button" className="lesson__close" onClick={() => { playSproutFeedback('modalOpen'); setConfirmQuit(true); }} aria-label="Close lesson">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor"
                strokeWidth="2.4" strokeLinecap="round">
             <path d="M6 6l12 12M18 6L6 18" />
@@ -133,8 +147,8 @@ export default function LessonScreen({ onExit, onComplete, unitId }: LessonScree
             <Pip className="quit__pip" />
             <h2 className="quit__title">Leave the lesson?</h2>
             <p className="quit__sub">Your sprout keeps what you've grown so far. 🌱</p>
-            <button type="button" className="btn-primary quit__stay" onClick={() => setConfirmQuit(false)}>Keep going</button>
-            <button type="button" className="quit__leave" onClick={onExit}>Leave for now</button>
+            <button type="button" className="btn-primary quit__stay" onClick={() => { playSproutFeedback('modalClose'); setConfirmQuit(false); }}>Keep going</button>
+            <button type="button" className="quit__leave" onClick={() => { playSproutFeedback('modalClose'); onExit(); }}>Leave for now</button>
           </div>
         </div>
       )}
