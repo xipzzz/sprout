@@ -839,6 +839,270 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .welcome .splash__cta { align-self: center; margin-top: var(--s4); }
 
 /* ============================================================
+   Onboarding v2 — garden-themed 5-segment flow
+   (welcome → audience → [reassure if child] → grow → ready)
+   ============================================================ */
+.ob {
+  display: flex; flex-direction: column;
+  background: var(--bg);
+  min-height: 100dvh;
+}
+.ob__chrome {
+  display: flex; align-items: center; gap: var(--s3);
+  padding: calc(var(--s4) + env(safe-area-inset-top)) var(--s5) var(--s2);
+  flex-shrink: 0;
+}
+.ob__back {
+  width: 32px; height: 32px;
+  display: grid; place-items: center;
+  color: var(--ink-muted);
+  background: transparent; border: none; padding: 0;
+}
+.ob__progress { flex: 1; }
+.ob__step {
+  margin: 0 0 5px;
+  font-size: var(--fs-eyebrow);
+  font-weight: 900;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.ob__bars { display: flex; gap: 6px; }
+.ob__bar {
+  flex: 1; height: 9px;
+  border-radius: 5px;
+  background: var(--bg-soft);
+  overflow: hidden;
+}
+.ob__bar-fill {
+  display: block; height: 100%;
+  background: var(--green);
+  transition: width 0.35s var(--ease);
+}
+.ob__body {
+  flex: 1;
+  display: flex; flex-direction: column;
+  padding: var(--s3) var(--s5) 0;
+  overflow: auto;
+}
+.ob__welcome {
+  flex: 1;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center;
+  gap: var(--s2);
+  padding: 0 var(--s3);
+}
+.ob__pip-wrap { position: relative; }
+.ob__pip-spark {
+  position: absolute; top: -6px; right: -10px;
+  font-size: 1.9rem;
+}
+.ob__pip-xl { width: 140px; height: 140px; }
+.ob__pip-md { width: 76px; height: 76px; flex-shrink: 0; }
+.ob__title-big {
+  margin: var(--s4) 0 0;
+  font-size: var(--fs-display);
+  font-weight: 900;
+  line-height: 1.15;
+  color: var(--ink);
+}
+.ob__lead {
+  margin: var(--s2) 0 0;
+  max-width: 284px;
+  font-size: var(--fs-body);
+  font-weight: 700;
+  color: var(--ink-muted);
+  line-height: 1.4;
+}
+.ob__title {
+  margin: 2px 0 0;
+  font-size: var(--fs-h1);
+  font-weight: 900;
+  color: var(--ink);
+  line-height: 1.15;
+}
+.ob__eyebrow {
+  margin: 0;
+  font-size: var(--fs-eyebrow);
+  font-weight: 900;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--green-deep);
+}
+.ob__hint {
+  margin: -8px var(--s1) var(--s3);
+  font-size: var(--fs-caption);
+  font-weight: 700;
+  color: var(--ink-muted);
+}
+.ob__pace {
+  margin-top: var(--s5);
+  padding: var(--s3) var(--s5);
+  background: var(--green-tint);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: 0 3px 0 var(--green-tint-2);
+}
+.ob__pace-lbl {
+  margin: 0;
+  font-size: var(--fs-caption);
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.ob__pace-val {
+  margin: 2px 0 0;
+  font-size: 1.125rem;
+  font-weight: 900;
+  color: var(--green-deep);
+}
+.ob__pace-hint {
+  margin: 2px 0 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--ink-muted);
+}
+
+/* Reassure ("for grown-ups") */
+.ob__reassure { padding-top: var(--s2); }
+.ob__reassure-head {
+  display: flex; align-items: center;
+  gap: var(--s3);
+  margin-bottom: var(--s5);
+}
+
+/* Pip speech bubble (used on question screens) */
+.ob-bubble {
+  display: flex; align-items: flex-end;
+  gap: 10px;
+  margin-bottom: var(--s5);
+}
+.ob-bubble__pip { width: 76px; height: 76px; flex-shrink: 0; }
+.ob-bubble__msg {
+  position: relative;
+  flex: 1;
+  padding: 12px 15px;
+  background: var(--surface);
+  border: 2px solid var(--line);
+  border-radius: 16px;
+  box-shadow: 0 2px 0 var(--line);
+  font-size: var(--fs-body);
+  font-weight: 800;
+  color: var(--ink);
+  line-height: 1.35;
+}
+.ob-bubble__msg::before {
+  content: "";
+  position: absolute;
+  left: -8px; bottom: 13px;
+  width: 14px; height: 14px;
+  background: var(--surface);
+  border-left: 2px solid var(--line);
+  border-bottom: 2px solid var(--line);
+  transform: rotate(45deg);
+}
+
+/* Big tappable option card */
+.ob-opt {
+  width: 100%;
+  display: flex; align-items: center;
+  gap: 13px;
+  padding: 14px 15px;
+  margin: 0 0 10px;
+  background: var(--surface);
+  border: 2px solid var(--line);
+  border-radius: 16px;
+  box-shadow: 0 2px 0 var(--line);
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+.ob-opt--on {
+  background: var(--green-tint);
+  border-color: var(--green);
+  box-shadow: 0 3px 0 var(--green-tint-2);
+}
+.ob-opt__icon {
+  width: 44px; height: 44px;
+  display: grid; place-items: center;
+  background: var(--bg-soft);
+  border-radius: 12px;
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+.ob-opt--on .ob-opt__icon { background: var(--surface); }
+.ob-opt__text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.ob-opt__title { font-size: var(--fs-body); font-weight: 900; color: var(--ink); }
+.ob-opt__sub { font-size: 0.78rem; font-weight: 700; color: var(--ink-muted); margin-top: 1px; }
+.ob-opt__dot {
+  width: 24px; height: 24px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  border: 2px solid var(--bg-soft);
+  background: transparent;
+  color: #fff;
+  font-weight: 900;
+  font-size: 0.78rem;
+  flex-shrink: 0;
+}
+.ob-opt--on .ob-opt__dot { background: var(--green); border-color: var(--green); }
+
+/* Reassurance point cards */
+.ob-point {
+  display: flex; align-items: flex-start;
+  gap: 11px;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 2px 0 var(--line);
+  margin-bottom: 9px;
+}
+.ob-point__leaf {
+  width: 30px; height: 30px;
+  display: grid; place-items: center;
+  background: var(--green-tint);
+  border-radius: 9px;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+.ob-point__text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.ob-point__title { font-size: 0.91rem; font-weight: 900; color: var(--ink); line-height: 1.2; }
+.ob-point__sub { font-size: 0.78rem; font-weight: 700; color: var(--ink-muted); margin-top: 1px; line-height: 1.35; }
+
+/* Footer with big CTA */
+.ob__foot {
+  flex-shrink: 0;
+  padding: 14px 18px calc(30px + env(safe-area-inset-bottom));
+}
+.ob__cta {
+  width: 100%;
+  padding: 15px 0;
+  background: var(--green);
+  color: #fff;
+  font-family: inherit;
+  font-size: 1.0625rem;
+  font-weight: 900;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+  border: none;
+  border-radius: 16px;
+  box-shadow: 0 4px 0 var(--green-deep);
+  transition: background 0.15s var(--ease), transform 0.15s var(--ease);
+  cursor: pointer;
+}
+.ob__cta:not(:disabled):active { transform: translateY(2px); box-shadow: 0 2px 0 var(--green-deep); }
+.ob__cta:disabled {
+  background: var(--bg-soft);
+  color: var(--ink-muted);
+  box-shadow: none;
+  cursor: default;
+}
+
+/* ============================================================
    Modal (calm bottom sheet)
    ============================================================ */
 .modal-scrim { position: fixed; inset: 0; z-index: 50; display: flex; align-items: flex-end; justify-content: center; background: rgba(42, 35, 32, 0.4); padding: var(--s4); }
