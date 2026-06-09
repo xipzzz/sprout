@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Sprout — Button System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #FDF8EE; --paper: #FFFFFF; --ink: #2A2320; --mute: #857B70;
+    --green: #6FBF5E; --greenDark: #4D9E3F; --greenShadow: #3F7F34;
+    --cream: #F3E8D2; --cream2: #E9DCC0; --sun: #F5B94A; --sunShadow: #D59428;
+    --coral: #F47A7A; --coralDark: #C25048; --sky: #A8D8EA; --line: #E8DFCE;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--ink); font-family: "Nunito", system-ui, sans-serif; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 64px 24px 100px; }
+  .badge { display: inline-flex; align-items: center; gap: 9px; background: #EFF7EA; color: var(--greenDark); font-weight: 900; font-size: 13px; padding: 7px 14px 7px 9px; border-radius: 999px; }
+  .badge .leaf { width: 26px; height: 26px; border-radius: 8px; background: var(--green); display: grid; place-items: center; }
+  h1 { font-size: 44px; font-weight: 900; letter-spacing: -1px; margin: 22px 0 10px; line-height: 1.05; }
+  .lede { font-size: 18px; font-weight: 700; color: var(--mute); max-width: 560px; }
+  .lede em { color: var(--greenDark); font-style: normal; font-weight: 800; }
+  .section-label { font-size: 12px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; color: var(--mute); margin: 56px 0 18px; display: flex; align-items: center; gap: 10px; }
+  .section-label::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+  .tier { background: var(--paper); border: 1px solid var(--line); border-radius: 20px; padding: 22px; box-shadow: 0 2px 0 var(--line); margin-bottom: 16px; }
+  .tier-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 4px; }
+  .tier-head h3 { font-size: 19px; font-weight: 900; }
+  .tier-head .role { font-size: 12px; font-weight: 900; color: var(--greenDark); background: #EFF7EA; padding: 3px 9px; border-radius: 999px; text-transform: uppercase; letter-spacing: .04em; }
+  .tier p { font-size: 14px; font-weight: 600; color: var(--mute); margin-bottom: 18px; max-width: 480px; }
+  .demo { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
+  .demo .col { display: flex; flex-direction: column; align-items: center; gap: 7px; }
+  .demo .state { font-size: 11px; font-weight: 800; color: var(--mute); text-transform: uppercase; letter-spacing: .04em; }
+
+  /* shared pill geometry — ONE shape across all tiers */
+  .btn { position: relative; height: 56px; min-width: 150px; padding: 0 26px; border: none; border-radius: 16px;
+    font-family: inherit; font-weight: 800; font-size: 16px; letter-spacing: .4px; text-transform: uppercase;
+    cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: transform .08s, box-shadow .08s; }
+  .btn:active { transform: translateY(3px); }
+  /* primary — filled green, solid drop shadow */
+  .btn-primary { background: var(--green); color: #fff; box-shadow: 0 5px 0 var(--greenShadow); }
+  .btn-primary:active { box-shadow: 0 2px 0 var(--greenShadow); }
+  .btn-primary.disabled { background: #CFE4C7; color: #fff; box-shadow: 0 5px 0 #BBD4B2; opacity: .8; cursor: default; pointer-events: none; }
+  /* secondary — tonal/outline */
+  .btn-secondary { background: var(--paper); color: var(--greenDark); border: 2px solid var(--line); box-shadow: 0 4px 0 var(--line); }
+  .btn-secondary:active { box-shadow: 0 1px 0 var(--line); }
+  /* tertiary — text only */
+  .btn-tertiary { background: transparent; color: var(--mute); box-shadow: none; height: 48px; }
+  .btn-tertiary:active { transform: none; opacity: .6; }
+  /* destructive — restrained */
+  .btn-danger-text { background: transparent; color: var(--coralDark); box-shadow: none; height: 48px; }
+  .btn-danger-outline { background: var(--paper); color: var(--coralDark); border: 2px solid #F0C9C5; box-shadow: 0 4px 0 #F0C9C5; }
+
+  .rules { background: var(--paper); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; box-shadow: 0 2px 0 var(--line); }
+  .rrow { display: grid; grid-template-columns: 150px 1fr; gap: 14px; padding: 15px 18px; border-bottom: 1px solid var(--line); align-items: baseline; }
+  .rrow:last-child { border-bottom: none; }
+  .rrow .k { font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: .05em; color: var(--mute); }
+  .rrow .v { font-size: 14.5px; font-weight: 700; }
+  .rrow .v .q { color: var(--greenDark); font-weight: 800; }
+  .foot { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--line); font-size: 13px; font-weight: 700; color: var(--mute); }
+  @media (max-width: 600px) { h1 { font-size: 34px; } .rrow { grid-template-columns: 1fr; gap: 4px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="badge"><span class="leaf"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M12 22c0-6 0-9 5-13-1 6-3 9-5 13zM12 22C9 17 5 15 3 9c6 1 8 4 9 13z" fill="#fff"/></svg></span> Sprout · Button System</div>
+  <h1>Buttons</h1>
+  <p class="lede">One shape, three tiers, clear states. <em>Filled green = go, text = gentle, red = careful.</em> Importance is always obvious at a glance.</p>
+
+  <div class="section-label">The three tiers</div>
+
+  <div class="tier">
+    <div class="tier-head"><h3>Primary</h3><span class="role">Filled green pill</span></div>
+    <p>The one main action on a screen — Continue, Check, Start. Full-width green pill with a solid drop shadow that presses down on tap. Only one primary per screen.</p>
+    <div class="demo">
+      <div class="col"><button class="btn btn-primary">Continue</button><span class="state">Enabled</span></div>
+      <div class="col"><button class="btn btn-primary disabled">Check</button><span class="state">Disabled</span></div>
+    </div>
+  </div>
+
+  <div class="tier">
+    <div class="tier-head"><h3>Secondary</h3><span class="role">Tonal / outline</span></div>
+    <p>An alternate action that sits beside the primary — “Review”, “Set up later”, “Keep my garden”. Same pill shape, outlined on paper so it reads as the quieter choice.</p>
+    <div class="demo">
+      <div class="col"><button class="btn btn-secondary">Review</button><span class="state">Enabled</span></div>
+      <div class="col"><button class="btn btn-secondary">Maybe later</button><span class="state">Alternate</span></div>
+    </div>
+  </div>
+
+  <div class="tier">
+    <div class="tier-head"><h3>Tertiary</h3><span class="role">Text only</span></div>
+    <p>The gentlest action — declines and skips in Pip’s calm voice: “No thanks”, “Skip”, “Can’t listen now”. Text only, no container, so it never competes with the primary.</p>
+    <div class="demo">
+      <div class="col"><button class="btn btn-tertiary">No thanks</button><span class="state">Decline</span></div>
+      <div class="col"><button class="btn btn-tertiary">Skip this one</button><span class="state">Skip</span></div>
+    </div>
+  </div>
+
+  <div class="tier">
+    <div class="tier-head"><h3>Destructive</h3><span class="role">Restrained</span></div>
+    <p>Log out, Delete account. Red <em>text</em> or a red <em>outline</em> — never a loud filled-red primary. Reserve filled red only for a final, truly dangerous confirm.</p>
+    <div class="demo">
+      <div class="col"><button class="btn btn-danger-text">Log out</button><span class="state">Red text</span></div>
+      <div class="col"><button class="btn btn-danger-outline">Delete account</button><span class="state">Red outline</span></div>
+    </div>
+  </div>
+
+  <div class="section-label">Rules</div>
+  <div class="rules">
+    <div class="rrow"><div class="k">One shape</div><div class="v">Every button: <span class="q">56px tall, 16px radius, full-width pill</span> (tertiary/text is 48px, no container). No stray sizes.</div></div>
+    <div class="rrow"><div class="k">One primary</div><div class="v">Exactly one filled-green primary per screen — the single most important next step.</div></div>
+    <div class="rrow"><div class="k">Disabled → enabled</div><div class="v">Primary fades (desaturated green) until valid, then snaps to full green. <span class="q">Check</span> is disabled until an answer is chosen.</div></div>
+    <div class="rrow"><div class="k">Press feedback</div><div class="v">Every button presses down (shadow collapses ~3px) on tap; pairs with a light haptic.</div></div>
+    <div class="rrow"><div class="k">Casing & weight</div><div class="v">Primary/secondary labels uppercase + extrabold; tertiary sentence-case. 1–3 words.</div></div>
+    <div class="rrow"><div class="k">Destructive</div><div class="v">Red text/outline only; filled red reserved for a final “Delete forever” confirm.</div></div>
+  </div>
+
+  <div class="foot">🌱 Sprout button system · one shape, three tiers — filled green = go, text = gentle, red = careful.</div>
+</div>
+</body>
+</html>

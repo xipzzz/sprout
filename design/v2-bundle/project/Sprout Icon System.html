@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Sprout — Icon System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #FDF8EE; --paper: #FFFFFF; --ink: #2A2320; --mute: #857B70;
+    --green: #6FBF5E; --greenDark: #4D9E3F; --cream: #F3E8D2; --cream2: #E9DCC0;
+    --sun: #F5B94A; --coral: #F47A7A; --sky: #A8D8EA; --line: #E8DFCE;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--ink); font-family: "Nunito", system-ui, sans-serif; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 820px; margin: 0 auto; padding: 64px 24px 100px; }
+  .badge { display: inline-flex; align-items: center; gap: 9px; background: #EFF7EA; color: var(--greenDark); font-weight: 900; font-size: 13px; padding: 7px 14px 7px 9px; border-radius: 999px; }
+  .badge .leaf { width: 26px; height: 26px; border-radius: 8px; background: var(--green); display: grid; place-items: center; }
+  h1 { font-size: 44px; font-weight: 900; letter-spacing: -1px; margin: 22px 0 10px; line-height: 1.05; }
+  .lede { font-size: 18px; font-weight: 700; color: var(--mute); max-width: 580px; }
+  .lede em { color: var(--greenDark); font-style: normal; font-weight: 800; }
+  .section-label { font-size: 12px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; color: var(--mute); margin: 54px 0 16px; display: flex; align-items: center; gap: 10px; }
+  .section-label::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+  .spec { display: grid; grid-template-columns: repeat(auto-fill,minmax(150px,1fr)); gap: 12px; }
+  .scard { background: var(--paper); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 2px 0 var(--line); padding: 16px; }
+  .scard .k { font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: .05em; color: var(--mute); }
+  .scard .v { font-size: 16px; font-weight: 900; margin-top: 3px; }
+
+  .glyphs { display: grid; grid-template-columns: repeat(auto-fill,minmax(96px,1fr)); gap: 10px; }
+  .g { background: var(--paper); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 2px 0 var(--line); padding: 14px 8px 9px; text-align: center; }
+  .g svg { display: block; margin: 0 auto 8px; }
+  .g .n { font-size: 11px; font-weight: 800; color: var(--mute); }
+
+  .policy { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .pcol { border-radius: 16px; padding: 18px; }
+  .pcol.custom { background: #EFF7EA; border: 1px solid #CFE4C7; }
+  .pcol.emoji { background: var(--paper); border: 1px solid var(--line); }
+  .pcol h3 { font-size: 15px; font-weight: 900; margin-bottom: 4px; }
+  .pcol h3 .tag { font-size: 11px; font-weight: 900; padding: 2px 8px; border-radius: 999px; margin-left: 6px; }
+  .pcol.custom .tag { background: var(--green); color: #fff; }
+  .pcol.emoji .tag { background: var(--cream2); color: var(--ink); }
+  .pcol p { font-size: 13px; font-weight: 700; color: var(--mute); margin-bottom: 12px; }
+  .row { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,.7); border-radius: 10px; padding: 8px 10px; margin-bottom: 7px; }
+  .row .lbl { font-size: 13px; font-weight: 800; }
+  .row .ex { margin-left: auto; font-size: 18px; }
+
+  .rules { background: var(--paper); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; box-shadow: 0 2px 0 var(--line); }
+  .rrow { display: grid; grid-template-columns: 150px 1fr; gap: 14px; padding: 14px 18px; border-bottom: 1px solid var(--line); align-items: baseline; }
+  .rrow:last-child { border-bottom: none; }
+  .rrow .k { font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: .05em; color: var(--mute); }
+  .rrow .v { font-size: 14px; font-weight: 700; }
+  .rrow .v .q { color: var(--greenDark); font-weight: 800; }
+  .foot { margin-top: 56px; padding-top: 24px; border-top: 1px solid var(--line); font-size: 13px; font-weight: 700; color: var(--mute); }
+  @media (max-width: 600px) { h1 { font-size: 34px; } .policy { grid-template-columns: 1fr; } .rrow { grid-template-columns: 1fr; gap: 4px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="badge"><span class="leaf"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M12 22c0-6 0-9 5-13-1 6-3 9-5 13zM12 22C9 17 5 15 3 9c6 1 8 4 9 13z" fill="#fff"/></svg></span> Sprout · Icon System</div>
+  <h1>Icons</h1>
+  <p class="lede">Bespoke inline SVGs, one family. <em>One stroke, one grid, one style</em> — with a deliberate line on where emoji are fine and where custom icons are required.</p>
+
+  <div class="section-label">The spec</div>
+  <div class="spec">
+    <div class="scard"><div class="k">Grid</div><div class="v">24 × 24</div></div>
+    <div class="scard"><div class="k">Stroke</div><div class="v">2px</div></div>
+    <div class="scard"><div class="k">Caps / joins</div><div class="v">Round</div></div>
+    <div class="scard"><div class="k">Color</div><div class="v">currentColor</div></div>
+    <div class="scard"><div class="k">Optical size</div><div class="v">Consistent weight</div></div>
+  </div>
+
+  <div class="section-label">Stroke by render-size bucket — not one global value</div>
+  <p style="font-size:13px;font-weight:700;color:var(--mute);max-width:600px;margin-bottom:16px">Some stroke variance is <strong>legitimate optical sizing</strong>, not drift: a 16px inline glyph needs a thinner absolute stroke than a 32px node icon to read at the same weight (how Lucide / SF Symbols stay even). So we lock <strong>one stroke per render bucket</strong> — then only true outliers need fixing.</p>
+  <div class="rules" style="margin-bottom:8px">
+    <div class="rrow"><div class="k">16px · inline</div><div class="v"><span class="q">1.5px</span> stroke — chevrons in rows, small chips, inline-with-text glyphs</div></div>
+    <div class="rrow"><div class="k">24px · default</div><div class="v"><span class="q">2px</span> stroke — the base bucket: nav, gear, bell, mic, volume, users, target, book</div></div>
+    <div class="rrow"><div class="k">32px+ · feature</div><div class="v"><span class="q">2.5px</span> stroke — large node / exercise-type icons that anchor a card</div></div>
+    <div class="rrow"><div class="k">Emphasis marks</div><div class="v">Check ✓ / X ✗ ride heavier (<span class="q">3–3.5px</span>) on purpose — they sit inside filled circles as bold feedback, not line icons</div></div>
+    <div class="rrow"><div class="k">Inner detail</div><div class="v">Decorative sub-strokes (leaf vein, droplet shine, gem facets) stay thin (<span class="q">1–1.6px</span>) — intentionally below the outline weight</div></div>
+  </div>
+
+  <div class="section-label">Contact sheet — all glyphs at one size (drift jumps out)</div>
+  <p style="font-size:13px;font-weight:700;color:var(--mute);max-width:600px;margin-bottom:16px">Every glyph rendered at the <strong>same 26px</strong> on one strip. When sizes are equalized, true weight-drift is visible by eye; optically-scaled glyphs that look right at their native size can read a touch heavy/light here — that's expected. Use this as the regression check when adding a glyph.</p>
+  <div style="background:var(--paper);border:1px solid var(--line);border-radius:16px;box-shadow:0 2px 0 var(--line);padding:18px;display:flex;flex-wrap:wrap;gap:18px;align-items:center;color:#2A2320">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M3 11l9-7 9 7v10a1 1 0 01-1 1h-5v-7H9v7H4a1 1 0 01-1-1V11z" stroke="#2A2320" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg>
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="#2A2320" stroke-width="2"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7" stroke="#2A2320" stroke-width="2" stroke-linecap="round"/></svg>
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3.4" stroke="#2A2320" stroke-width="2"/><path d="M3 20c0-3.2 2.7-5.5 6-5.5s6 2.3 6 5.5" stroke="#2A2320" stroke-width="2" stroke-linecap="round"/><path d="M16 5.2A3.2 3.2 0 0 1 18 11M17.5 14.7c2.2.6 3.9 2.5 3.9 5.1" stroke="#2A2320" stroke-width="2" stroke-linecap="round"/></svg>
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M19.4 13a7.8 7.8 0 0 0 0-2l2-1.6-2-3.4-2.4 1a7.6 7.6 0 0 0-1.7-1l-.4-2.5h-3.8l-.4 2.5a7.6 7.6 0 0 0-1.7 1l-2.4-1-2 3.4L4.6 11a7.8 7.8 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a7.6 7.6 0 0 0 1.7 1l.4 2.5h3.8l.4-2.5a7.6 7.6 0 0 0 1.7-1l2.4 1 2-3.4-2-1.6z" stroke="#2A2320" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="12" r="2.8" stroke="#2A2320" stroke-width="2"/></svg>
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M12 3a6 6 0 00-6 6c0 3.5-1 5-2 6.2-.5.6-.1 1.6.8 1.6h14.4c.9 0 1.3-1 .8-1.6-1-1.2-2-2.7-2-6.2a6 6 0 00-6-6z" stroke="#2A2320" stroke-width="2" stroke-linejoin="round"/><path d="M10 20a2 2 0 004 0" stroke="#2A2320" stroke-width="2" stroke-linecap="round"/></svg>
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M4 4h8a4 4 0 014 4v13a3 3 0 00-3-3H4V4z" stroke="#2A2320" stroke-width="2" stroke-linejoin="round"/><path d="M20 4h-8a4 4 0 00-4 4v13a3 3 0 013-3h9V4z" stroke="#2A2320" stroke-width="2" stroke-linejoin="round"/></svg>
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#2A2320" stroke-width="2"/><circle cx="12" cy="12" r="5" stroke="#2A2320" stroke-width="2"/><circle cx="12" cy="12" r="1.6" fill="#2A2320"/></svg>
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="#2A2320"/><path d="M16 9a3.5 3.5 0 0 1 0 6" stroke="#2A2320" stroke-width="2" stroke-linecap="round"/></svg>
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><rect x="9" y="3" width="6" height="12" rx="3" fill="#2A2320"/><path d="M5 11a7 7 0 0014 0M12 18v3" stroke="#2A2320" stroke-width="2" stroke-linecap="round"/></svg>
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="#2A2320" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="#2A2320" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span style="width:26px;height:26px;border-radius:50%;background:#58A800;display:inline-flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 7" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    <span style="width:26px;height:26px;border-radius:50%;background:#F47A7A;display:inline-flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="#fff" stroke-width="3.2" stroke-linecap="round"/></svg></span>
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><circle cx="18" cy="5" r="2.6" fill="#2A2320"/><circle cx="6" cy="12" r="2.6" fill="#2A2320"/><circle cx="18" cy="19" r="2.6" fill="#2A2320"/><path d="M8.3 10.7l7.4-4.3M8.3 13.3l7.4 4.3" stroke="#2A2320" stroke-width="2" stroke-linecap="round"/></svg>
+    <svg width="26" height="26" viewBox="0 0 24 24"><path d="M4 20c0-10 8-16 16-16 0 10-6 16-16 16z" fill="#6FBF5E"/></svg>
+    <svg width="26" height="26" viewBox="0 0 24 24"><path d="M6 4h12l4 6-10 11L2 10l4-6z" fill="#5AB9D9"/></svg>
+    <svg width="26" height="26" viewBox="0 0 24 24"><path d="M12 2.5c0 0 6.5 7.4 6.5 11.5a6.5 6.5 0 0 1-13 0C5.5 9.9 12 2.5 12 2.5z" fill="#2BB8E6"/></svg>
+    <svg width="26" height="26" viewBox="0 0 24 24"><path d="M12 2c1 4 5 5 5 10a5 5 0 01-10 0c0-2 1-3 2-3-1-2 1-5 3-7z" fill="#F5833E"/></svg>
+    <svg width="26" height="26" viewBox="0 0 24 24"><path d="M12 2l3 6.5 7 1-5 5 1.2 7L12 18l-6.2 3.5L7 14.5l-5-5 7-1L12 2z" fill="#F5B94A"/></svg>
+    <svg width="26" height="26" viewBox="0 0 24 24"><path d="M2 8l4 4 4-7 2 4 2-4 4 7 4-4v10H2V8z" fill="#F5B94A"/></svg>
+  </div>
+
+  <div class="section-label">UI glyphs — navigation &amp; actions</div>
+  <div class="glyphs">
+    <div class="g"><svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M3 11l9-7 9 7v10a1 1 0 01-1 1h-5v-7H9v7H4a1 1 0 01-1-1V11z" stroke="#2A2320" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg><div class="n">Home</div></div>
+    <div class="g"><svg width="28" height="28" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="#2A2320" stroke-width="2"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7" stroke="#2A2320" stroke-width="2" stroke-linecap="round"/></svg><div class="n">User</div></div>
+    <div class="g"><svg width="28" height="28" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3.4" stroke="#2A2320" stroke-width="2"/><path d="M3 20c0-3.2 2.7-5.5 6-5.5s6 2.3 6 5.5" stroke="#2A2320" stroke-width="2" stroke-linecap="round"/><path d="M16 5.2A3.2 3.2 0 0 1 18 11M17.5 14.7c2.2.6 3.9 2.5 3.9 5.1" stroke="#2A2320" stroke-width="2" stroke-linecap="round"/></svg><div class="n">Users</div></div>
+    <div class="g"><svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M19.4 13a7.8 7.8 0 0 0 0-2l2-1.6-2-3.4-2.4 1a7.6 7.6 0 0 0-1.7-1l-.4-2.5h-3.8l-.4 2.5a7.6 7.6 0 0 0-1.7 1l-2.4-1-2 3.4L4.6 11a7.8 7.8 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a7.6 7.6 0 0 0 1.7 1l.4 2.5h3.8l.4-2.5a7.6 7.6 0 0 0 1.7-1l2.4 1 2-3.4-2-1.6z" stroke="#2A2320" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="12" r="2.8" stroke="#2A2320" stroke-width="2"/></svg><div class="n">Gear</div></div>
+    <div class="g"><svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M12 3a6 6 0 00-6 6c0 3.5-1 5-2 6.2-.5.6-.1 1.6.8 1.6h14.4c.9 0 1.3-1 .8-1.6-1-1.2-2-2.7-2-6.2a6 6 0 00-6-6z" stroke="#2A2320" stroke-width="2" stroke-linejoin="round"/><path d="M10 20a2 2 0 004 0" stroke="#2A2320" stroke-width="2" stroke-linecap="round"/></svg><div class="n">Bell</div></div>
+    <div class="g"><svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="#2A2320" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg><div class="n">Chevron</div></div>
+    <div class="g"><svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 7" stroke="#4D9E3F" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg><div class="n">Check</div></div>
+    <div class="g"><svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="#C25048" stroke-width="3" stroke-linecap="round"/></svg><div class="n">X</div></div>
+    <div class="g"><svg width="28" height="28" viewBox="0 0 24 24" fill="none"><circle cx="18" cy="5" r="2.6" fill="#2A2320"/><circle cx="6" cy="12" r="2.6" fill="#2A2320"/><circle cx="18" cy="19" r="2.6" fill="#2A2320"/><path d="M8.3 10.7l7.4-4.3M8.3 13.3l7.4 4.3" stroke="#2A2320" stroke-width="2" stroke-linecap="round"/></svg><div class="n">Share</div></div>
+    <div class="g"><svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M4 4h8a4 4 0 014 4v13a3 3 0 00-3-3H4V4z" stroke="#2A2320" stroke-width="2" stroke-linejoin="round"/><path d="M20 4h-8a4 4 0 00-4 4v13a3 3 0 013-3h9V4z" stroke="#2A2320" stroke-width="2" stroke-linejoin="round"/></svg><div class="n">Book</div></div>
+  </div>
+
+  <div class="section-label">Exercise-type glyphs</div>
+  <div class="glyphs">
+    <div class="g"><svg width="28" height="28" viewBox="0 0 24 24" fill="none"><rect x="9" y="3" width="6" height="12" rx="3" fill="#6FBF5E"/><path d="M5 11a7 7 0 0014 0M12 18v3" stroke="#6FBF5E" stroke-width="2" stroke-linecap="round"/></svg><div class="n">Mic · speak</div></div>
+    <div class="g"><svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="#5AB9D9"/><path d="M16 9a3.5 3.5 0 0 1 0 6" stroke="#5AB9D9" stroke-width="2" stroke-linecap="round"/></svg><div class="n">Volume · listen</div></div>
+    <div class="g"><svg width="28" height="28" viewBox="0 0 24 24"><path d="M7 4l13 8-13 8V4z" fill="#6FBF5E"/></svg><div class="n">Play</div></div>
+    <div class="g"><svg width="28" height="28" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#C9A23C" stroke-width="2"/><circle cx="12" cy="12" r="5" stroke="#C9A23C" stroke-width="2"/><circle cx="12" cy="12" r="1.6" fill="#C9A23C"/></svg><div class="n">Target</div></div>
+    <div class="g"><svg width="28" height="28" viewBox="0 0 24 24"><path d="M12 2l3 6.5 7 1-5 5 1.2 7L12 18l-6.2 3.5L7 14.5l-5-5 7-1L12 2z" fill="#F5B94A" stroke="#F5B94A" stroke-width="1.5" stroke-linejoin="round"/></svg><div class="n">Star</div></div>
+    <div class="g"><svg width="28" height="28" viewBox="0 0 24 24"><path d="M2 8l4 4 4-7 2 4 2-4 4 7 4-4v10H2V8z" fill="#F5B94A"/><circle cx="2" cy="8" r="1.5" fill="#F5B94A"/><circle cx="22" cy="8" r="1.5" fill="#F5B94A"/></svg><div class="n">Crown · review</div></div>
+    <div class="g"><svg width="28" height="28" viewBox="0 0 24 24"><rect x="3" y="10" width="18" height="10" rx="2" fill="#C98A3C"/><path d="M3 10a9 5 0 0 1 18 0z" fill="#E0A857"/><rect x="10.7" y="11" width="2.6" height="5" rx="1" fill="#F4D58A"/></svg><div class="n">Chest</div></div>
+    <div class="g"><svg width="28" height="28" viewBox="0 0 24 24" fill="none"><g fill="#E0A21C"><ellipse cx="12" cy="5.5" rx="2.6" ry="3.5"/><ellipse cx="12" cy="14.5" rx="2.6" ry="3.5"/><ellipse cx="7.5" cy="10" rx="3.5" ry="2.6"/><ellipse cx="16.5" cy="10" rx="3.5" ry="2.6"/></g><circle cx="12" cy="10" r="2.6" fill="#fff"/><circle cx="12" cy="10" r="1.4" fill="#E0A21C"/></svg><div class="n">Flower</div></div>
+  </div>
+
+  <div class="section-label">HUD currencies — must be custom SVG</div>
+  <div class="glyphs">
+    <div class="g"><svg width="28" height="28" viewBox="0 0 24 24"><path d="M4 20c0-10 8-16 16-16 0 10-6 16-16 16z" fill="#6FBF5E"/><path d="M4 20c4-4 8-8 14-12" stroke="#2E5B29" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg><div class="n">Leaf · streak</div></div>
+    <div class="g"><svg width="28" height="28" viewBox="0 0 24 24"><path d="M6 4h12l4 6-10 11L2 10l4-6z" fill="#5AB9D9"/><path d="M6 4l3 6h6l3-6M12 21l-3-11 3-6 3 6-3 11" fill="none" stroke="#fff" stroke-width="1" opacity="0.6"/></svg><div class="n">Gem</div></div>
+    <div class="g"><svg width="28" height="28" viewBox="0 0 24 24"><path d="M12 2.5c0 0 6.5 7.4 6.5 11.5a6.5 6.5 0 0 1-13 0C5.5 9.9 12 2.5 12 2.5z" fill="#2BB8E6"/></svg><div class="n">Droplet · water</div></div>
+    <div class="g"><svg width="28" height="28" viewBox="0 0 24 24"><path d="M12 2c1 4 5 5 5 10a5 5 0 01-10 0c0-2 1-3 2-3-1-2 1-5 3-7z" fill="#F5833E"/><path d="M12 10c.5 2 2 2.5 2 4.5a2.5 2.5 0 01-5 0c0-1 .5-1.5 1-2 0 0 1 .5 2-2.5z" fill="#FFD466"/></svg><div class="n">Flame · streak</div></div>
+  </div>
+
+  <div class="section-label">Emoji vs custom — the policy</div>
+  <div class="policy">
+    <div class="pcol custom">
+      <h3>Custom SVG <span class="tag">Required</span></h3>
+      <p>Anything load-bearing or brand-defining — must be pixel-consistent across devices and match the palette + stroke.</p>
+      <div class="row"><span class="lbl">HUD currencies</span><span class="ex">🍃💎💧</span></div>
+      <div class="row"><span class="lbl">Correct / wrong</span><span class="ex">✓ ✕</span></div>
+      <div class="row"><span class="lbl">Nav &amp; chrome</span><span class="ex">⌂ ⚙ ›</span></div>
+      <div class="row"><span class="lbl">Exercise types</span><span class="ex">🎤🎧</span></div>
+    </div>
+    <div class="pcol emoji">
+      <h3>Emoji <span class="tag">OK</span></h3>
+      <p>Incidental, playful, decorative warmth — in copy, celebrations, and content where exact rendering doesn’t matter.</p>
+      <div class="row"><span class="lbl">In-copy warmth</span><span class="ex">🌱</span></div>
+      <div class="row"><span class="lbl">Celebrations</span><span class="ex">🌸🎉</span></div>
+      <div class="row"><span class="lbl">Seasonal blooms</span><span class="ex">🌻🍂</span></div>
+      <div class="row"><span class="lbl">Tale / scene flavor</span><span class="ex">☕🚶‍♀️</span></div>
+    </div>
+  </div>
+
+  <div class="section-label">Rules</div>
+  <div class="rules">
+    <div class="rrow"><div class="k">One family</div><div class="v">24×24 grid, ~2px stroke, round caps/joins, <span class="q">currentColor</span> so icons inherit text color.</div></div>
+    <div class="rrow"><div class="k">Currencies = custom</div><div class="v">Streak / gems / water / XP are <span class="q">custom SVG, never emoji</span> — emoji drift across iOS versions.</div></div>
+    <div class="rrow"><div class="k">Feedback = custom</div><div class="v">✓ / ✗ are drawn icons (color-blind-safe pairing), not emoji.</div></div>
+    <div class="rrow"><div class="k">Emoji where playful</div><div class="v">Fine for in-copy warmth, celebrations and seasonal/content flavor.</div></div>
+    <div class="rrow"><div class="k">Optical sizing</div><div class="v">Match visual weight at a given size, not just the box — so a row of icons reads even.</div></div>
+  </div>
+
+  <div class="foot">🌱 Sprout icon system · one bespoke SVG family + a deliberate emoji policy. Completes the design system: Voice &amp; Tone · Typography · Color · Spacing &amp; Layout · Buttons · Icons.</div>
+</div>
+</body>
+</html>
