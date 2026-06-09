@@ -1,0 +1,1614 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Sprout — Screen Viewer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; background: #EDE8DF; font-family: 'Nunito', system-ui, sans-serif; overflow: hidden;
+    /* Tabular (fixed-width) lining figures app-wide so ticking stats — HUD leaf/gem/water,
+       XP, streak, daily goal — never shift layout as digits change (9→10). */
+    font-variant-numeric: tabular-nums lining-nums; font-feature-settings: "tnum" 1, "lnum" 1; }
+  * { box-sizing: border-box; }
+  /* ── Sprout type scale (documented) ─────────────────────────────
+     display 32/900 · title 24/900 · section 18/800 · body 15/700 · label 13/800 · caption 11/800-uppercase
+     weight roles: 900 titles+numbers · 800 buttons/labels · 700 body · 600 secondary
+     One family (Nunito), tabular figures (above). Keep new UI on these steps. */
+  button { font-family: inherit; }
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(42,35,32,.13); border-radius: 3px; }
+  .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+  .no-scrollbar::-webkit-scrollbar { display: none; width: 0; height: 0; }
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<!-- Phosphor duotone icons via Iconify (shared icon system — see icons.jsx) -->
+<script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
+<script type="text/babel" src="ios-frame.jsx"></script>
+<script type="text/babel" src="icons.jsx"></script>
+<script type="text/babel" src="juice.jsx"></script>
+<script type="text/babel" src="sound.jsx"></script>
+<script type="text/babel" src="water-gauge.jsx"></script>
+<script type="text/babel" src="mascot.jsx"></script>
+<script type="text/babel" src="shared.jsx"></script>
+<script type="text/babel" src="variant-a.jsx"></script>
+<script type="text/babel" src="variant-b.jsx"></script>
+<script type="text/babel" src="variant-c.jsx"></script>
+<script type="text/babel" src="exercises.jsx"></script>
+<script type="text/babel" src="feedback.jsx"></script>
+<script type="text/babel" src="out-of-water.jsx"></script>
+<script type="text/babel" src="lesson-complete.jsx"></script>
+<script type="text/babel" src="leagues.jsx"></script>
+<script type="text/babel" src="streak-milestone.jsx"></script>
+<script type="text/babel" src="garden-tales.jsx"></script>
+<script type="text/babel" src="account.jsx"></script>
+<script type="text/babel" src="blooms.jsx"></script>
+<script type="text/babel" src="monthly-blooms.jsx"></script>
+<script type="text/babel" src="garden-collection.jsx"></script>
+<script type="text/babel" src="offline.jsx"></script>
+<script type="text/babel" src="notification-priming.jsx"></script>
+<script type="text/babel" src="skeletons.jsx"></script>
+<script type="text/babel" src="widgets.jsx"></script>
+<script type="text/babel" src="moonlit.jsx"></script>
+<script type="text/babel" src="insights.jsx"></script>
+<script type="text/babel" src="splash.jsx"></script>
+<script type="text/babel" src="search.jsx"></script>
+<script type="text/babel" src="courses.jsx"></script>
+<script type="text/babel" src="inbox.jsx"></script>
+<script type="text/babel" src="customizer.jsx"></script>
+<script type="text/babel" src="invite.jsx"></script>
+<script type="text/babel" src="words-detail.jsx"></script>
+<script type="text/babel" src="streak-calendar.jsx"></script>
+<script type="text/babel" src="streak-repair.jsx"></script>
+<script type="text/babel" src="quests.jsx"></script>
+<script type="text/babel" src="friends.jsx"></script>
+<script type="text/babel" src="xp-graph.jsx"></script>
+<script type="text/babel" src="practice.jsx"></script>
+<script type="text/babel" src="family-plan.jsx"></script>
+<script type="text/babel" src="profile-extras.jsx"></script>
+<script type="text/babel" src="gems-shop.jsx"></script>
+<script type="text/babel" src="golden-bloom.jsx"></script>
+<script type="text/babel" src="onboarding.jsx"></script>
+<script type="text/babel" src="app-flow.jsx"></script>
+<!-- Exploration: the data is PURE JS (no Babel) and stays eager so EXPLORATIONS is
+     always defined (the Tweaks panel reads EXPLORATIONS[explSel] on every render).
+     The three heavy JSX component files (~850KB of in-browser Babel) are NOT loaded
+     here — they are fetched + transformed lazily the first time the Exploration tab
+     is opened (see ensureExplorationLoaded), so Play / Gallery / Prototype boot
+     without paying that transform cost, and it stays off the critical path as the
+     deck grows. -->
+<script type="text/javascript" src="exploration-data.js"></script>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+
+
+// ─────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────
+const PH_W = 402,PH_H = 874;
+const SCALE = 0.56;
+const TH_W = Math.round(PH_W * SCALE); // 225
+const TH_H = Math.round(PH_H * SCALE); // 489
+const TH_R = Math.round(48 * SCALE); // 27
+const ORDER_KEY = 'sprout-viewer-order-v1';
+const MOBILE_BP = 760;
+
+const ALL_SCREENS = [
+{ id: 'onboarding', group: 'Onboarding', label: 'Welcome flow' },
+{ id: 'account', group: 'Onboarding', label: 'Save your garden' },
+{ id: 'login', group: 'Onboarding', label: 'Log in' },
+{ id: 'notif-prime', group: 'Onboarding', label: 'Reminder priming' },
+{ id: 'splash', group: 'Onboarding', label: 'Launch splash' },
+{ id: 'home-a', group: 'Home', label: 'Winding path' },
+{ id: 'home-b', group: 'Home', label: 'Garden' },
+{ id: 'home-b-empty', group: 'Home', label: 'Garden — first time' },
+{ id: 'home-c', group: 'Home', label: 'Today card' },
+{ id: 'ex-mc', group: 'Exercises', label: 'Multiple choice' },
+{ id: 'ex-arrange', group: 'Exercises', label: 'Arrange words' },
+{ id: 'ex-hear', group: 'Exercises', label: 'Type what you hear' },
+{ id: 'ex-hear-tiles', group: 'Exercises', label: 'Tap what you hear · easy' },
+{ id: 'ex-match', group: 'Exercises', label: 'Match pairs' },
+{ id: 'ex-match-audio', group: 'Exercises', label: 'Match pairs · audio' },
+{ id: 'ex-speak', group: 'Exercises', label: 'Speak out loud' },
+{ id: 'ex-fill', group: 'Exercises', label: 'Fill in blank' },
+{ id: 'ex-fill-hard', group: 'Exercises', label: 'Fill in blank · type' },
+{ id: 'oow-std', group: 'Modals', label: 'Out of water' },
+{ id: 'water-sheet', group: 'Modals', label: 'Water sheet (full)' },
+{ id: 'shop', group: 'Modals', label: 'Shop (kid)' },
+{ id: 'family-plan', group: 'Modals', label: 'Sprout Family (grown-ups)' },
+{ id: 'oow-calm', group: 'Modals', label: 'Out of water — calm' },
+{ id: 'offline', group: 'Modals', label: 'Offline' },
+{ id: 'offline-dl', group: 'Modals', label: 'Practice offline' },
+{ id: 'load-path', group: 'Modals', label: 'Loading · path' },
+{ id: 'load-garden', group: 'Modals', label: 'Loading · garden' },
+{ id: 'load-pip', group: 'Modals', label: 'Loading · Pip' },
+{ id: 'widgets', group: 'Modals', label: 'iOS widgets' },
+{ id: 'moonlit', group: 'Modals', label: 'Moonlit (dark)' },
+{ id: 'invite', group: 'Social', label: 'Invite a friend' },
+{ id: 'invite-landing', group: 'Social', label: 'You\u2019re invited' },
+{ id: 'fb-correct', group: 'Feedback', label: 'Correct answer' },
+{ id: 'fb-wrong', group: 'Feedback', label: 'Wrong answer' },
+{ id: 'lc-std', group: 'Complete', label: 'Complete — in bloom' },
+{ id: 'lc-steady', group: 'Complete', label: 'Complete — steady' },
+{ id: 'lc-water', group: 'Complete', label: 'Complete — needs water' },
+{ id: 'lc-calm', group: 'Complete', label: 'Complete — calm' },
+{ id: 'daily-goal', group: 'Complete', label: 'Daily goal met' },
+{ id: 'lr-promote', group: 'League', label: 'Results — promoted' },
+{ id: 'lr-hold', group: 'League', label: 'Results — held' },
+{ id: 'lr-demote', group: 'League', label: 'Results — demoted' },
+{ id: 'league-empty', group: 'League', label: 'First week' },
+{ id: 'grove-calm', group: 'League', label: 'Grove (calm)' },
+{ id: 'friends-empty', group: 'Social', label: 'Friends — empty' },
+{ id: 'sm-7', group: 'Milestone', label: 'Streak — 7 days' },
+{ id: 'streak-cal', group: 'Milestone', label: 'Streak calendar' },
+{ id: 'sm-30', group: 'Milestone', label: 'Streak — 30 days' },
+{ id: 'sm-100', group: 'Milestone', label: 'Streak — 100 days' },
+{ id: 'sm-365', group: 'Milestone', label: 'Streak — 365 days' },
+{ id: 'streak-saved', group: 'Milestone', label: 'Streak saved (freeze)' },
+{ id: 'comeback', group: 'Milestone', label: 'Comeback greeting' },
+{ id: 'streak-repair', group: 'Milestone', label: 'Streak repair' },
+{ id: 'words-review', group: 'Tales', label: 'Words review' },
+{ id: 'course-switch', group: 'Tales', label: 'Course switcher' },
+{ id: 'tale-cafe', group: 'Tales', label: 'Garden Tale — café' },
+{ id: 'tale-done', group: 'Tales', label: 'Tale complete' },
+{ id: 'gb-gate', group: 'Mastery', label: 'Golden Bloom — gate' },
+{ id: 'gb-pass', group: 'Mastery', label: 'Golden Bloom — earned' },
+{ id: 'gb-fail', group: 'Mastery', label: 'Golden Bloom — retry' },
+{ id: 'insights', group: 'Profile', label: 'Insights' },
+{ id: 'parent-dash', group: 'Profile', label: 'Grown-ups summary' },
+{ id: 'settings', group: 'Profile', label: 'Settings' },
+{ id: 'monthly-blooms', group: 'Profile', label: 'Monthly Blooms' },
+{ id: 'customizer', group: 'Profile', label: 'Customize' },
+{ id: 'year-in-bloom', group: 'Profile', label: 'Year in Bloom' },
+{ id: 'inbox', group: 'Profile', label: 'Activity inbox' },
+{ id: 'search', group: 'Profile', label: 'Search' }];
+
+// ─────────────────────────────────────────────────────────────
+// Change history — newest first, capped at 20. Each entry: { summary, screen, when }.
+// `screen` is a screen id from ALL_SCREENS; tapping an entry jumps the viewer there.
+// Going forward: PREPEND a new entry on each design change; trim to MAX_UPDATES.
+// ─────────────────────────────────────────────────────────────
+const MAX_UPDATES = 20;
+const UPDATES = [
+{ summary: 'System consistency pass — unified the whole app on one LAYOUT token (safe-area top inset 62, screen padding 16, tab-bar bottom inset, scroll padding) so HUD, lesson, onboarding, tales, complete + loading skeletons all start on one baseline (no jump home→lesson, skeleton→real). Exploration mini-chrome now mirrors the real HUD/nav (WaterGauge bottle not flat droplet; claimable dots on Quests/League).', screen: 'home-a', when: 'just now' },
+{ summary: 'Winding Path — de-noised the active node (reward +10 now shows once, in the START callout, not duplicated beside the node) and darkened locked-node glyphs to a legible taupe so upcoming lesson types preview clearly on the cream path', screen: 'home-a', when: 'just now' },
+{ summary: 'Active path node — its progress ring is now SEGMENTED (one arc per sub-lesson, 2 of 5 filled) so the “2/5” reads spatially on the ring, echoing the START bubble pips, instead of a single continuous arc.', screen: 'home-a', when: 'just now' },
+{ summary: 'Feedback drawer — correct-answer praise now rotates through garden-flavored lines (“Blooming!”, “Fresh sprout!”, “That one took root!”…) so a streak of right answers never feels robotic.', screen: 'fb-correct', when: 'just now' },
+{ summary: 'Winding path — the map now opens pre-scrolled to the active node (auto-centered on load), so the eye lands on “do this next” without a hunt; the floating “Today” pill still handles jump-back after scrolling.', screen: 'home-a', when: 'just now' },
+{ summary: 'Onboarding — the “who’s this for” and “what to grow” option cards now expose proper radiogroup/checkbox ARIA roles + checked state, so VoiceOver users can tell they’re selectable and which are chosen (matches the a11y the app advertises).', screen: 'onboarding', when: 'just now' },
+{ summary: 'Settings — added a “For grown-ups” section (Parents & plan) so the parent gate → dashboard / Family plan / privacy is discoverable where a parent naturally looks, not only in the shop/profile. Registered a Settings QA screen.', screen: 'settings', when: 'just now' },
+{ summary: 'Streak calendar — a proactive “N rainy-day covers ready” chip on the milestone rail, so learners see their safety net BEFORE a miss (not just the after-the-fact “kept safe” summary). Kindness made proactive.', screen: 'streak-cal', when: 'just now' },
+{ summary: 'Bottom nav — the active tab now sits in a soft green pill (a second, non-color cue for color-blind/bright-sun a11y), with a gentle bump on switch and claimable-state dots on Quests + League so reward-ready/results-posted pull users back without a push.', screen: 'home-a', when: 'just now' },
+{ summary: 'Course switcher — tapping another language now asks “Switch to X?” (Switch garden / Stay here) instead of swapping the active course on a single tap, so an accidental tap can’t change the garden. Registered a QA screen.', screen: 'course-switch', when: 'just now' },
+{ summary: 'Path connectors now bloom with progress — the sprout-dots between completed nodes turn green, while connectors ahead of the active node stay neutral, so the trail shows “how far you’ve grown” at a glance', screen: 'home-a', when: 'just now' },
+{ summary: 'Words review — each word row now leads with the plain-English respelling (“MOR-ning”) before the IPA, so the scannable list is readable to learners (esp. kids) who can’t parse phonetic symbols. Registered a “Words review” QA screen.', screen: 'words-review', when: 'just now' },
+{ summary: 'Insights / Year in Bloom — fixed two off-brand details: dropped the 🔥 flame from the Year-in-Bloom recap (brand has no fire-streak) and made streak labels Calm-aware (“Day streak” → “Days grown”)', screen: 'insights', when: 'just now' },
+{ summary: 'Winding Path — built the long-requested “Grow ahead?” test-out: a calm, opt-in placement check on the first locked unit (non-calm only) so returning/confident learners can skip ahead without grinding; never blocks the default flow', screen: 'home-a', when: 'just now' },
+{ summary: 'Winding Path — a small “+10 🌱” reward chip now pins to the active node ring, so the incentive stays visible after the START callout scrolls away', screen: 'home-a', when: 'just now' },
+{ summary: 'Winding Path — only the ACTIVE node now animates (pulsing halo); the golden reward node settled to a quiet static gold ring so the eye lands on one “tap here next”. HUD currencies grouped tightly right, set apart from the flag.', screen: 'home-a', when: 'just now' },
+{ summary: 'Garden Tales — reward preview (🌱 +N) on each ready tale before you open it, and a full prev / pause / next scrubber on the dialogue replay so any line can be re-heard', screen: 'tale-done', when: 'just now' },
+{ summary: 'Grove — added a “My grove / Friends” toggle (opt-in social), a gentle “🌷 Top bloom” marker on the week’s leading gardener, a calm “Grove refreshes Sunday” reset line, and a “🌿 N this season” cumulative total', screen: 'grove-calm', when: 'just now' },
+{ summary: 'HUD chips — now Calm-aware: in Calm mode (default) they read as quiet borderless icon+number so the path breathes; standard mode keeps the hairline pill affordance. A bit more gap to the banner. Low-water tint still wins.', screen: 'home-a', when: 'just now' },
+{ summary: 'HUD chips — now read as buttons at rest: each currency sits in a hairline pill and the flag carries a chevron (language switcher), so the bar telegraphs tappability without an explainer', screen: 'home-a', when: 'just now' },
+{ summary: 'Active path node — now lifts off the path with a soft drop-shadow + slight rise so it’s the clear tap target before the callout is read; the START bubble gently bobs (reduced-motion aware)', screen: 'home-a', when: 'just now' },
+{ summary: 'HUD water chip — a low-energy state: when water ≤2 the chip warms (soft amber→coral wash) and pulses at ≤1, with a “tap for refill” label, so the bar carries gentle urgency without nagging', screen: 'home-a', when: 'just now' },
+{ summary: 'Feedback drawer — on a miss, the corrected word in the answer is now bolded + underlined (clay accent) so the eye lands on exactly what changed', screen: 'fb-wrong', when: 'just now' },
+{ summary: 'Path — quieted the mastery petals under completed nodes (bare petals, no pill/border; a perfect 3/3 fades back) so the space between nodes reads calmer', screen: 'home-a', when: 'just now' },
+{ summary: 'Today card — the daily plan checklist now closes out live: tapping a row’s checkbox pops a green check + strikes the label through, so the card visibly empties as you go', screen: 'home-c', when: 'just now' },
+{ summary: 'Path wayfinding — subtle dotted “stepping-stone” connectors thread consecutive nodes within a unit (absent at unit boundaries) so the trail reads as one continuous path', screen: 'home-a', when: 'just now' },
+{ summary: 'Lesson Complete polish — a daily-goal “Today’s garden” bar that animates the win forward, plus a flawless-run bonus Golden Bloom card (perfection grows something rare)', screen: 'lc-std', when: 'just now' },
+{ summary: 'Active path node — added a gentle pulsing halo (calm, reduced-motion aware) so the one tap that matters pops on a long path', screen: 'home-a', when: 'just now' },
+{ summary: 'Path banner — a compact daily-goal ring (“water 3 plants today”, 2/3) docked by the guidebook icon on the active unit; hidden in calm mode', screen: 'home-a', when: 'just now' },
+{ summary: 'Active path node — its bubble now shows per-skill progress pips + a “+10 🌱” reward telegraph, and is tappable to start (node still launches too)', screen: 'home-a', when: 'just now' },
+{ summary: 'Home path polish — a first-run “sprouting checklist” under the Getting-started banner + a floating “Today” pill that scrolls back to the active node on long paths', screen: 'home-a', when: 'just now' },
+{ summary: 'Streak calendar polish — added a named milestone rail (Sprout → Sapling → Tree, with a you-are-here marker) + a gentle one-line “keep it growing” nudge above the grid', screen: 'streak-cal', when: 'just now' },
+{ summary: 'Shop polish — “In your shed” row gains item-count badges; for-sale power-ups are state-aware (Streak Freeze shows Armed, XP boost shows a live ticking countdown)', screen: 'shop', when: 'just now' },
+{ summary: 'Lesson Complete polish — tiered headline + garden-tier stat labels (Lush/Healthy/Sprouting), an itemized seed ledger, and the streak as a sequenced 2nd beat', screen: 'lc-std', when: 'just now' },
+{ summary: 'Path polish — sticky unit banner now shows “Lesson X of Y” + growth track; completed nodes carry 1–3 mastery petals', screen: 'home-a', when: 'just now' },
+{ summary: 'Profile rethink — calm kid-first view (Days tended + mastery-by-area, no league rank / XP race) + a gated grown-ups summary for the parent', screen: 'parent-dash', when: 'just now' },
+{ summary: 'Shop rethink — removed the gambling “Garden Bet” + “Popular”/“SAVE” pressure; earned-gem economy, real money behind a parent gate, one calm “Sprout Family” plan', screen: 'shop', when: 'just now' },
+{ summary: 'Onboarding rethink — try-before-signup (first bloom before the account ask), parent self-ID + one calm reassurance screen, 2-question playful goal picker', screen: 'onboarding', when: 'just now' },
+{ summary: 'League rethink — calm mode now shows a cooperative “Grove” (shared garden, no ranks); competitive board drops demotion/loss framing', screen: 'grove-calm', when: 'just now' },
+{ summary: 'Streak calendar — soft leaf-green practiced dots, growing vine, neutral rest days + gently-shown “kept safe” freeze', screen: 'streak-cal', when: 'just now' },
+{ summary: 'Wrong-answer drawer — warm clay tone (not alarm red), kinder copy, teach-the-miss + flag-an-issue', screen: 'fb-wrong', when: 'just now' },
+{ summary: 'Garden — a living current-seedling hero (grows with your active unit), tap for provenance, one-time metaphor line', screen: 'home-b', when: 'just now' },
+{ summary: 'Redundancy pass — Home now has ONE start point (the path node); dropped the pinned “Up next” card', screen: 'home-a', when: 'just now' },
+{ summary: 'Lesson Complete trimmed — 3 stat tiles + a single Continue (Review demoted; share/feel/remind moved off)', screen: 'lc-std', when: 'just now' },
+{ summary: 'Reminder settings — time, Gentle/Daily cadence, quiet hours; + notification voice in the Voice doc', screen: 'home-a', when: '1h ago' },
+{ summary: 'Type system — tabular figures app-wide (stats stop shifting) + documented type scale', screen: 'home-a', when: '19h ago' },
+{ summary: 'Light mode only (temp) — dark theme + Appearance control hidden, Moonlit code preserved', screen: 'home-a', when: '20m ago' },
+{ summary: 'League results reveal — anticipation → rank reveal → outcome + next-week tee-up', screen: 'lr-promote', when: '12m ago' },
+{ summary: 'Today card — richer resume (Lesson 4/6 + bar), Resume lesson, smart “what’s next”', screen: 'home-c', when: '9m ago' },
+{ summary: 'Monthly Blooms — seasonal collectible flowers in a yearly grid, gentle monthly goal', screen: 'monthly-blooms', when: '11m ago' },
+{ summary: 'Account & privacy — email/login methods, Data & privacy group, Export my data + Delete', screen: 'moonlit', when: '12m ago' },
+{ summary: 'Calm garden sound palette + granular sound/haptics settings + ambient soundscape', screen: 'home-c', when: '14m ago' },
+{ summary: 'Multiple-choice states polished — sky-tinted selection + ✓/✗ badges (color-blind-safe)', screen: 'ex-mc', when: '12m ago' },
+{ summary: 'Streak repair moments — freeze-saved relief, gentle comeback, kind replant', screen: 'comeback', when: '26m ago' },
+{ summary: 'Daily-goal celebration — "garden tended today" + weekly bloom ring', screen: 'daily-goal', when: '38m ago' },
+{ summary: 'Theme switcher wired live — Light / Dark / System re-themes the whole app', screen: 'moonlit', when: '52m ago' },
+{ summary: 'Offline screen simplified — just Pip, message + one Try again', screen: 'offline', when: '1h ago' },
+{ summary: 'Launch splash — sprouting animation + warm personalized greeting', screen: 'splash', when: '1h ago' },
+{ summary: 'Search — find a word, lesson or tale (type-ahead, recent + suggested)', screen: 'search', when: '1h ago' },
+{ summary: 'Send-a-gift flow — garden-native gifts from earned gems', screen: 'friends-empty', when: '1h ago' },
+{ summary: 'Path header: removed lesson-count bar, sticky unit banner + guidebook', screen: 'home-a', when: '2h ago' },
+{ summary: 'Path nodes: centered star + centered exercise icon, no connector lines', screen: 'home-a', when: '2h ago' },
+{ summary: 'Pip-led quit confirmation + segmented progress bar', screen: 'ex-mc', when: '2h ago' },
+{ summary: 'Activity inbox (the bell) with inline actions', screen: 'inbox', when: '3h ago' },
+{ summary: 'Pip & garden customizer — Closet / Decorate, seasonal locks', screen: 'customizer', when: '1h ago' },
+{ summary: 'Find-my-level placement fork in onboarding', screen: 'onboarding', when: '1h ago' },
+{ summary: 'Practice hub: Tend your garden + Needs water', screen: 'home-c', when: '2h ago' },
+{ summary: 'Friend activity feed + visitable gardens', screen: 'friends-empty', when: '2h ago' },
+{ summary: 'Insights — garden over time', screen: 'insights', when: '2h ago' },
+{ summary: 'Year in Bloom recap cards', screen: 'year-in-bloom', when: '2h ago' },
+{ summary: 'Blooms: categories, date-earned, locked silhouettes', screen: 'home-b', when: '3h ago' },
+{ summary: 'Accessibility settings — Dynamic Type, color-safe feedback', screen: 'home-c', when: '3h ago' },
+{ summary: 'Haptics + reduce-motion juice layer', screen: 'fb-correct', when: '3h ago' },
+{ summary: 'Moonlit Garden dark theme + Appearance control', screen: 'moonlit', when: '4h ago' },
+{ summary: 'iOS home & lock-screen widgets', screen: 'widgets', when: '4h ago' },
+{ summary: 'Loading skeletons + Pip loader', screen: 'load-path', when: '5h ago' },
+{ summary: 'Notification priming after first lesson', screen: 'notif-prime', when: '5h ago' },
+{ summary: 'Offline state + downloadable lessons', screen: 'offline', when: '6h ago' }].
+slice(0, MAX_UPDATES);
+
+
+// Self-resetting onboarding for the gallery — loops back to welcome on finish.
+function OnboardingDemo({ tweaks }) {
+  const [k, setK] = React.useState(0);
+  return <OnboardingFlow key={k} onComplete={() => setK((x) => x + 1)} />;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Screen renderer
+// ─────────────────────────────────────────────────────────────
+// Self-looping splash for the gallery (replays so it isn't blank after the sequence).
+function SplashLoop() {
+  const [k, setK] = React.useState(0);
+  return (
+    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+      <LaunchSplash key={k} dark={false} returning={true} onDone={() => setTimeout(() => setK((n) => n + 1), 900)} />
+    </div>
+  );
+}
+
+function ScreenContent({ id, tweaks }) {
+  const t = tweaks || {};
+  switch (id) {
+    case 'onboarding':return <OnboardingDemo tweaks={t} />;
+    case 'account':return <div style={{ position: 'relative', width: '100%', height: '100%' }}><AccountGate calm={t.calm} onAuthed={() => {}} onLogin={() => {}} onSkip={() => {}} /></div>;
+    case 'login':return <div style={{ position: 'relative', width: '100%', height: '100%' }}><LogIn calm={t.calm} onAuthed={() => {}} onBack={() => {}} /></div>;
+    case 'notif-prime':return <NotificationPriming calm={t.calm} onAllow={() => {}} onLater={() => {}} />;
+    case 'splash':return <SplashLoop />;
+    case 'home-a':return <VariantA tweaks={t} />;
+    case 'home-b':return <VariantB tweaks={t} />;
+    case 'home-b-empty':return <VariantB tweaks={{ ...t, firstTime: true }} />;
+    case 'home-c':return <VariantC tweaks={t} />;
+    case 'ex-mc':return <ExMultipleChoice />;
+    case 'ex-arrange':return <ExArrange />;
+    case 'ex-hear':return <ExTypeHear />;
+    case 'ex-hear-tiles':return <ExTypeHear tiles={true} />;
+    case 'ex-match':return <ExMatch />;
+    case 'ex-match-audio':return <ExMatch audio={true} />;
+    case 'ex-speak':return <ExSpeak />;
+    case 'ex-fill':return <ExFillBlank />;
+    case 'ex-fill-hard':return <ExFillBlank hard={true} />;
+    case 'oow-std':return <ExWithOutOfWater variant="standard" />;
+    case 'water-sheet':return <div style={{ position: 'relative', width: '100%', height: '100%', background: SPROUT.bg }}><OutOfWaterModal variant={t.calm ? 'calm' : 'standard'} level={5} onClose={() => {}} /></div>;
+    case 'shop':return <div style={{ position: 'relative', width: '100%', height: '100%', background: SPROUT.bg }}><GemsShop calm={!!t.calm} onClose={() => {}} /></div>;
+    case 'family-plan':return <div style={{ position: 'relative', width: '100%', height: '100%', background: SPROUT.bg }}><FamilyPlan onClose={() => {}} /></div>;
+    case 'oow-calm':return <ExWithOutOfWater variant="calm" />;
+    case 'offline':return <OfflineScreen calm={t.calm} onRetry={() => {}} onSettings={() => {}} />;
+    case 'offline-dl':return <OfflineDownloads onClose={() => {}} />;
+    case 'load-path':return <ScreenLoading kind="path" calm={t.calm} />;
+    case 'load-garden':return <ScreenLoading kind="garden" calm={t.calm} />;
+    case 'load-pip':return <PipLoading calm={t.calm} label="Growing your tale…" />;
+    case 'widgets':return <WidgetShowcase calm={t.calm} />;
+    case 'moonlit':return <MoonlitShowcase />;
+    case 'invite':return <InviteScreen onClose={() => {}} />;
+    case 'invite-landing':return <InviteLanding inviter="Maya" onAccept={() => {}} onClose={() => {}} />;
+    case 'fb-correct':return <ExWithFeedback key="fb-correct" variant="correct" />;
+    case 'fb-wrong':return <ExWithFeedback key="fb-wrong" variant="wrong" />;
+    case 'lc-std':return <LessonComplete tweaks={{ calm: false }} accuracy={100} />;
+    case 'lc-steady':return <LessonComplete tweaks={{ calm: false }} accuracy={88} />;
+    case 'lc-water':return <LessonComplete tweaks={{ calm: false }} accuracy={64} />;
+    case 'lc-calm':return <LessonComplete tweaks={{ calm: true }} accuracy={88} />;
+    case 'daily-goal':return <div style={{ position: 'relative', width: '100%', height: '100%' }}><DailyGoalCelebration goal={t.calm ? 10 : 20} weekDone={4} calm={t.calm} onClose={() => {}} /></div>;
+    case 'lr-promote':return <div style={{ position: 'relative', width: '100%', height: '100%' }}><LeagueResults outcome="promote" calm={t.calm} onContinue={() => {}} /></div>;
+    case 'lr-hold':return <div style={{ position: 'relative', width: '100%', height: '100%' }}><LeagueResults outcome="hold" calm={t.calm} onContinue={() => {}} /></div>;
+    case 'lr-demote':return <div style={{ position: 'relative', width: '100%', height: '100%' }}><LeagueResults outcome="demote" calm={t.calm} onContinue={() => {}} /></div>;
+    case 'league-empty':return <LeagueScreen tweaks={{ ...t, firstTime: true }} tab="league" onTab={() => {}} />;
+    case 'grove-calm':return <LeagueScreen tweaks={{ ...t, calm: true }} tab="league" onTab={() => {}} />;
+    case 'friends-empty':return <FriendsScreen tweaks={{ ...t, firstTime: true }} onBack={() => {}} onStartLesson={() => {}} />;
+    case 'sm-7':return <div style={{ position: 'relative', width: '100%', height: '100%' }}><StreakMilestone days={7} calm={t.calm} onContinue={() => {}} /></div>;
+    case 'sm-30':return <div style={{ position: 'relative', width: '100%', height: '100%' }}><StreakMilestone days={30} calm={t.calm} onContinue={() => {}} /></div>;
+    case 'sm-100':return <div style={{ position: 'relative', width: '100%', height: '100%' }}><StreakMilestone days={100} calm={t.calm} onContinue={() => {}} /></div>;
+    case 'sm-365':return <div style={{ position: 'relative', width: '100%', height: '100%' }}><StreakMilestone days={365} calm={t.calm} onContinue={() => {}} /></div>;
+    case 'streak-cal':return <div style={{ position: 'relative', width: '100%', height: '100%', background: SPROUT.bg }}><StreakCalendar tweaks={t} water={5} freezes={2} onClose={() => {}} /></div>;
+    case 'streak-saved':return <div style={{ position: 'relative', width: '100%', height: '100%' }}><StreakSaved days={30} freezesLeft={1} calm={t.calm} onContinue={() => {}} /></div>;
+    case 'comeback':return <div style={{ position: 'relative', width: '100%', height: '100%' }}><Comeback daysAway={3} calm={t.calm} onContinue={() => {}} /></div>;
+    case 'streak-repair':return <div style={{ position: 'relative', width: '100%', height: '100%' }}><StreakRepair lostStreak={30} repairCost={0} calm={t.calm} onRepair={() => {}} onFresh={() => {}} /></div>;
+    case 'words-review':return <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'auto', background: SPROUT.bg, padding: '16px 16px 40px' }}><WordsReview onStartLesson={() => {}} /></div>;
+    case 'course-switch':return <div style={{ position: 'relative', width: '100%', height: '100%', background: SPROUT.bg }}><CourseSwitcher onClose={() => {}} /></div>;
+    case 'tale-cafe':return <div style={{ position: 'relative', width: '100%', height: '100%' }}><GardenTale tale="cafe" calm={t.calm} onExit={() => {}} onComplete={() => {}} /></div>;
+    case 'tale-done':return <div style={{ position: 'relative', width: '100%', height: '100%' }}><TaleComplete tale={TALES.cafe} calm={t.calm} onContinue={() => {}} /></div>;
+    case 'gb-gate':return <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}><VariantA tweaks={t} onStartLesson={() => {}} onOpenTale={() => {}} onOpenGolden={() => {}} /><GoldenBloomGate unit={{ title: 'Getting started' }} calm={t.calm} onStart={() => {}} onClose={() => {}} /></div>;
+    case 'gb-pass':return <div style={{ position: 'relative', width: '100%', height: '100%' }}><GoldenBloomResult outcome="pass" unit={{ title: 'Getting started' }} accuracy={0.93} calm={t.calm} onContinue={() => {}} onRetry={() => {}} /></div>;
+    case 'gb-fail':return <div style={{ position: 'relative', width: '100%', height: '100%' }}><GoldenBloomResult outcome="fail" unit={{ title: 'Getting started' }} calm={t.calm} onContinue={() => {}} onRetry={() => {}} /></div>;
+    case 'insights':return <div style={{ position: 'relative', width: '100%', height: '100%' }}><InsightsScreen tweaks={t} onBack={() => {}} onYearInBloom={() => {}} /></div>;
+    case 'parent-dash':return <div style={{ position: 'relative', width: '100%', height: '100%', background: SPROUT.bg }}><ParentDashboard onClose={() => {}} childName="Alex" /></div>;
+    case 'settings':return <div style={{ position: 'relative', width: '100%', height: '100%' }}><MeScreen tweaks={{ ...t, _startSettings: true }} tab="me" onTab={() => {}} onStartLesson={() => {}} /></div>;
+    case 'monthly-blooms':return <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'auto', background: SPROUT.bg, padding: `${LAYOUT.safeTop}px 16px 24px` }}><MonthlyBloomsGrid /></div>;
+    case 'customizer':return <Customizer tweaks={t} onBack={() => {}} />;
+    case 'year-in-bloom':return <YearInBloom onClose={() => {}} />;
+    case 'inbox':return <InboxScreen tweaks={t} onClose={() => {}} onGoTo={() => {}} />;
+    case 'search':return <div style={{ position: 'relative', width: '100%', height: '100%' }}><SearchOverlay onClose={() => {}} onStartLesson={() => {}} onOpenTale={() => {}} /></div>;
+    default:return null;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Grip icon
+// ─────────────────────────────────────────────────────────────
+function GripDots() {
+  return (
+    <svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor">
+      <circle cx="2.5" cy="2.5" r="1.4" />
+      <circle cx="7.5" cy="2.5" r="1.4" />
+      <circle cx="2.5" cy="7" r="1.4" />
+      <circle cx="7.5" cy="7" r="1.4" />
+      <circle cx="2.5" cy="11.5" r="1.4" />
+      <circle cx="7.5" cy="11.5" r="1.4" />
+    </svg>);
+
+}
+
+// ─────────────────────────────────────────────────────────────
+// Gallery card
+// ─────────────────────────────────────────────────────────────
+const GalleryCard = React.memo(function GalleryCard({
+  screen, index, tweaks, onOpen,
+  isDragging, isDropTarget,
+  onGripDragStart, onDragEnd,
+  onDragOver, onDragLeave, onDrop
+}) {
+  return (
+    <div
+      data-screen={screen.id}
+      onDragOver={(e) => {e.preventDefault();onDragOver(e);}}
+      onDragLeave={(e) => {if (!e.currentTarget.contains(e.relatedTarget)) onDragLeave();}}
+      onDrop={(e) => {e.preventDefault();onDrop(e);}}
+      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 11, opacity: isDragging ? 0.3 : 1, transition: 'opacity .12s' }}>
+      
+      {/* Phone thumbnail */}
+      <div
+        onClick={onOpen}
+        style={{
+          width: TH_W, height: TH_H, overflow: 'hidden', borderRadius: TH_R,
+          cursor: 'pointer', position: 'relative', flexShrink: 0,
+          boxShadow: isDropTarget ?
+          '0 0 0 2.5px #4D9E3F, 0 0 0 5px rgba(79,158,63,.2), 0 12px 40px -10px rgba(0,0,0,.24)' :
+          '0 8px 28px -8px rgba(0,0,0,.22)',
+          transition: 'box-shadow .12s'
+        }}>
+        
+        <div style={{
+          width: PH_W, height: PH_H,
+          transform: `scale(${SCALE})`, transformOrigin: 'top left',
+          pointerEvents: 'none', userSelect: 'none'
+        }}>
+          <IOSDevice width={PH_W} height={PH_H}>
+            <ScreenContent id={screen.id} tweaks={tweaks} />
+          </IOSDevice>
+        </div>
+      </div>
+
+      {/* Label */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 7, width: TH_W }}>
+        <span
+          draggable
+          onDragStart={onGripDragStart}
+          onDragEnd={onDragEnd}
+          onClick={(e) => e.stopPropagation()}
+          title="Drag to reorder"
+          style={{ cursor: 'grab', color: '#C8BEB4', flexShrink: 0, lineHeight: 0, userSelect: 'none' }}>
+          
+          <GripDots />
+        </span>
+        <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: '#BEB5AB', letterSpacing: '.1em', flexShrink: 0 }}>
+          {String(index + 1).padStart(2, '0')}
+        </span>
+        <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: '#8FB97F', letterSpacing: '.06em', flexShrink: 0, fontWeight: 700 }}>
+          {'SP-' + String(index + 1).padStart(3, '0')}
+        </span>
+        <span style={{
+          fontFamily: 'Nunito, system-ui', fontSize: 10, fontWeight: 800,
+          color: '#6E6259', textTransform: 'uppercase', letterSpacing: '.1em',
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1
+        }}>
+          {screen.label}
+        </span>
+      </div>
+    </div>);
+
+});
+
+// ─────────────────────────────────────────────────────────────
+// Gallery view
+// ─────────────────────────────────────────────────────────────
+function Gallery({ ordered, tweaks, onOpen, dragId, dropInfo, onGripDragStart, onDragEnd, onDragOver, onDrop, onDragLeave }) {
+  return (
+    <div style={{ flex: 1, overflowY: 'auto', padding: '40px 36px 100px' }}>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: `repeat(auto-fill, minmax(${TH_W}px, 1fr))`,
+        gap: '40px 28px',
+        maxWidth: 1440
+      }}>
+        {ordered.map((screen, i) =>
+        <GalleryCard
+          key={screen.id}
+          screen={screen}
+          index={i}
+          tweaks={tweaks}
+          onOpen={() => onOpen(i)}
+          isDragging={dragId === screen.id}
+          isDropTarget={dropInfo?.targetId === screen.id}
+          onGripDragStart={(e) => onGripDragStart(e, screen.id)}
+          onDragEnd={onDragEnd}
+          onDragOver={(e) => onDragOver(e, screen.id, 'grid')}
+          onDragLeave={onDragLeave}
+          onDrop={(e) => onDrop(e, screen.id, 'grid')} />
+
+        )}
+      </div>
+    </div>);
+
+}
+
+// ─────────────────────────────────────────────────────────────
+// Play view — the wired, interactive app (SproutApp)
+// ─────────────────────────────────────────────────────────────
+function PlayMode({ tweaks, isMobile, playScreen, onClearScreen, screensById }) {
+  const HOMES = [
+  { id: 'a', label: 'Winding path' },
+  { id: 'b', label: 'Garden' },
+  { id: 'c', label: 'Today card' }];
+
+  const [home, setHome] = React.useState('a');
+  const stageRef = React.useRef(null);
+  const [isFull, setIsFull] = React.useState(false);
+
+  // A screen pinned from the Screens panel (null = the default live home loop).
+  const pinned = playScreen && screensById ? screensById[playScreen] : null;
+
+  React.useEffect(() => {
+    const onChange = () => setIsFull(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', onChange);
+    return () => document.removeEventListener('fullscreenchange', onChange);
+  }, []);
+
+  const toggleFull = () => {
+    const el = stageRef.current;
+    if (!el) return;
+    if (document.fullscreenElement) {
+      document.exitFullscreen?.();
+    } else {
+      (el.requestFullscreen?.() || Promise.reject()).catch(() => {});
+    }
+  };
+
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', overflow: 'hidden', padding: isMobile ? '12px 0 0' : '20px 0 0' }}>
+      <style>{`
+        .play-stage:fullscreen { background: #2A2320; padding: 0; }
+        .play-stage:fullscreen .play-picker { display: none; }
+      `}</style>
+      {/* Home design picker + fullscreen — or, when a screen is pinned from the panel, its name + a way back */}
+      <div className="play-picker" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, marginBottom: isMobile ? 12 : 16 }}>
+        {pinned ? (
+          <React.Fragment>
+            <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: '#B0A89C', textTransform: 'uppercase', letterSpacing: '.16em' }}>
+              {pinned.group} · viewing screen
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
+              <span style={{ fontFamily: 'Nunito, system-ui', fontSize: 14, fontWeight: 800, color: '#2A2320', whiteSpace: 'nowrap' }}>{pinned.label}</span>
+              <button onClick={onClearScreen} style={{
+                appearance: 'none', cursor: 'pointer', whiteSpace: 'nowrap',
+                display: 'flex', alignItems: 'center', gap: 6,
+                minHeight: 38, padding: '0 14px', borderRadius: 999,
+                border: '1px solid rgba(42,35,32,.14)', background: '#F7F2E9',
+                fontFamily: 'Nunito, system-ui', fontSize: 13, fontWeight: 700, color: '#2A2320'
+              }}>
+                <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M8.5 3 4.5 7l4 4"/>
+                </svg>
+                Back to live app
+              </button>
+            </div>
+          </React.Fragment>
+        ) : (
+          <React.Fragment>
+            <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: '#B0A89C', textTransform: 'uppercase', letterSpacing: '.16em' }}>
+              Home screen
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
+              <div style={{ display: 'inline-flex', padding: 3, background: 'rgba(42,35,32,.08)', borderRadius: 999 }}>
+                {HOMES.map((h) =>
+                <button key={h.id} onClick={() => setHome(h.id)} style={{
+                  appearance: 'none', border: 0, outline: 0, cursor: 'pointer',
+                  minHeight: 38, padding: '0 14px', borderRadius: 999,
+                  fontFamily: 'Nunito, system-ui', fontSize: 13, fontWeight: 700,
+                  background: home === h.id ? '#2A2320' : 'transparent',
+                  color: home === h.id ? '#F5F0E7' : '#9A8F85',
+                  transition: 'background .15s, color .15s'
+                }}>{h.label}</button>
+                )}
+              </div>
+              <button onClick={toggleFull} title="Preview fullscreen (best for mobile browsers)" style={{
+                appearance: 'none', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: 6,
+                minHeight: 38, padding: '0 13px', borderRadius: 999,
+                border: '1px solid rgba(42,35,32,.14)', background: '#F7F2E9',
+                fontFamily: 'Nunito, system-ui', fontSize: 13, fontWeight: 700, color: '#2A2320'
+              }}>
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M1.5 5V2a.5.5 0 0 1 .5-.5h3M9 1.5h3a.5.5 0 0 1 .5.5v3M12.5 9v3a.5.5 0 0 1-.5.5H9M5 12.5H2a.5.5 0 0 1-.5-.5V9"/>
+                </svg>
+                Fullscreen
+              </button>
+            </div>
+          </React.Fragment>
+        )}
+      </div>
+
+      {/* The live app — or the pinned screen from the Screens panel */}
+      <div ref={stageRef} className="play-stage" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', width: '100%', minHeight: 0 }}>
+        <FittedPhone maxScale={isFull ? 4 : 1}>
+          {pinned ?
+            <div key={pinned.id} style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden', background: SPROUT.bg }}>
+              <ScreenContent id={pinned.id} tweaks={tweaks} />
+            </div> :
+            <SproutApp key={home} tweaks={tweaks} homeVariant={home} initialOnboarded={true} />
+          }
+        </FittedPhone>
+        {isFull && (
+          <button onClick={toggleFull} aria-label="Exit fullscreen" style={{
+            position: 'fixed', top: 16, right: 16, zIndex: 50,
+            appearance: 'none', cursor: 'pointer',
+            width: 44, height: 44, borderRadius: '50%',
+            border: 'none', background: 'rgba(255,255,255,.92)', color: '#2A2320',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 4px 14px rgba(0,0,0,.3)', fontSize: 22, lineHeight: 1
+          }}>×</button>
+        )}
+      </div>
+
+    </div>);
+
+}
+
+// ─────────────────────────────────────────────────────────────
+// Responsive helpers
+// ─────────────────────────────────────────────────────────────
+function useIsMobile(bp) {
+  const point = bp || MOBILE_BP;
+  const [m, setM] = React.useState(() => window.innerWidth < point);
+  React.useEffect(() => {
+    const f = () => setM(window.innerWidth < point);
+    window.addEventListener('resize', f);
+    return () => window.removeEventListener('resize', f);
+  }, [point]);
+  return m;
+}
+
+// Scales the fixed 402×874 device down (or up, in fullscreen) to fit its
+// container — guarantees no horizontal scroll on a phone browser.
+function FittedPhone({ children, maxScale = 1 }) {
+  const wrapRef = React.useRef(null);
+  const [scale, setScale] = React.useState(maxScale);
+  React.useLayoutEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const compute = () => {
+      const aw = el.clientWidth, ah = el.clientHeight;
+      if (!aw || !ah) return;
+      let s = Math.min(aw / PH_W, ah / PH_H, maxScale);
+      if (!isFinite(s) || s <= 0) s = maxScale;
+      setScale(s);
+    };
+    compute();
+    const ro = new ResizeObserver(compute);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [maxScale]);
+  return (
+    <div ref={wrapRef} style={{ flex: 1, width: '100%', minHeight: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', padding: 8 }}>
+      <div style={{ width: PH_W * scale, height: PH_H * scale, flexShrink: 0 }}>
+        <div style={{ width: PH_W, height: PH_H, transform: `scale(${scale})`, transformOrigin: 'top left' }}>
+          <IOSDevice width={PH_W} height={PH_H}>
+            {children}
+          </IOSDevice>
+        </div>
+      </div>
+    </div>);
+
+}
+
+// ─────────────────────────────────────────────────────────────
+// Prototype view
+// ─────────────────────────────────────────────────────────────
+function Prototype({ ordered, current, onPrev, onNext, tweaks }) {
+  const screen = ordered[current];
+  const total = ordered.length;
+
+  React.useEffect(() => {
+    const h = (e) => {
+      if (e.key === 'ArrowLeft') onPrev();
+      if (e.key === 'ArrowRight') onNext();
+    };
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
+  }, [onPrev, onNext]);
+
+  if (!screen) return null;
+
+  const canPrev = current > 0;
+  const canNext = current < total - 1;
+
+  const navBtn = (label, icon, onClick, enabled) =>
+  <button
+    onClick={onClick}
+    disabled={!enabled}
+    style={{
+      width: 44, height: 44, borderRadius: 999, border: '1px solid rgba(42,35,32,.12)',
+      background: '#F7F2E9', color: enabled ? '#2A2320' : '#C8C0B8',
+      cursor: enabled ? 'pointer' : 'default',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      opacity: enabled ? 1 : 0.4, transition: 'opacity .12s'
+    }}
+    aria-label={label}>
+    
+      {icon}
+    </button>;
+
+
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', overflow: 'hidden', padding: '32px 0 0' }}>
+      {/* Phone — scales to fit, no horizontal scroll */}
+      <FittedPhone>
+        <ScreenContent id={screen.id} tweaks={tweaks} />
+      </FittedPhone>
+
+      {/* Bottom dock: breadcrumb + pager */}
+      <div style={{
+        flexShrink: 0, padding: '18px 0 18px',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+        userSelect: 'none'
+      }}>
+        <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: '#B0A89C', textTransform: 'uppercase', letterSpacing: '.14em' }}>
+          {screen.group} · {screen.label}
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          {navBtn('Previous',
+          <svg width="7" height="12" viewBox="0 0 7 12"><path d="M5.5 1L1 6l4.5 5" stroke="currentColor" strokeWidth="1.8" fill="none" strokeLinecap="round" strokeLinejoin="round" /></svg>,
+          onPrev, canPrev)}
+
+          <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 12, color: '#9A8F85', letterSpacing: '.06em', minWidth: 64, textAlign: 'center' }}>
+            <span style={{ color: '#2A2320', fontWeight: 600 }}>{String(current + 1).padStart(2, '0')}</span>
+            {' / '}
+            {String(total).padStart(2, '0')}
+          </span>
+
+          {navBtn('Next',
+          <svg width="7" height="12" viewBox="0 0 7 12"><path d="M1 1l4.5 5L1 11" stroke="currentColor" strokeWidth="1.8" fill="none" strokeLinecap="round" strokeLinejoin="round" /></svg>,
+          onNext, canNext)}
+        </div>
+      </div>
+    </div>);
+
+}
+
+// ─────────────────────────────────────────────────────────────
+// Sidebar
+// ─────────────────────────────────────────────────────────────
+function Sidebar({ ordered, current, mode, playScreen, onSelect, onClose, dragId, dropInfo, onGripDragStart, onDragEnd, onDragOver, onDrop, onDragLeave }) {
+  let lastGroup = null;
+
+  return (
+    <div style={{
+      width: 220, flexShrink: 0, height: '100%',
+      display: 'flex', flexDirection: 'column',
+      borderRight: '1px solid rgba(42,35,32,.08)',
+      background: '#F5F0E7'
+    }}>
+      {/* Header — fixed to the toolbar height so its baseline aligns with the top bar */}
+      <div style={{
+        height: 56, boxSizing: 'border-box', padding: '0 14px',
+        borderBottom: '1px solid rgba(42,35,32,.07)',
+        display: 'flex', alignItems: 'center', gap: 9, flexShrink: 0
+      }}>
+        <span style={{ fontWeight: 900, fontSize: 15, color: '#2A2320', letterSpacing: '-.01em' }}>Screens</span>
+        <span style={{ marginLeft: 'auto', fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: '#C0B8B0', background: 'rgba(42,35,32,.06)', borderRadius: 5, padding: '2px 6px' }}>
+          {ordered.length}
+        </span>
+        {onClose &&
+        <button onClick={onClose} aria-label="Close screens panel" style={{
+          appearance: 'none', border: 0, cursor: 'pointer', background: 'transparent',
+          width: 32, height: 32, marginLeft: 2, marginRight: -6, borderRadius: 8, color: '#9A8F85',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, lineHeight: 1
+        }}>×</button>
+        }
+      </div>
+
+      {/* Screen list */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '6px 8px 16px' }}>
+        {ordered.map((screen, i) => {
+          const showGroup = screen.group !== lastGroup;
+          lastGroup = screen.group;
+          const isActive = (mode === 'prototype' && i === current) || (mode === 'play' && screen.id === playScreen);
+          const isDragging = dragId === screen.id;
+          const isBefore = dropInfo?.targetId === screen.id && dropInfo?.pos === 'before';
+          const isAfter = dropInfo?.targetId === screen.id && dropInfo?.pos === 'after';
+
+          return (
+            <React.Fragment key={screen.id}>
+              {showGroup &&
+              <div style={{
+                fontFamily: 'JetBrains Mono, monospace', fontSize: 9,
+                color: '#C8BEB4', textTransform: 'uppercase', letterSpacing: '.16em',
+                padding: `${i === 0 ? '8' : '14'}px 10px 5px`
+              }}>
+                  {screen.group}
+                </div>
+              }
+
+              {isBefore &&
+              <div style={{ height: 2, background: '#6FBF5E', borderRadius: 2, margin: '2px 10px' }} />
+              }
+
+              <div
+                onClick={() => onSelect(i)}
+                onDragOver={(e) => {e.preventDefault();onDragOver(e, screen.id, 'sidebar');}}
+                onDragLeave={(e) => {if (!e.currentTarget.contains(e.relatedTarget)) onDragLeave();}}
+                onDrop={(e) => {e.preventDefault();onDrop(e, screen.id, 'sidebar');}}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 7,
+                  minHeight: 42, padding: '8px 10px', borderRadius: 8,
+                  position: 'relative',
+                  background: isActive ? 'rgba(79,158,63,.14)' : 'transparent',
+                  boxShadow: isActive ? 'inset 3px 0 0 #4D9E3F' : 'none',
+                  cursor: 'pointer', opacity: isDragging ? 0.3 : 1,
+                  transition: 'background .1s'
+                }}>
+                
+                <span
+                  draggable
+                  onDragStart={(e) => onGripDragStart(e, screen.id)}
+                  onDragEnd={onDragEnd}
+                  onClick={(e) => e.stopPropagation()}
+                  title="Drag to reorder"
+                  style={{ cursor: 'grab', color: isActive ? '#93CA89' : '#C8C0B6', flexShrink: 0, lineHeight: 0, userSelect: 'none' }}>
+                  
+                  <GripDots />
+                </span>
+                <span style={{
+                  fontFamily: 'JetBrains Mono, monospace', fontSize: 10,
+                  color: isActive ? '#4D9E3F' : '#BEB5AB',
+                  letterSpacing: '.08em', flexShrink: 0, minWidth: 20
+                }}>
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <span style={{
+                  fontFamily: 'Nunito, system-ui', fontSize: 11, fontWeight: 700,
+                  color: isActive ? '#4D9E3F' : '#6E6259',
+                  textTransform: 'uppercase', letterSpacing: '.06em',
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1
+                }}>
+                  {screen.label}
+                </span>
+              </div>
+
+              {isAfter &&
+              <div style={{ height: 2, background: '#6FBF5E', borderRadius: 2, margin: '2px 10px' }} />
+              }
+            </React.Fragment>);
+
+        })}
+      </div>
+    </div>);
+
+}
+
+// ─────────────────────────────────────────────────────────────
+// Updates panel — right-side change history, mirrors the left Sidebar.
+// Newest at top; tap an entry to jump the viewer to that screen.
+// ─────────────────────────────────────────────────────────────
+function UpdatesPanel({ updates, screensById, onSelect, onClose }) {
+  return (
+    <div style={{
+      width: 250, flexShrink: 0, height: '100%',
+      display: 'flex', flexDirection: 'column',
+      borderLeft: '1px solid rgba(42,35,32,.08)',
+      background: '#F5F0E7'
+    }}>
+      {/* Header */}
+      <div style={{
+        padding: '16px 14px 13px',
+        borderBottom: '1px solid rgba(42,35,32,.07)',
+        display: 'flex', alignItems: 'center', gap: 9, flexShrink: 0
+      }}>
+        <span style={{ fontWeight: 900, fontSize: 15, color: '#2A2320', letterSpacing: '-.01em' }}>Updates</span>
+        <span style={{ marginLeft: 'auto', fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: '#C0B8B0', background: 'rgba(42,35,32,.06)', borderRadius: 5, padding: '2px 6px' }}>
+          {updates.length}
+        </span>
+        {onClose &&
+        <button onClick={onClose} aria-label="Close updates panel" style={{
+          appearance: 'none', border: 0, cursor: 'pointer', background: 'transparent',
+          width: 32, height: 32, marginLeft: 2, marginRight: -6, borderRadius: 8, color: '#9A8F85',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, lineHeight: 1
+        }}>×</button>
+        }
+      </div>
+
+      {/* Update list — newest first */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '8px 8px 16px' }}>
+        {updates.map((u, i) => {
+          const target = screensById[u.screen];
+          return (
+            <div
+              key={i}
+              onClick={() => onSelect(u.screen)}
+              style={{
+                padding: '10px 11px', borderRadius: 10, cursor: 'pointer',
+                background: i === 0 ? 'rgba(79,158,63,.08)' : 'transparent',
+                marginBottom: 2, transition: 'background .1s'
+              }}
+              onMouseEnter={(e) => { if (i !== 0) e.currentTarget.style.background = 'rgba(42,35,32,.045)'; }}
+              onMouseLeave={(e) => { if (i !== 0) e.currentTarget.style.background = 'transparent'; }}>
+
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4
+              }}>
+                {i === 0 &&
+                <span style={{ width: 6, height: 6, borderRadius: 999, background: '#6FBF5E', flexShrink: 0 }} />
+                }
+                <span style={{
+                  fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: '#B0A89E',
+                  textTransform: 'uppercase', letterSpacing: '.1em'
+                }}>{u.when}</span>
+              </div>
+
+              <div style={{
+                fontFamily: 'Nunito, system-ui', fontSize: 12.5, fontWeight: 700,
+                color: '#3A332E', lineHeight: 1.35, marginBottom: 5
+              }}>
+                {u.summary}
+              </div>
+
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 5,
+                fontFamily: 'Nunito, system-ui', fontSize: 10, fontWeight: 800,
+                color: '#7AA86E', background: 'rgba(79,158,63,.1)',
+                borderRadius: 6, padding: '2px 7px',
+                textTransform: 'uppercase', letterSpacing: '.05em',
+                maxWidth: '100%'
+              }}>
+                <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" style={{ flexShrink: 0 }}>
+                  <rect x="2.5" y="1.5" width="7" height="9" rx="1.2" />
+                  <path d="M5 5.5h2M5 7.5h2" strokeLinecap="round" />
+                </svg>
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{target ? target.label : u.screen}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>);
+
+}
+
+// ─────────────────────────────────────────────────────────────
+// Control bar  ·  [ ☰ Screens ] [ Mode ▾ ] ······ [ Tweaks ]
+// ─────────────────────────────────────────────────────────────
+const MODES = [
+{ id: 'gallery', label: 'Gallery', desc: 'All screens as a grid' },
+{ id: 'play', label: 'Prototype', desc: 'The live, wired app' },
+{ id: 'exploration', label: 'Exploration', desc: 'Design ideas in testing' }];
+
+
+function ModeDropdown({ mode, onMode }) {
+  const [open, setOpen] = React.useState(false);
+  const ref = React.useRef(null);
+  React.useEffect(() => {
+    const h = (e) => {if (ref.current && !ref.current.contains(e.target)) setOpen(false);};
+    document.addEventListener('mousedown', h);
+    document.addEventListener('touchstart', h);
+    return () => {document.removeEventListener('mousedown', h);document.removeEventListener('touchstart', h);};
+  }, []);
+  const cur = MODES.find((m) => m.id === mode) || MODES[0];
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <button onClick={() => setOpen((o) => !o)} style={{
+        appearance: 'none', cursor: 'pointer', minHeight: 44, padding: '0 12px',
+        display: 'flex', alignItems: 'center', gap: 8, borderRadius: 12,
+        border: '1px solid rgba(42,35,32,.14)', background: '#FFFDF7',
+        fontFamily: 'Nunito, system-ui', fontSize: 14, fontWeight: 800, color: '#2A2320'
+      }}>
+        {cur.label}
+        <svg width="11" height="7" viewBox="0 0 11 7" fill="none" style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }}>
+          <path d="M1 1l4.5 4.5L10 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+      {open &&
+      <div style={{
+        position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 80,
+        width: 220, background: '#FFFDF7', borderRadius: 14,
+        border: '1px solid rgba(42,35,32,.1)',
+        boxShadow: '0 16px 44px -8px rgba(0,0,0,.26)', overflow: 'hidden', padding: 6
+      }}>
+          {MODES.map((m) => {
+            const on = m.id === mode;
+            return (
+              <button key={m.id} onClick={() => {onMode(m.id);setOpen(false);}} style={{
+                appearance: 'none', cursor: 'pointer', width: '100%', textAlign: 'left',
+                display: 'flex', flexDirection: 'column', gap: 1, padding: '10px 11px',
+                borderRadius: 10, border: 0, background: on ? 'rgba(79,158,63,.12)' : 'transparent',
+                fontFamily: 'inherit'
+              }}
+              onMouseEnter={(e) => {if (!on) e.currentTarget.style.background = 'rgba(42,35,32,.05)';}}
+              onMouseLeave={(e) => {if (!on) e.currentTarget.style.background = 'transparent';}}>
+                <span style={{ fontSize: 14, fontWeight: 800, color: on ? '#4D9E3F' : '#2A2320' }}>{m.label}</span>
+                <span style={{ fontSize: 11, fontWeight: 600, color: '#9A8F85' }}>{m.desc}</span>
+              </button>);
+
+          })}
+        </div>
+      }
+    </div>);
+
+}
+
+// Desktop: 3-way segmented pill — one tap to switch, active segment filled dark.
+function ModeSegments({ mode, onMode }) {
+  return (
+    <div style={{ display: 'inline-flex', padding: 3, background: 'rgba(42,35,32,.08)', borderRadius: 999 }}>
+      {MODES.map((m) => {
+        const on = m.id === mode;
+        return (
+          <button key={m.id} onClick={() => onMode(m.id)} title={m.desc} style={{
+            appearance: 'none', border: 0, outline: 0, cursor: 'pointer',
+            minHeight: 38, padding: '0 16px', borderRadius: 999,
+            fontFamily: 'Nunito, system-ui', fontSize: 14, fontWeight: 800,
+            background: on ? '#2A2320' : 'transparent',
+            color: on ? '#F5F0E7' : '#8A7F75',
+            transition: 'background .15s, color .15s'
+          }}>{m.label}</button>);
+
+      })}
+    </div>);
+
+}
+
+function ControlBar({ mode, onMode, panelOpen, onTogglePanel, onOpenPanel, tweaksCount, isMobile, toolOpen }) {
+  return (
+    <div style={{
+      height: 56, flexShrink: 0, position: 'relative', zIndex: 60,
+      display: 'flex', alignItems: 'center', gap: 8, padding: '0 12px',
+      borderBottom: '1px solid rgba(42,35,32,.08)',
+      background: 'rgba(245,240,231,.96)',
+      backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)'
+    }}>
+      {/* ☰ Screens toggle — only when the panel is closed; the open panel has its own "Screens" header + ✕.
+          Hidden in Exploration, which carries its own left index. */}
+      {!panelOpen && (mode !== 'exploration' || isMobile) && (
+      <button onClick={onTogglePanel} aria-label="Open screens panel" style={{
+        appearance: 'none', cursor: 'pointer', minHeight: 44, padding: '0 13px',
+        display: 'flex', alignItems: 'center', gap: 8, borderRadius: 12,
+        border: '1px solid rgba(42,35,32,.14)',
+        background: '#FFFDF7',
+        color: '#2A2320',
+        fontFamily: 'Nunito, system-ui', fontSize: 14, fontWeight: 800,
+        transition: 'background .15s, border-color .15s'
+      }}>
+        <svg width="15" height="12" viewBox="0 0 15 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+          <path d="M1 1h13M1 6h13M1 11h13" />
+        </svg>
+        {mode === 'exploration' ? 'Index' : 'Screens'}
+      </button>
+      )}
+
+      <div style={{ flex: 1 }} />
+
+      {/* Mode selector — centered; segmented pill on desktop, dropdown on mobile */}
+      {isMobile ? <ModeDropdown mode={mode} onMode={onMode} /> : <ModeSegments mode={mode} onMode={onMode} />}
+
+      <div style={{ flex: 1 }} />
+
+      {/* Tweaks + Updates — one combined panel */}
+      <button onClick={onOpenPanel} aria-label="Open tweaks and updates" style={{
+        appearance: 'none', cursor: 'pointer', minHeight: 44, padding: '0 13px',
+        display: 'flex', alignItems: 'center', gap: 8, borderRadius: 12,
+        border: '1px solid rgba(42,35,32,.14)',
+        background: toolOpen ? '#2A2320' : '#FFFDF7',
+        color: toolOpen ? '#F5F0E7' : '#2A2320',
+        fontFamily: 'Nunito, system-ui', fontSize: 14, fontWeight: 800,
+        transition: 'background .15s, color .15s'
+      }}>
+        <svg width="15" height="15" viewBox="0 0 14 14" fill="none">
+          <circle cx="4" cy="4" r="1.7" fill="currentColor" />
+          <path d="M7 4H13" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+          <path d="M1 4H1.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+          <circle cx="10" cy="10" r="1.7" fill="currentColor" />
+          <path d="M7 10H1" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+          <path d="M13 10H12.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+        </svg>
+        {!isMobile && 'Panel'}
+        {tweaksCount > 0 &&
+        <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, background: '#6FBF5E', color: '#fff', padding: '1px 6px', borderRadius: 999, lineHeight: 1.4 }}>{tweaksCount}</span>
+        }
+      </button>
+    </div>);
+
+}
+
+// ─────────────────────────────────────────────────────────────
+// Floating tweaks controller (bottom-right)
+// ─────────────────────────────────────────────────────────────
+function Stepper({ label, value, min, max, onChange }) {
+  const dec = () => onChange(Math.max(min, value - 1));
+  const inc = () => onChange(Math.min(max, value + 1));
+  const btn = (enabled) => ({
+    appearance: 'none', border: '1px solid rgba(42,35,32,.14)', cursor: enabled ? 'pointer' : 'default',
+    width: 30, height: 30, borderRadius: 9, background: enabled ? '#FFFDF7' : '#F2ECE0',
+    color: enabled ? '#2A2320' : '#C4BAAC', fontSize: 18, fontWeight: 800, lineHeight: 1,
+    display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit', flexShrink: 0,
+  });
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 10px' }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontWeight: 800, fontSize: 13, color: '#2A2320' }}>{label}</div>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexShrink: 0 }}>
+        <button onClick={dec} disabled={value <= min} style={btn(value > min)} aria-label={`Decrease ${label}`}>–</button>
+        <span style={{ minWidth: 20, textAlign: 'center', fontWeight: 900, fontSize: 14, color: '#2A2320', fontVariantNumeric: 'tabular-nums' }}>{value}</span>
+        <button onClick={inc} disabled={value >= max} style={btn(value < max)} aria-label={`Increase ${label}`}>+</button>
+      </div>
+    </div>
+  );
+}
+
+function ToolPanel({ tweaks, onTweaks, updates, screensById, onSelectUpdate, open, tab, onTab, onClose, mode, explEx, explIdx, explTotal }) {
+  const items = [
+  { key: 'calm', label: 'Calm mode', desc: 'Hide streaks & timers' },
+  { key: 'lowWater', label: 'Low water', desc: 'Pulse the water HUD near empty' },
+  { key: 'firstTime', label: 'First-time user', desc: 'Empty garden, friends & league' },
+  { key: 'milestoneDemo', label: 'Streak milestone', desc: 'Fire a 30-day celebration after a lesson' }]
+  // TEMP light-only: the 'lightMode' palette tweak is hidden while ALLOW_DARK is off.
+  .concat((typeof ALLOW_DARK !== 'undefined' && ALLOW_DARK) ? [{ key: 'lightMode', label: 'Light mode', desc: 'Warm cream palette' }] : []);
+
+  if (!open) return null;
+
+  // In Exploration mode this panel IS the exploration tracker (replaces Tweaks/Updates).
+  if (mode === 'exploration' && explEx) {
+    return (
+      <div style={{
+        position: 'fixed', top: 0, right: 0, bottom: 0, zIndex: 100,
+        width: 300, maxWidth: '88vw', background: '#FFFDF7',
+        borderLeft: '1px solid rgba(42,35,32,.1)',
+        boxShadow: '-8px 0 32px -8px rgba(0,0,0,.18)',
+        fontFamily: 'Nunito, system-ui', overflow: 'hidden', display: 'flex', flexDirection: 'column'
+      }}>
+        <ExplorationTrackPanel ex={explEx} idx={explIdx} total={explTotal} embedded onClose={onClose} />
+      </div>
+    );
+  }
+
+  const onTweaksTab = tab === 'tweaks';
+
+  // segmented tab button
+  const TabBtn = ({ id, label, badge }) => {
+    const active = tab === id;
+    return (
+      <button onClick={() => onTab(id)} style={{
+        flex: 1, appearance: 'none', border: 0, cursor: 'pointer', borderRadius: 8, padding: '7px 0',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+        background: active ? '#FFFDF7' : 'transparent', color: active ? '#2A2320' : '#857B70',
+        fontFamily: 'Nunito, system-ui', fontWeight: 900, fontSize: 13,
+        boxShadow: active ? '0 1px 3px rgba(0,0,0,.12)' : 'none', transition: 'background .12s'
+      }}>
+        {label}
+        {badge != null && badge > 0 &&
+        <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 9, background: active ? '#6FBF5E' : 'rgba(42,35,32,.12)', color: active ? '#fff' : '#857B70', padding: '1px 5px', borderRadius: 999, lineHeight: 1.4 }}>{badge}</span>
+        }
+      </button>
+    );
+  };
+
+  return (
+    <div style={{
+      position: 'fixed', top: 0, right: 0, bottom: 0, zIndex: 100,
+      width: 300, maxWidth: '88vw', background: '#FFFDF7',
+      borderLeft: '1px solid rgba(42,35,32,.1)',
+      boxShadow: '-8px 0 32px -8px rgba(0,0,0,.18)',
+      fontFamily: 'Nunito, system-ui',
+      overflow: 'hidden', display: 'flex', flexDirection: 'column'
+    }}>
+      {/* Header — segmented Tweaks | Updates tabs + close */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 8,
+        padding: '10px 10px 9px',
+        borderBottom: '1px solid rgba(42,35,32,.06)', flexShrink: 0
+      }}>
+        <div style={{ flex: 1, display: 'flex', gap: 3, background: 'rgba(42,35,32,.06)', borderRadius: 10, padding: 3 }}>
+          <TabBtn id="tweaks" label="Tweaks" />
+          <TabBtn id="updates" label="Updates" badge={updates ? updates.length : 0} />
+        </div>
+        <button
+          onClick={onClose}
+          style={{
+            appearance: 'none', border: 0, cursor: 'pointer', background: 'transparent',
+            width: 28, height: 28, borderRadius: 7, color: '#9A8F85', flexShrink: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 19, lineHeight: 1
+          }}
+          aria-label="Close panel">
+          ×
+        </button>
+      </div>
+
+      {/* Updates list */}
+      {!onTweaksTab &&
+      <div style={{ flex: 1, overflowY: 'auto', padding: '8px 8px 16px' }}>
+        {updates.map((u, i) => {
+          const target = screensById[u.screen];
+          return (
+            <div
+              key={i}
+              onClick={() => onSelectUpdate(u.screen)}
+              style={{
+                padding: '10px 11px', borderRadius: 10, cursor: 'pointer',
+                background: i === 0 ? 'rgba(79,158,63,.08)' : 'transparent',
+                marginBottom: 2, transition: 'background .1s'
+              }}
+              onMouseEnter={(e) => { if (i !== 0) e.currentTarget.style.background = 'rgba(42,35,32,.045)'; }}
+              onMouseLeave={(e) => { if (i !== 0) e.currentTarget.style.background = 'transparent'; }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                {i === 0 &&
+                <span style={{ width: 6, height: 6, borderRadius: 999, background: '#6FBF5E', flexShrink: 0 }} />
+                }
+                <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: '#B0A89E', textTransform: 'uppercase', letterSpacing: '.1em' }}>{u.when}</span>
+              </div>
+              <div style={{ fontFamily: 'Nunito, system-ui', fontSize: 12.5, fontWeight: 700, color: '#3A332E', lineHeight: 1.35, marginBottom: 5 }}>
+                {u.summary}
+              </div>
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 5,
+                fontFamily: 'Nunito, system-ui', fontSize: 10, fontWeight: 800,
+                color: '#7AA86E', background: 'rgba(79,158,63,.1)',
+                borderRadius: 6, padding: '2px 7px',
+                textTransform: 'uppercase', letterSpacing: '.05em', maxWidth: '100%'
+              }}>
+                <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" style={{ flexShrink: 0 }}>
+                  <rect x="2.5" y="1.5" width="7" height="9" rx="1.2" />
+                  <path d="M5 5.5h2M5 7.5h2" strokeLinecap="round" />
+                </svg>
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{target ? target.label : u.screen}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      }
+
+      {/* Tweaks rows */}
+      {onTweaksTab &&
+      <div style={{ flex: 1, overflowY: 'auto', padding: '4px 6px 8px' }}>
+        {/* Course position — jump the Winding Path to any Section / Unit */}
+        {(() => {
+          const sections = (window.COURSE_SECTIONS || [{ units: [{}] }]);
+          const secCount = sections.length;
+          const section = Math.max(1, Math.min(tweaks.section || 1, secCount));
+          const sec = sections[section - 1];
+          const unitCount = sec ? sec.units.length : 1;
+          const unit = Math.max(1, Math.min(tweaks.unit || 1, unitCount));
+          const focusUnit = sec ? sec.units[unit - 1] : null;
+          const lessonCount = focusUnit ? focusUnit.lessons.length : 1;
+          const defaultLesson = Math.floor(lessonCount / 2) + 1;
+          const lessonN = Math.max(1, Math.min(tweaks.lessonN || defaultLesson, lessonCount));
+          const heading = focusUnit
+            ? `Section ${section} · Unit ${unit} · ${focusUnit.title}`
+            : `Section ${section} · Unit ${unit}`;
+          return (
+            <div style={{ padding: '2px 4px 8px', borderBottom: '1px solid rgba(42,35,32,.06)', marginBottom: 4 }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, padding: '4px 8px 2px' }}>
+                <span style={{ fontWeight: 900, fontSize: 11, color: '#9A8F85', textTransform: 'uppercase', letterSpacing: '.08em' }}>Course position</span>
+              </div>
+              <div style={{ fontSize: 11, color: '#6FBF5E', fontWeight: 800, padding: '0 8px 4px' }}>{heading}</div>
+              <Stepper label="Section" value={section} min={1} max={secCount}
+                onChange={(v) => onTweaks({ ...tweaks, section: v, unit: 1, lessonN: undefined })} />
+              <Stepper label="Unit" value={unit} min={1} max={unitCount}
+                onChange={(v) => onTweaks({ ...tweaks, section, unit: v, lessonN: undefined })} />
+              <Stepper label="Lesson" value={lessonN} min={1} max={lessonCount}
+                onChange={(v) => onTweaks({ ...tweaks, section, unit, lessonN: v })} />
+            </div>
+          );
+        })()}
+        {items.map(({ key, label, desc }) => {
+          const on = !!tweaks[key];
+          return (
+            <button
+              key={key}
+              onClick={() => onTweaks((prev) => ({ ...prev, [key]: !prev[key] }))}
+              style={{
+                appearance: 'none', border: 0, cursor: 'pointer', background: 'transparent',
+                width: '100%', padding: '10px 10px',
+                display: 'flex', alignItems: 'center', gap: 12,
+                borderRadius: 10, textAlign: 'left',
+                fontFamily: 'inherit',
+                transition: 'background .1s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(42,35,32,.04)'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
+              
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 800, fontSize: 13, color: '#2A2320' }}>{label}</div>
+                <div style={{ fontSize: 11, color: '#9A8F85', marginTop: 1 }}>{desc}</div>
+              </div>
+              {/* iOS-style switch */}
+              <div style={{
+                width: 34, height: 20, borderRadius: 999, flexShrink: 0,
+                background: on ? '#6FBF5E' : 'rgba(42,35,32,.15)',
+                position: 'relative', transition: 'background .15s'
+              }}>
+                <div style={{
+                  position: 'absolute', top: 2, left: on ? 16 : 2,
+                  width: 16, height: 16, borderRadius: '50%', background: '#fff',
+                  boxShadow: '0 1px 3px rgba(0,0,0,.2)',
+                  transition: 'left .15s'
+                }} />
+              </div>
+            </button>);
+
+        })}
+      </div>
+      }
+    </div>);
+
+}
+
+// ─────────────────────────────────────────────────────────────
+// Lazy Exploration bundle
+// The Exploration deck's three component files are large JSX (~850KB of in-browser
+// Babel). They are NOT loaded eagerly; the first time the Exploration tab is opened
+// we fetch each, transform it once with Babel, and append it as a classic <script>
+// so its top-level `function`/`const` declarations land in global scope exactly as
+// an eager <script type="text/babel"> would. Order is preserved (parts → views →
+// exploration) so PROPOSED_VIEWS in exploration.jsx sees the component functions.
+// Result: Play / Gallery / Prototype boot without the exploration transform.
+// ─────────────────────────────────────────────────────────────
+let __EXPL_LOAD = null;
+function ensureExplorationLoaded() {
+  if (__EXPL_LOAD) return __EXPL_LOAD;
+  const files = ['exploration-parts.jsx', 'exploration-views.jsx', 'exploration.jsx'];
+  __EXPL_LOAD = (async () => {
+    for (const f of files) {
+      const code = await (await fetch(f)).text();
+      const out = Babel.transform(code, { presets: ['react'], filename: f }).code;
+      const s = document.createElement('script');
+      s.textContent = out;
+      document.head.appendChild(s); // classic script → executes synchronously in global scope
+    }
+  })();
+  return __EXPL_LOAD;
+}
+
+// Calm placeholder shown while the exploration bundle transforms on first open.
+function ExplorationLoading() {
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, background: '#EDE8DF' }}>
+      <style>{`@keyframes explSpin{to{transform:rotate(360deg)}}`}</style>
+      <div style={{ width: 32, height: 32, borderRadius: '50%', border: '3px solid rgba(79,158,63,.25)', borderTopColor: '#4D9E3F', animation: 'explSpin .8s linear infinite' }} />
+      <div style={{ fontFamily: 'Nunito, system-ui', fontWeight: 800, fontSize: 13, color: '#6E6259', letterSpacing: '.02em' }}>Growing the exploration deck…</div>
+    </div>);
+
+}
+
+// ─────────────────────────────────────────────────────────────
+// App
+// ─────────────────────────────────────────────────────────────
+function App() {
+  const isMobile = useIsMobile();
+  const [mode, setMode] = React.useState('play');
+  const [explSel, setExplSel] = React.useState(0);
+  // Heavy Exploration component bundle loads lazily on first open of its tab.
+  const [explReady, setExplReady] = React.useState(false);
+  React.useEffect(() => {
+    if (mode === 'exploration' && !explReady) {
+      ensureExplorationLoaded()
+        .then(() => setExplReady(true))
+        .catch((e) => console.error('Exploration bundle failed to load', e));
+    }
+  }, [mode, explReady]);
+  const [panelOpen, setPanelOpen] = React.useState(() => window.innerWidth >= MOBILE_BP);
+  // Combined Tweaks+Updates panel — one entry point, segmented tabs, remembers last tab.
+  const [toolOpen, setToolOpen] = React.useState(() => window.innerWidth >= MOBILE_BP);
+  const [toolTab, setToolTab] = React.useState(() => { try { return localStorage.getItem('sprout.toolTab') || 'updates'; } catch (e) { return 'updates'; } });
+  const selectToolTab = (t) => { setToolTab(t); try { localStorage.setItem('sprout.toolTab', t); } catch (e) {} };
+
+  const [order, setOrder] = React.useState(() => {
+    try {
+      const s = JSON.parse(localStorage.getItem(ORDER_KEY) || 'null');
+      if (Array.isArray(s) && s.length === ALL_SCREENS.length && s.every((id) => ALL_SCREENS.find((sc) => sc.id === id)))
+      return s;
+    } catch (e) {}
+    return ALL_SCREENS.map((s) => s.id);
+  });
+
+  const [current, setCurrent] = React.useState(0);
+  // In Play mode, the Screens panel acts as a navigator: this holds the screen id
+  // the live Play preview is pinned to (null = the default interactive home loop).
+  const [playScreen, setPlayScreen] = React.useState(null);
+
+  const [tweaks, setTweaks] = React.useState({
+    calm: true,
+    lightMode: true
+  });
+  // keep the reduce-motion body class synced to the in-app toggle ('on' forces calm motion everywhere)
+  if (typeof useReduceMotionClass === 'function') useReduceMotionClass(tweaks.reduceMotion);
+
+  // ── Live theme (Light / Dark / System + auto-evening) ──
+  // Read persisted prefs; the Settings Appearance control dispatches 'sprout-theme'
+  // so this top-level listener can re-theme the WHOLE app (SPROUT mutated + re-render).
+  const readTheme = () => { try { return localStorage.getItem('sprout.theme') || 'system'; } catch (e) { return 'system'; } };
+  const readEvening = () => { try { return localStorage.getItem('sprout.autoEvening') === 'on'; } catch (e) { return false; } };
+  const [themePref, setThemePref] = React.useState(readTheme);
+  const [autoEvening, setAutoEvening] = React.useState(readEvening);
+  React.useEffect(() => {
+    const onTheme = (e) => {
+      if (e.detail && e.detail.pref != null) setThemePref(e.detail.pref);
+      if (e.detail && e.detail.autoEvening != null) setAutoEvening(e.detail.autoEvening);
+    };
+    window.addEventListener('sprout-theme', onTheme);
+    return () => window.removeEventListener('sprout-theme', onTheme);
+  }, []);
+  // apply BEFORE children render so every screen reads the right palette this pass
+  const resolvedTheme = (typeof resolveTheme === 'function') ? resolveTheme(themePref, autoEvening) : 'light';
+  if (typeof applyTheme === 'function') applyTheme(resolvedTheme);
+
+  // drag state
+  const [dragId, setDragId] = React.useState(null);
+  const [dropInfo, setDropInfo] = React.useState(null); // { targetId, pos: 'before'|'after' }
+
+  const ordered = order.map((id) => ALL_SCREENS.find((s) => s.id === id)).filter(Boolean);
+
+  // reorder helper
+  function reorder(fromId, toId, pos) {
+    if (!fromId || fromId === toId) return;
+    const curId = ordered[current]?.id;
+    setOrder((prev) => {
+      const a = [...prev];
+      const fi = a.indexOf(fromId);
+      if (fi < 0) return prev;
+      a.splice(fi, 1);
+      let ti = a.indexOf(toId);
+      if (ti < 0) return prev;
+      if (pos === 'after') ti++;
+      a.splice(ti, 0, fromId);
+      localStorage.setItem(ORDER_KEY, JSON.stringify(a));
+      if (curId) {
+        const ni = a.indexOf(curId);
+        if (ni >= 0) setCurrent(ni);
+      }
+      return a;
+    });
+  }
+
+  function onGripDragStart(e, id) {
+    setDragId(id);
+    e.dataTransfer.effectAllowed = 'move';
+    try {e.dataTransfer.setData('text/plain', id);} catch (err) {}
+  }
+
+  function onDragEnd() {
+    setDragId(null);
+    setDropInfo(null);
+  }
+
+  function onDragLeave() {
+    setDropInfo(null);
+  }
+
+  function onDragOver(e, targetId, zone) {
+    if (!dragId || dragId === targetId) {setDropInfo(null);return;}
+    const rect = e.currentTarget.getBoundingClientRect();
+    const pos = zone === 'sidebar' ?
+    e.clientY - rect.top < rect.height / 2 ? 'before' : 'after' :
+    e.clientX - rect.left < rect.width / 2 ? 'before' : 'after';
+    setDropInfo((prev) =>
+    prev?.targetId === targetId && prev?.pos === pos ? prev : { targetId, pos }
+    );
+  }
+
+  function onDrop(e, targetId, zone) {
+    if (!dragId) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const pos = zone === 'sidebar' ?
+    e.clientY - rect.top < rect.height / 2 ? 'before' : 'after' :
+    e.clientX - rect.left < rect.width / 2 ? 'before' : 'after';
+    reorder(dragId, targetId, pos);
+    setDragId(null);
+    setDropInfo(null);
+  }
+
+  const dragHandlers = { onGripDragStart, onDragEnd, onDragOver, onDrop, onDragLeave };
+
+  const closePanelOnMobile = () => { if (isMobile) setPanelOpen(false); };
+
+  const sidebar = (
+    <Sidebar
+      ordered={ordered}
+      current={current}
+      mode={mode}
+      playScreen={playScreen}
+      onClose={() => setPanelOpen(false)}
+      onSelect={(i) => {
+        setCurrent(i);
+        if (mode === 'play') {
+          // Stay in Play — pin the live preview to the chosen screen (works for all 59).
+          setPlayScreen(ordered[i].id);
+        } else if (mode === 'gallery') {
+          setMode('prototype');
+        }
+        // Keep the panel open so it acts as a table of contents — jump screen to screen.
+      }}
+      dragId={dragId}
+      dropInfo={dropInfo}
+      {...dragHandlers} />
+  );
+
+  const screensById = React.useMemo(() => {
+    const m = {};
+    ALL_SCREENS.forEach((s) => { m[s.id] = s; });
+    return m;
+  }, []);
+
+  const selectUpdate = (screenId) => {
+    const i = ordered.findIndex((s) => s.id === screenId);
+    if (i >= 0) {
+      setCurrent(i);
+      if (mode !== 'prototype') setMode('prototype');
+    }
+    if (isMobile) setToolOpen(false);
+  };
+
+  const tweaksCount = ['calm', 'lightMode', 'lowWater', 'firstTime', 'milestoneDemo'].filter((k) => tweaks[k]).length
+    + ((tweaks.section && tweaks.section > 1) || (tweaks.unit && tweaks.unit > 1) ? 1 : 0);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
+      {typeof JuiceStyles === 'function' && <JuiceStyles />}
+
+      {/* Mobile Screens panel — viewport-level slide-over so its header sits flush at the very top (y=0), level with the toolbar */}
+      {isMobile && mode !== 'exploration' &&
+        <div style={{
+          position: 'fixed', top: 0, bottom: 0, left: 0, zIndex: 65,
+          transform: panelOpen ? 'translateX(0)' : 'translateX(-100%)',
+          transition: 'transform .24s cubic-bezier(.4,0,.2,1)',
+          boxShadow: panelOpen ? '0 0 40px rgba(0,0,0,.18)' : 'none',
+          pointerEvents: panelOpen ? 'auto' : 'none'
+        }}>
+          {sidebar}
+        </div>
+      }
+
+      {/* Mobile Exploration Index — same slide-over drawer pattern as the Screens panel */}
+      {isMobile && mode === 'exploration' && explReady &&
+        <React.Fragment>
+          <div onClick={() => setPanelOpen(false)} style={{
+            position: 'fixed', inset: 0, zIndex: 64, background: 'rgba(42,35,32,.4)',
+            opacity: panelOpen ? 1 : 0, pointerEvents: panelOpen ? 'auto' : 'none',
+            transition: 'opacity .24s cubic-bezier(.4,0,.2,1)'
+          }} />
+          <div style={{
+            position: 'fixed', top: 0, bottom: 0, left: 0, zIndex: 65,
+            transform: panelOpen ? 'translateX(0)' : 'translateX(-100%)',
+            transition: 'transform .24s cubic-bezier(.4,0,.2,1)',
+            boxShadow: panelOpen ? '0 0 40px rgba(0,0,0,.18)' : 'none',
+            pointerEvents: panelOpen ? 'auto' : 'none'
+          }}>
+            <ExplorationIndex items={EXPLORATIONS} sel={explSel}
+              onSelect={(i) => { setExplSel(i); setPanelOpen(false); }} isMobile={false} />
+          </div>
+        </React.Fragment>
+      }
+
+      {/* Outer row: desktop Screens panel rises full-height beside the toolbar+content */}
+      <div style={{ flex: 1, display: 'flex', minHeight: 0, overflow: 'hidden' }}>
+
+        {/* Desktop Screens panel — full height, header flush with the top toolbar.
+            Exploration provides its own left index, so the global Screens panel steps aside there. */}
+        {!isMobile && panelOpen && mode !== 'exploration' && sidebar}
+
+        {/* Exploration's left index — rises full-height beside the toolbar, flush to the
+            very top exactly like the Screens panel (no empty band under the tab bar). */}
+        {!isMobile && mode === 'exploration' && explReady &&
+          <ExplorationIndex items={EXPLORATIONS} sel={explSel} onSelect={setExplSel} isMobile={false} />}
+
+        {/* Right column: toolbar on top, content below */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
+          <ControlBar
+            key={'cb-' + mode}
+            mode={mode}
+            onMode={(m) => { setMode(m); closePanelOnMobile(); }}
+            panelOpen={panelOpen}
+            onTogglePanel={() => setPanelOpen((o) => !o)}
+            onOpenPanel={() => { setToolOpen((o) => !o); if (isMobile) setPanelOpen(false); }}
+            tweaksCount={tweaksCount}
+            toolOpen={toolOpen}
+            isMobile={isMobile} />
+
+          <div style={{ flex: 1, display: 'flex', overflow: 'hidden', position: 'relative', minHeight: 0, paddingRight: (toolOpen && !isMobile) ? 300 : 0, transition: 'padding-right .24s cubic-bezier(.4,0,.2,1)' }}>
+            {/* Main view */}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
+              {mode === 'gallery' ?
+              <Gallery
+                ordered={ordered}
+                tweaks={tweaks}
+                onOpen={(i) => { setCurrent(i); setMode('prototype'); }}
+                dragId={dragId}
+                dropInfo={dropInfo}
+                {...dragHandlers} /> :
+
+              mode === 'play' ?
+              <PlayMode tweaks={tweaks} isMobile={isMobile} playScreen={playScreen} onClearScreen={() => setPlayScreen(null)} screensById={screensById} /> :
+
+              mode === 'exploration' ?
+              (explReady ?
+                <ExplorationBoard tweaks={tweaks} ScreenContent={ScreenContent} isMobile={isMobile} sel={explSel} onSel={setExplSel} /> :
+                <ExplorationLoading />) :
+
+              <Prototype
+                ordered={ordered}
+                current={current}
+                onPrev={() => setCurrent((c) => Math.max(0, c - 1))}
+                onNext={() => setCurrent((c) => Math.min(ordered.length - 1, c + 1))}
+                tweaks={tweaks} />
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Combined Tweaks + Updates panel — segmented tabs, one entry point + X.
+          Keyed on the tweak values so the toggles' visuals always reflect live state
+          (the panel is stateless, so remounting on change is safe + cheap). */}
+      <ToolPanel
+        key={'tp-' + [tweaks.calm, tweaks.lowWater, tweaks.firstTime, tweaks.milestoneDemo, tweaks.lightMode, tweaks.section, tweaks.unit, tweaks.lessonN].join('|') + '-' + toolTab + '-' + mode + '-' + explSel}
+        mode={mode}
+        explEx={explReady ? EXPLORATIONS[explSel] : null}
+        explIdx={explSel}
+        explTotal={EXPLORATIONS.length}
+        tweaks={tweaks}
+        onTweaks={setTweaks}
+        updates={UPDATES}
+        screensById={screensById}
+        onSelectUpdate={selectUpdate}
+        open={toolOpen}
+        tab={toolTab}
+        onTab={selectToolTab}
+        onClose={() => setToolOpen(false)} />
+    </div>);
+
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

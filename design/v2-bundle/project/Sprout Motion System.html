@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Sprout — Motion System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #FDF8EE; --paper: #FFFFFF; --ink: #2A2320; --mute: #857B70;
+    --green: #6FBF5E; --greenDark: #4D9E3F; --greenShadow: #3F7F34;
+    --cream: #F3E8D2; --cream2: #E9DCC0; --sun: #F5B94A; --coral: #F47A7A; --sky: #A8D8EA; --line: #E8DFCE;
+    --spring: cubic-bezier(.2,.9,.3,1.25);
+    --springy: cubic-bezier(.3,1.5,.5,1);
+    --ease-out: cubic-bezier(.2,.8,.2,1);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--ink); font-family: "Nunito", system-ui, sans-serif; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 820px; margin: 0 auto; padding: 64px 24px 100px; }
+  .badge { display: inline-flex; align-items: center; gap: 9px; background: #EFF7EA; color: var(--greenDark); font-weight: 900; font-size: 13px; padding: 7px 14px 7px 9px; border-radius: 999px; }
+  .badge .leaf { width: 26px; height: 26px; border-radius: 8px; background: var(--green); display: grid; place-items: center; }
+  h1 { font-size: 44px; font-weight: 900; letter-spacing: -1px; margin: 22px 0 10px; line-height: 1.05; }
+  .lede { font-size: 18px; font-weight: 700; color: var(--mute); max-width: 580px; }
+  .lede em { color: var(--greenDark); font-style: normal; font-weight: 800; }
+  .section-label { font-size: 12px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; color: var(--mute); margin: 54px 0 16px; display: flex; align-items: center; gap: 10px; }
+  .section-label::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+  .hint { font-size: 13px; font-weight: 700; color: var(--mute); max-width: 600px; margin-bottom: 16px; }
+  .hint code { background: #EFF7EA; color: var(--greenDark); font-weight: 800; padding: 1px 6px; border-radius: 5px; font-family: inherit; }
+
+  .toks { display: grid; grid-template-columns: repeat(auto-fill,minmax(220px,1fr)); gap: 12px; }
+  .tk { background: var(--paper); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 2px 0 var(--line); padding: 16px; }
+  .tk .k { font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: .05em; color: var(--mute); }
+  .tk .v { font-size: 17px; font-weight: 900; margin-top: 3px; }
+  .tk .m { font-size: 12px; font-weight: 700; color: var(--mute); margin-top: 2px; font-variant-numeric: tabular-nums; }
+
+  .demos { display: grid; grid-template-columns: repeat(auto-fill,minmax(230px,1fr)); gap: 14px; }
+  .demo { background: var(--paper); border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 2px 0 var(--line); padding: 18px; text-align: center; cursor: pointer; user-select: none; }
+  .demo .stage { height: 92px; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+  .demo .cap { font-size: 13px; font-weight: 900; margin-top: 8px; }
+  .demo .sub { font-size: 11.5px; font-weight: 700; color: var(--mute); }
+  .tapnote { font-size: 11px; font-weight: 800; color: var(--greenDark); margin-top: 4px; opacity: .8; }
+
+  /* demo elements */
+  .pill { background: var(--sun); color: #5B3E07; font-weight: 900; font-size: 15px; padding: 7px 14px; border-radius: 999px; }
+  .opt { background: var(--paper); border: 2px solid var(--line); border-radius: 12px; padding: 11px 18px; font-weight: 800; font-size: 14px; }
+  .opt.ok { border-color: var(--green); background: #EFF7EA; color: var(--greenDark); }
+  .bar { width: 80%; height: 12px; border-radius: 6px; background: var(--cream2); overflow: hidden; }
+  .bar > i { display: block; height: 100%; width: 0; border-radius: 6px; background: linear-gradient(90deg,var(--green),var(--sun)); }
+  .leaf2 { position: absolute; font-size: 19px; }
+  .btnp { background: var(--green); color: #fff; font-weight: 900; font-size: 14px; padding: 12px 22px; border-radius: 14px; box-shadow: 0 5px 0 var(--greenShadow); text-transform: uppercase; }
+  .count { font-size: 34px; font-weight: 900; color: var(--greenDark); font-variant-numeric: tabular-nums; }
+
+  /* keyframes mirror the app's real animations */
+  @keyframes dFly { 0%{transform:translateY(18px) scale(.8);opacity:0} 60%{transform:translateY(-4px) scale(1.06)} 100%{transform:translateY(0) scale(1);opacity:1} }
+  @keyframes dPop { 0%{transform:scale(.4);opacity:0} 55%{transform:scale(1.12)} 100%{transform:scale(1);opacity:1} }
+  @keyframes dShake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-6px)} 40%{transform:translateX(6px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} }
+  @keyframes dPress { 0%{transform:translateY(0);box-shadow:0 5px 0 var(--greenShadow)} 45%{transform:translateY(3px);box-shadow:0 2px 0 var(--greenShadow)} 100%{transform:translateY(0);box-shadow:0 5px 0 var(--greenShadow)} }
+  @keyframes dFall { 0%{transform:translateY(-30px) rotate(0);opacity:0} 12%{opacity:1} 100%{transform:translateY(96px) rotate(380deg);opacity:0} }
+  .run-fly .pill { animation: dFly .5s var(--spring) both; }
+  .run-pop .opt { animation: dPop .6s var(--springy) both; }
+  .run-shake .opt { animation: dShake .5s ease both; }
+  .run-press .btnp { animation: dPress .35s ease both; }
+  .run-bar .bar > i { width: 88%; transition: width .9s var(--ease-out); }
+  .run-fall .leaf2 { animation: dFall 1.2s linear both; }
+
+  .rules { background: var(--paper); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; box-shadow: 0 2px 0 var(--line); }
+  .rrow { display: grid; grid-template-columns: 160px 1fr; gap: 14px; padding: 14px 18px; border-bottom: 1px solid var(--line); align-items: baseline; }
+  .rrow:last-child { border-bottom: none; }
+  .rrow .k { font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: .05em; color: var(--mute); }
+  .rrow .v { font-size: 14px; font-weight: 700; }
+  .rrow .v .q { color: var(--greenDark); font-weight: 800; }
+
+  /* tiers */
+  .tiers { display: flex; flex-direction: column; gap: 12px; }
+  .tier { display: flex; align-items: center; gap: 16px; background: var(--paper); border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 2px 0 var(--line); padding: 16px 18px; }
+  .tier .dot { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }
+  .tier .nm { font-size: 15px; font-weight: 900; min-width: 130px; }
+  .tier .ds { font-size: 13px; font-weight: 700; color: var(--mute); }
+  .tier .ms { margin-left: auto; font-size: 12px; font-weight: 900; color: var(--greenDark); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .foot { margin-top: 56px; padding-top: 24px; border-top: 1px solid var(--line); font-size: 13px; font-weight: 700; color: var(--mute); }
+  @media (max-width: 600px) { h1 { font-size: 34px; } .rrow, .tier { grid-template-columns: 1fr; } .tier { flex-wrap: wrap; } .tier .ms { margin-left: 0; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="badge"><span class="leaf"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M12 22c0-6 0-9 5-13-1 6-3 9-5 13zM12 22C9 17 5 15 3 9c6 1 8 4 9 13z" fill="#fff"/></svg></span> Sprout · Motion System</div>
+  <h1>Motion</h1>
+  <p class="lede">Gentle, brief, earned. <em>The garden grows</em> — motion reinforces the metaphor, never frantic. Tokenized so 50+ screens move as one app.</p>
+
+  <!-- DURATIONS -->
+  <div class="section-label">Duration scale</div>
+  <div class="toks">
+    <div class="tk"><div class="k">Micro</div><div class="v">150ms</div><div class="m">taps, toggles, hovers, press</div></div>
+    <div class="tk"><div class="k">Standard</div><div class="v">280ms</div><div class="m">sheets, entrances, transitions</div></div>
+    <div class="tk"><div class="k">Expressive</div><div class="v">400–600ms</div><div class="m">pops, count-ups, reveals</div></div>
+    <div class="tk"><div class="k">Celebratory</div><div class="v">≤ 1200ms</div><div class="m">particle rain, milestone burst (cap)</div></div>
+  </div>
+
+  <!-- EASINGS -->
+  <div class="section-label">Easings &amp; springs</div>
+  <div class="toks">
+    <div class="tk"><div class="k">Ease-out · entrances</div><div class="v">.2,.8,.2,1</div><div class="m">sheets, fades, progress fills</div></div>
+    <div class="tk"><div class="k">Spring · playful</div><div class="v">.2,.9,.3,1.25</div><div class="m">Pip, plant pop, badges (gentle overshoot)</div></div>
+    <div class="tk"><div class="k">Springy · pop</div><div class="v">.3,1.5,.5,1</div><div class="m">big number / emoji pops (more bounce)</div></div>
+    <div class="tk"><div class="k">Linear · only fills</div><div class="v">linear</div><div class="m">particle falls, looping ambient drift</div></div>
+  </div>
+
+  <!-- LIVE MICRO-INTERACTIONS -->
+  <div class="section-label">Micro-interactions — tap any to replay</div>
+  <p class="hint">These mirror the app's real animations. Tap a card to play it. <code>Reduce Motion</code> swaps each for a simple fade (see below).</p>
+  <div class="demos" id="demos">
+    <div class="demo" data-run="run-fly"><div class="stage"><span class="pill">+10&nbsp;XP</span></div><div class="cap">XP pill fly-in</div><div class="sub">spring · 500ms</div><div class="tapnote">tap to replay</div></div>
+    <div class="demo" data-run="run-pop"><div class="stage"><span class="opt ok">✓ &nbsp;the cat</span></div><div class="cap">Correct answer pop</div><div class="sub">springy · 600ms + haptic</div><div class="tapnote">tap to replay</div></div>
+    <div class="demo" data-run="run-shake"><div class="stage"><span class="opt">the dog</span></div><div class="cap">Wrong — gentle shake</div><div class="sub">ease · 500ms · never jarring</div><div class="tapnote">tap to replay</div></div>
+    <div class="demo" data-run="run-press"><div class="stage"><span class="btnp">Continue</span></div><div class="cap">Button press</div><div class="sub">presses down · 150ms</div><div class="tapnote">tap to replay</div></div>
+    <div class="demo" data-run="run-bar"><div class="stage"><span class="bar"><i></i></span></div><div class="cap">Progress fill</div><div class="sub">ease-out · linear feel</div><div class="tapnote">tap to replay</div></div>
+    <div class="demo" data-run="run-fall"><div class="stage"><span class="leaf2" style="left:30%">🍃</span><span class="leaf2" style="left:50%">🌸</span><span class="leaf2" style="left:70%">💧</span></div><div class="cap">Garden particles</div><div class="sub">leaves / petals / drops — not confetti</div><div class="tapnote">tap to replay</div></div>
+  </div>
+
+  <!-- CELEBRATION TIERS -->
+  <div class="section-label">Celebration tiers — intensity matches the milestone</div>
+  <div class="tiers">
+    <div class="tier"><span class="dot" style="background:var(--sun)"></span><span class="nm">Small win</span><span class="ds">Correct answer / small XP — a quick pop + “+XP” pill + light haptic.</span><span class="ms">~600ms</span></div>
+    <div class="tier"><span class="dot" style="background:var(--green)"></span><span class="nm">Lesson complete</span><span class="ds">Bloom grows + modest leaf/petal particles + count-up stats.</span><span class="ms">~1s</span></div>
+    <div class="tier"><span class="dot" style="background:var(--coral)"></span><span class="nm">Milestone / Golden Bloom</span><span class="ds">Full particle rain + radiating rays + Pip reaction + spotlight.</span><span class="ms">≤1.2s</span></div>
+  </div>
+  <p class="hint" style="margin-top:14px">Every tier is <strong>tappable-through</strong> — celebration delights without slowing the daily loop. Particles are always garden-native (🍃🌸💧), never generic confetti.</p>
+
+  <!-- COUNT-UP -->
+  <div class="section-label">Count-ups — stats tick, never snap</div>
+  <div class="demo" style="max-width:230px;cursor:pointer" data-count="1"><div class="stage"><span class="count" id="ct">0</span></div><div class="cap">XP / streak / gems roll up</div><div class="sub">tabular figures · no width shift</div><div class="tapnote">tap to replay</div></div>
+
+  <!-- RULES + REDUCE MOTION -->
+  <div class="section-label">Rules &amp; Reduce Motion</div>
+  <div class="rules">
+    <div class="rrow"><div class="k">Tokens only</div><div class="v">Durations + easings come from the scale — <span class="q">no hand-tuned one-offs</span> per screen.</div></div>
+    <div class="rrow"><div class="k">Gentle springs</div><div class="v">Playful elements (Pip, plants, badges) overshoot softly; chrome uses plain ease-out.</div></div>
+    <div class="rrow"><div class="k">Earned &amp; brief</div><div class="v">Bigger motion for rarer moments; every celebration ≤1.2s and tappable-through.</div></div>
+    <div class="rrow"><div class="k">On-brand particles</div><div class="v">Leaves / petals / droplets — <span class="q">never generic confetti</span>.</div></div>
+    <div class="rrow"><div class="k">Reduce Motion</div><div class="v">When iOS Reduce Motion is on, particles + springs collapse to a <span class="q">simple fade</span> — feedback kept, movement dropped. Haptics still fire.</div></div>
+    <div class="rrow"><div class="k">Pip is alive</div><div class="v">A small idle bob at rest, a celebratory pose on wins — the buddy never feels static.</div></div>
+  </div>
+
+  <div class="foot">🌱 Sprout motion system · gentle / brief / earned, the garden growing. The 7th foundation doc — beside Voice &amp; Tone · Typography · Color · Spacing &amp; Layout · Buttons · Icons.</div>
+</div>
+
+<script>
+  // tap-to-replay: re-trigger the animation class
+  document.querySelectorAll('.demo[data-run]').forEach(function(el){
+    var cls = el.getAttribute('data-run');
+    function play(){ el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
+    el.addEventListener('click', play);
+    setTimeout(play, 200 + Math.random()*400);
+  });
+  // count-up demo
+  var ctEl = document.getElementById('ct');
+  function countUp(){
+    var v = 0, target = 420;
+    var iv = setInterval(function(){ v = Math.min(target, v + 11); ctEl.textContent = v; if (v>=target) clearInterval(iv); }, 28);
+  }
+  var ctCard = document.querySelector('[data-count]');
+  if (ctCard) { ctCard.addEventListener('click', countUp); setTimeout(countUp, 500); }
+</script>
+</body>
+</html>

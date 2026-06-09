@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Sprout — Voice &amp; Tone</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #FDF8EE; --paper: #FFFFFF; --ink: #2A2320; --mute: #857B70;
+    --green: #6FBF5E; --greenDark: #4D9E3F; --greenShadow: #3F7F34;
+    --cream: #F3E8D2; --cream2: #E9DCC0; --sun: #F5B94A; --sunShadow: #D59428;
+    --coral: #F47A7A; --sky: #A8D8EA; --lilac: #C9B8E3; --line: #E8DFCE;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--ink); font-family: "Nunito", system-ui, sans-serif; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 64px 24px 100px; }
+
+  /* header */
+  .badge { display: inline-flex; align-items: center; gap: 9px; background: #EFF7EA; color: var(--greenDark); font-weight: 900; font-size: 13px; padding: 7px 14px 7px 9px; border-radius: 999px; letter-spacing: .2px; }
+  .badge .leaf { width: 26px; height: 26px; border-radius: 8px; background: var(--green); display: grid; place-items: center; }
+  h1 { font-size: 44px; font-weight: 900; letter-spacing: -1px; margin: 22px 0 10px; line-height: 1.05; }
+  .lede { font-size: 18px; font-weight: 700; color: var(--mute); max-width: 540px; }
+  .lede em { color: var(--greenDark); font-style: normal; font-weight: 800; }
+
+  .section-label { font-size: 12px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; color: var(--mute); margin: 56px 0 18px; display: flex; align-items: center; gap: 10px; }
+  .section-label::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+  /* principles */
+  .principles { display: grid; gap: 14px; }
+  .principle { background: var(--paper); border: 1px solid var(--line); border-radius: 18px; padding: 20px 22px; box-shadow: 0 2px 0 var(--line); display: flex; gap: 16px; align-items: flex-start; }
+  .principle .num { width: 38px; height: 38px; flex-shrink: 0; border-radius: 11px; background: var(--cream); color: var(--greenDark); font-weight: 900; font-size: 17px; display: grid; place-items: center; }
+  .principle h3 { font-size: 18px; font-weight: 900; margin-bottom: 3px; }
+  .principle p { font-size: 14.5px; font-weight: 600; color: var(--mute); }
+  .principle .emoji { font-size: 22px; margin-left: auto; flex-shrink: 0; }
+
+  /* do / don't */
+  .dd { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .dd-col { border-radius: 18px; padding: 6px; }
+  .dd-head { display: flex; align-items: center; gap: 8px; font-weight: 900; font-size: 14px; padding: 12px 14px 8px; }
+  .dd-do .dd-head { color: var(--greenDark); }
+  .dd-dont .dd-head { color: #C0584F; }
+  .dd-pill { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 13px; color: #fff; }
+  .dd-do .dd-pill { background: var(--green); }
+  .dd-dont .dd-pill { background: var(--coral); }
+  .chip { background: var(--paper); border: 1px solid var(--line); border-radius: 13px; padding: 12px 14px; margin: 7px 0; font-size: 14.5px; font-weight: 700; }
+  .dd-do .chip { border-left: 4px solid var(--green); }
+  .dd-dont .chip { border-left: 4px solid var(--coral); color: var(--mute); }
+
+  /* string table */
+  .strings { background: var(--paper); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; box-shadow: 0 2px 0 var(--line); }
+  .srow { display: grid; grid-template-columns: 132px 1fr; gap: 14px; padding: 15px 18px; border-bottom: 1px solid var(--line); align-items: baseline; }
+  .srow:last-child { border-bottom: none; }
+  .srow .moment { font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: .06em; color: var(--mute); }
+  .srow .say { font-size: 15px; font-weight: 800; }
+  .srow .say .q { color: var(--greenDark); }
+  .srow .note { font-size: 12.5px; font-weight: 600; color: var(--mute); margin-top: 3px; }
+
+  /* empty-state recipe */
+  .recipe { display: flex; gap: 10px; flex-wrap: wrap; }
+  .recipe .step { flex: 1; min-width: 180px; background: var(--paper); border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px; box-shadow: 0 2px 0 var(--line); }
+  .recipe .step .k { font-size: 12px; font-weight: 900; color: var(--sunShadow); text-transform: uppercase; letter-spacing: .06em; }
+  .recipe .step .v { font-size: 15px; font-weight: 800; margin-top: 5px; }
+  .recipe .step .ex { font-size: 13px; font-weight: 600; color: var(--mute); margin-top: 6px; font-style: italic; }
+  .recipe .plus { align-self: center; font-size: 22px; font-weight: 900; color: var(--cream2); }
+
+  .foot { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--line); font-size: 13px; font-weight: 700; color: var(--mute); display: flex; align-items: center; gap: 8px; }
+
+  @media (max-width: 600px) {
+    h1 { font-size: 34px; }
+    .dd, .recipe { grid-template-columns: 1fr; }
+    .recipe .plus { display: none; }
+    .srow { grid-template-columns: 1fr; gap: 4px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="badge"><span class="leaf"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M12 22c0-6 0-9 5-13-1 6-3 9-5 13zM12 22C9 17 5 15 3 9c6 1 8 4 9 13z" fill="#fff"/></svg></span> Sprout · Voice &amp; Tone</div>
+
+  <h1>How Pip talks</h1>
+  <p class="lede">One voice across every screen — buttons, feedback, empty states, reminders, errors. <em>Calm, warm, and a little playful</em>, like a friend who tends gardens.</p>
+
+  <!-- PRINCIPLES -->
+  <div class="section-label">The four principles</div>
+  <div class="principles">
+    <div class="principle">
+      <div class="num">1</div>
+      <div><h3>Calm, never pushy</h3><p>We invite, we don't pressure. No guilt, no alarms, no countdowns shouting at the user. “Whenever you're ready” beats “Don't lose your streak!”</p></div>
+      <div class="emoji">🌿</div>
+    </div>
+    <div class="principle">
+      <div class="num">2</div>
+      <div><h3>Warm &amp; encouraging</h3><p>Every line roots for the learner. Celebrate effort, soften mistakes. Talk like a kind friend, not a system message.</p></div>
+      <div class="emoji">🤍</div>
+    </div>
+    <div class="principle">
+      <div class="num">3</div>
+      <div><h3>Garden-flavoured</h3><p>Growth is our metaphor: plant, water, bloom, tend, rest. Reach for it naturally — a flourish, not every other word.</p></div>
+      <div class="emoji">🌱</div>
+    </div>
+    <div class="principle">
+      <div class="num">4</div>
+      <div><h3>Clear first, clever second</h3><p>The user always knows what just happened and what to do next. Charm rides on top of clarity — never in place of it.</p></div>
+      <div class="emoji">✨</div>
+    </div>
+  </div>
+
+  <!-- DO / DON'T -->
+  <div class="section-label">Say this, not that</div>
+  <div class="dd">
+    <div class="dd-col dd-do">
+      <div class="dd-head"><span class="dd-pill">✓</span> Pip would say</div>
+      <div class="chip">“Not quite — here's the trick 🌱”</div>
+      <div class="chip">“Your garden's thirsty — rest or refill”</div>
+      <div class="chip">“No rush. Whenever you're ready.”</div>
+      <div class="chip">“In full bloom! Every answer right.”</div>
+      <div class="chip">“Pip can't reach your garden right now”</div>
+    </div>
+    <div class="dd-col dd-dont">
+      <div class="dd-head"><span class="dd-pill">✕</span> Pip wouldn't</div>
+      <div class="chip">“Wrong. Incorrect answer.”</div>
+      <div class="chip">“Error: 0 lives remaining”</div>
+      <div class="chip">“Don't lose your streak! Practice NOW”</div>
+      <div class="chip">“Lesson complete. +10 XP.”</div>
+      <div class="chip">“Network request failed”</div>
+    </div>
+  </div>
+
+  <!-- EMPTY STATE RECIPE -->
+  <div class="section-label">Empty states: warm line + what fills it + a step</div>
+  <div class="recipe">
+    <div class="step"><div class="k">Warm line</div><div class="v">“Your garden's bare for now 🌱”</div><div class="ex">Acknowledge the empty, kindly.</div></div>
+    <div class="plus">+</div>
+    <div class="step"><div class="k">What fills it</div><div class="v">“Finish a lesson to grow your first plant.”</div><div class="ex">Say what will appear here.</div></div>
+    <div class="plus">+</div>
+    <div class="step"><div class="k">A next step</div><div class="v">“Start growing →”</div><div class="ex">One clear, gentle CTA.</div></div>
+  </div>
+
+  <!-- THE NO / OOPS PATHS -->
+  <div class="section-label">The “no” and “oops” paths — kept kind</div>
+  <div class="strings">
+    <div class="srow"><div class="moment">Wrong answer</div><div><div class="say"><span class="q">“Not quite — here's the trick.”</span></div><div class="note">Then teach: the right answer + a one-line why. Never just “Wrong.”</div></div></div>
+    <div class="srow"><div class="moment">Out of water</div><div><div class="say"><span class="q">“Your garden's thirsty 💧 — rest a bit or refill.”</span></div><div class="note">A pause, not a wall. Always offer a gentle way forward.</div></div></div>
+    <div class="srow"><div class="moment">Offline</div><div><div class="say"><span class="q">“Pip can't reach your garden right now.”</span></div><div class="note">Reassure nothing's lost; offer “Try again.” Never a raw error code.</div></div></div>
+    <div class="srow"><div class="moment">Skipped reminder</div><div><div class="say"><span class="q">“No rush 🌱 — your garden's here whenever.”</span></div><div class="note">A decline is fine. We don't sulk or nag.</div></div></div>
+    <div class="srow"><div class="moment">Can't speak now</div><div><div class="say"><span class="q">“No problem — we'll skip listening for a bit.”</span></div><div class="note">Honour the context; no penalty, no friction.</div></div></div>
+    <div class="srow"><div class="moment">Struggled run</div><div><div class="say"><span class="q">“Needs a little water 💧”</span></div><div class="note">Frame a low score as growth-in-progress, not failure.</div></div></div>
+  </div>
+
+  <!-- NOTIFICATION VOICE -->
+  <div class="section-label">Notification voice — the anti-Duolingo</div>
+  <p style="font-size:14px;font-weight:700;color:var(--mute);max-width:620px;margin:-6px 0 16px">Push notifications are where “calm” is felt most. Always supportive, never shaming — a missed day earns a warm welcome, <em style="color:var(--greenDark);font-style:normal;font-weight:800">never</em> a guilt-trip. One gentle nudge a day, never a stream.</p>
+  <div class="dd">
+    <div class="dd-col dd-do">
+      <div class="dd-head"><span class="dd-pill">✓</span> Pip would send</div>
+      <div class="chip">“Your garden's ready for 5 minutes of sun 🌱”</div>
+      <div class="chip">“A little water keeps it growing — whenever you're ready.”</div>
+      <div class="chip">“Welcome back 🌱 your garden missed you.”</div>
+      <div class="chip">“Maya's been tending hers — grow together today?”</div>
+      <div class="chip">“Your snowdrop's almost in bloom — one lesson to go 🌸”</div>
+    </div>
+    <div class="dd-col dd-dont">
+      <div class="dd-head"><span class="dd-pill">✕</span> Pip never would</div>
+      <div class="chip">“You're about to LOSE your streak!”</div>
+      <div class="chip">“These reminders don't seem to be working…”</div>
+      <div class="chip">“You haven't practiced in 3 days. 😢”</div>
+      <div class="chip">“Don't make Pip sad — come back NOW”</div>
+      <div class="chip">“Final warning: your streak ends tonight”</div>
+    </div>
+  </div>
+  <div class="strings" style="margin-top:14px">
+    <div class="srow"><div class="moment">Priming first</div><div><div class="say"><span class="q">Show Pip + a benefit CTA (“Remind me to practice”) and a lock-screen preview BEFORE the iOS dialog.</span></div><div class="note">Never fire the raw system ask cold — opt-in as support, not interruption.</div></div></div>
+    <div class="srow"><div class="moment">After a lapse</div><div><div class="say"><span class="q">“Welcome back — your garden missed you.”</span></div><div class="note">Reassure, don't scold. Cap it: one warm nudge, never a spam streak.</div></div></div>
+    <div class="srow"><div class="moment">User owns it</div><div><div class="say"><span class="q">Time, frequency (Gentle / Daily), quiet hours — all in Settings, off in one tap.</span></div><div class="note">A tool the user owns, not a hook in them. Respect Do Not Disturb.</div></div></div>
+  </div>
+
+  <!-- QUICK RULES -->
+  <div class="section-label">Quick rules</div>
+  <div class="strings">
+    <div class="srow"><div class="moment">Length</div><div class="say">Short. A line, not a paragraph. Buttons are 1–3 words.</div></div>
+    <div class="srow"><div class="moment">Emoji</div><div class="say">A sparing 🌱/💧/🌸 for warmth — never more than one per line.</div></div>
+    <div class="srow"><div class="moment">Person</div><div class="say">“you” for the learner; Pip refers to itself as “Pip.”</div></div>
+    <div class="srow"><div class="moment">Caps</div><div class="say">Sentence case everywhere. No SHOUTING, no Title Case Buttons.</div></div>
+    <div class="srow"><div class="moment">Calm mode</div><div class="say">Drop streak/number language; lean fully into gentle growth framing.</div></div>
+  </div>
+
+  <div class="foot">🌱 Sprout voice guide · apply to every string — one friendly Pip, everywhere.</div>
+
+</div>
+</body>
+</html>

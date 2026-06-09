@@ -7,10 +7,11 @@
 
 :root {
   /* ---- Surfaces (warm, calm, light-mode only) ---- */
-  --bg: #f5f0e7;            /* warm cream "paper" — screen background */
-  --bg-soft: #ede8df;       /* slightly sunken cream */
-  --surface: #fffdf7;       /* warm white — cards & chips */
-  --surface-2: #f7f2e9;     /* faint cream */
+  /* v2: warmer cream + pure-white paper per design/v2-bundle/project/Sprout Color System.html */
+  --bg: #FDF8EE;            /* warm cream "paper" — screen background */
+  --bg-soft: #EDE8DF;       /* slightly sunken cream */
+  --surface: #FFFFFF;       /* pure white — cards & chips (paper) */
+  --surface-2: #F3E8D2;     /* warmer secondary surface */
 
   /* ---- Brand green (ONE primary — calm, softer than Duolingo) ---- */
   --green: #6fbf5e;         /* primary leaf green */
@@ -22,15 +23,19 @@
   --green-muted: #7aa86e;   /* garden / secondary green */
 
   /* ---- Accents (each used sparingly, for ONE job) ---- */
-  --gold: #f5c23d;          /* gems + special milestones */
+  /* v2: warmer/deeper sun + sky; softer coral. */
+  --gold: #F5B94A;          /* gems + special milestones (deeper sun) */
   --gold-deep: #d6a420;
   --gold-tint: #fbeecb;
-  --water: #5aa7c9;         /* energy / lives (calm blue) */
+  --water: #5AB9D9;         /* energy / lives (warmer sky blue) */
   --water-deep: #3e8bba;
   --water-tint: #e2eef3;
-  --clay: #ff8a80;          /* "wrong" feedback — warm coral, NEVER red */
+  --clay: #F47A7A;          /* "wrong" feedback — warm coral, NEVER red */
   --clay-deep: #5c2b2e;
   --clay-tint: #ffe6e2;
+  --correct: #58A800;       /* v2: darker "correct" green for feedback */
+  --lilac: #C9B8E3;         /* v2: rare blooms */
+  --streak-flame: #F5833E;  /* v2: warm amber for streak flame */
 
   /* ---- Ink (text) — exact from design ---- */
   --ink: #2a2320;           /* warm near-black */
