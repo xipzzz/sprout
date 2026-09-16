@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import type { TabKey } from './components/TabBar';
 import HomeScreen from './screens/HomeScreen';
 import LessonScreen from './screens/LessonScreen';
+import LessonScreenSoT from './screens/LessonScreenSoT';
 import GardenScreen from './screens/GardenScreen';
 import MeScreen from './screens/MeScreen';
 import WordsScreen from './screens/WordsScreen';
@@ -142,9 +143,14 @@ export default function App() {
   }
 
   if (lessonUnit) {
+    const useSoT = new URLSearchParams(window.location.search).get('sot') === '1';
     return (
       <div className="app">
-        <LessonScreen onExit={() => setLessonUnit(null)} onComplete={completeLesson} unitId={lessonUnit} firstLesson={completed.length === 0} />
+        {useSoT ? (
+          <LessonScreenSoT onExit={() => setLessonUnit(null)} onComplete={completeLesson} />
+        ) : (
+          <LessonScreen onExit={() => setLessonUnit(null)} onComplete={completeLesson} unitId={lessonUnit} firstLesson={completed.length === 0} />
+        )}
       </div>
     );
   }

@@ -37,6 +37,20 @@
   --lilac: #C9B8E3;         /* v2: rare blooms */
   --streak-flame: #F5833E;  /* v2: warm amber for streak flame */
 
+  /* ---- SoT Lock B lesson chrome colors ---- */
+  --pip-green: #38B861;       /* Check/Continue button, progress bar, correct feedback */
+  --pip-green-deep: #2F9A51;  /* button shadow */
+  --pip-green-sheet: #EAF8EF; /* full-bleed correct feedback background */
+  --pip-green-tint: #E5F7E0;  /* correct card fill */
+  --duo-red: #EE4848;         /* Got it button, wrong feedback */
+  --duo-red-deep: #C93A3A;    /* button shadow */
+  --duo-red-sheet: #FCEEEF;   /* full-bleed almost feedback background */
+  --duo-red-tint: #FFE8E8;    /* wrong card fill */
+  --sky: #5AA7C9;             /* selected card border */
+  --sky-tint: #E5F5FA;        /* selected card fill */
+  --cream-deep: #E8DFD0;      /* disabled button bg */
+  --cream-bg: #F8F1E6;        /* lesson screen background */
+
   /* ---- Ink (text) — exact from design ---- */
   --ink: #2a2320;           /* warm near-black */
   --ink-soft: #6e6259;      /* secondary text */
