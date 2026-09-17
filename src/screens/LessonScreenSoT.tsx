@@ -6,7 +6,7 @@
    - Full-bleed mint/coral feedback sheets
    - Check/Continue/Got it CTAs */
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import WordPick from '../components/WordPick';
 import PipPose from '../components/PipPose';
 import { playSproutFeedback } from '../utils/feedback';
@@ -38,6 +38,26 @@ const QUESTIONS: Question[] = [
     choices: ['sprout', 'bloom', 'seedling', 'root'],
     correct: 'root',
   },
+  {
+    prompt: 'Which word means seed?',
+    choices: ['leaf', 'seed', 'stem', 'petal'],
+    correct: 'seed',
+  },
+  {
+    prompt: 'Which word means leaf?',
+    choices: ['seed', 'petal', 'leaf', 'stem'],
+    correct: 'leaf',
+  },
+  {
+    prompt: 'Which word means home?',
+    choices: ['home', 'door', 'window', 'roof'],
+    correct: 'home',
+  },
+  {
+    prompt: 'Which word means garden?',
+    choices: ['grass', 'garden', 'fence', 'path'],
+    correct: 'garden',
+  },
 ];
 
 interface LessonScreenSoTProps {
@@ -63,13 +83,13 @@ export default function LessonScreenSoT({ onExit, onComplete }: LessonScreenSoTP
     return Math.min(100, Math.round(base + bump * 0.55 + 28));
   }
 
-  function onSelect(choice: string) {
+  const onSelect = useCallback((choice: string) => {
     if (phase !== 'question' && phase !== 'selected') return;
     setSelected(choice);
     setPhase('selected');
-  }
+  }, [phase]);
 
-  function onCheck() {
+  const onCheck = useCallback(() => {
     if (phase !== 'selected') return;
     setPhase('check');
 
@@ -79,9 +99,9 @@ export default function LessonScreenSoT({ onExit, onComplete }: LessonScreenSoTP
       if (isCorrect) playSproutFeedback('correct');
       setPhase('feedback');
     }, 180);
-  }
+  }, [phase, selected, q.correct]);
 
-  function onAdvance() {
+  const onAdvance = useCallback(() => {
     if (phase !== 'feedback') return;
     if (index + 1 >= total) {
       if (onComplete) onComplete();
@@ -90,7 +110,7 @@ export default function LessonScreenSoT({ onExit, onComplete }: LessonScreenSoTP
     setIndex((i) => i + 1);
     setSelected(null);
     setPhase('question');
-  }
+  }, [phase, index, total, onComplete]);
 
   useEffect(() => {
     function handleKeyboard(event: KeyboardEvent) {
@@ -101,7 +121,7 @@ export default function LessonScreenSoT({ onExit, onComplete }: LessonScreenSoTP
     }
     window.addEventListener('keydown', handleKeyboard);
     return () => window.removeEventListener('keydown', handleKeyboard);
-  }, [phase, selected]);
+  }, [phase, onCheck, onAdvance]);
 
   const pipPose = phase === 'feedback' && result === 'correct' ? 'correct' : phase === 'feedback' && result === 'almost' ? 'almost' : 'neutral';
   const showBubble = phase !== 'feedback';
