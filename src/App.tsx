@@ -19,7 +19,6 @@ import TalesScreen from './screens/TalesScreen';
 import SettingsScreen from './screens/SettingsScreen';
 import OnboardingSplash from './screens/OnboardingSplash';
 import ComebackScreen from './screens/ComebackScreen';
-import AccountGateScreen from './screens/AccountGateScreen';
 import Modal from './components/Modal';
 import Pip from './components/Pip';
 import { loadCompleted, saveCompleted } from './state/progress';
@@ -42,7 +41,6 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showDailyGoal, setShowDailyGoal] = useState(false);
   const [dailyGoalShown, setDailyGoalShown] = useState(false);
-  const [showAccountGate, setShowAccountGate] = useState(false);
   const [goldenBloom, setGoldenBloom] = useState<string | null>(null);
   const [showShop, setShowShop] = useState(false);
   const [showWater, setShowWater] = useState(false);
@@ -96,16 +94,6 @@ export default function App() {
       markTodayDone('lesson'); // auto-tick the Today checklist + the daily Quest
       playSproutFeedback('gardenGrowth');
       setPendingPathFocus(firstUnlockedUnit(next) ?? null);
-      const isFirstPlayableLesson = completed.length <= 1 && next.length <= 2;
-      if (isFirstPlayableLesson) {
-        try {
-          const accountSeen = localStorage.getItem('sprout.accountGateSeen') === '1';
-          if (!accountSeen) {
-            setShowAccountGate(true);
-            return;
-          }
-        } catch { /* ignore */ }
-      }
       // Finishing a whole section is a special golden moment — it takes
       // precedence over (and replaces) the daily-goal celebration here.
       const finishedSection = sectionCompletedByUnit(unit, next);
@@ -151,19 +139,6 @@ export default function App() {
         ) : (
           <LessonScreen onExit={() => setLessonUnit(null)} onComplete={completeLesson} unitId={lessonUnit} firstLesson={completed.length === 0} />
         )}
-      </div>
-    );
-  }
-
-  if (showAccountGate) {
-    const closeAccountGate = () => {
-      try { localStorage.setItem('sprout.accountGateSeen', '1'); } catch { /* ignore */ }
-      setShowAccountGate(false);
-    };
-
-    return (
-      <div className="app">
-        <AccountGateScreen onSaved={closeAccountGate} onSkip={closeAccountGate} />
       </div>
     );
   }
