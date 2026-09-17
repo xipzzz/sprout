@@ -19,6 +19,8 @@ import TalesScreen from './screens/TalesScreen';
 import SettingsScreen from './screens/SettingsScreen';
 import OnboardingSplash from './screens/OnboardingSplash';
 import ComebackScreen from './screens/ComebackScreen';
+import ScanHomeworkScreen from './screens/ScanHomeworkScreen';
+import type { WordPickQuestion } from './lib/homeworkParse';
 import Modal from './components/Modal';
 import Pip from './components/Pip';
 import { loadCompleted, saveCompleted } from './state/progress';
@@ -39,6 +41,8 @@ export default function App() {
   const [showInsights, setShowInsights] = useState(false);
   const [showTales, setShowTales] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showScan, setShowScan] = useState(false);
+  const [scanQuestion, setScanQuestion] = useState<WordPickQuestion | null>(null);
   const [showDailyGoal, setShowDailyGoal] = useState(false);
   const [dailyGoalShown, setDailyGoalShown] = useState(false);
   const [goldenBloom, setGoldenBloom] = useState<string | null>(null);
@@ -126,6 +130,36 @@ export default function App() {
     return (
       <div className="app">
         <ComebackScreen onContinue={() => setShowComeback(false)} />
+      </div>
+    );
+  }
+
+  if (scanQuestion) {
+    return (
+      <div className="app">
+        <LessonScreenSoT
+          questions={[{ prompt: scanQuestion.prompt, choices: scanQuestion.choices, correct: scanQuestion.correct }]}
+          onExit={() => setScanQuestion(null)}
+          onComplete={() => {
+            setScanQuestion(null);
+            markTodayDone('lesson');
+            playSproutFeedback('gardenGrowth');
+          }}
+        />
+      </div>
+    );
+  }
+
+  if (showScan) {
+    return (
+      <div className="app">
+        <ScanHomeworkScreen
+          onCancel={() => setShowScan(false)}
+          onParsed={(q) => {
+            setShowScan(false);
+            setScanQuestion(q);
+          }}
+        />
       </div>
     );
   }
@@ -226,7 +260,7 @@ export default function App() {
   return (
     <div className="app">
       {tab === 'learn' && (
-        <HomeScreen tab={tab} onTabChange={setTab} completed={completed} focusTarget={pendingPathFocus} onFocusSettled={() => setPendingPathFocus(null)} onStartUnit={setLessonUnit} onOpenShop={() => setShowShop(true)} onOpenWater={() => { playSproutFeedback('waterOpen'); setShowWater(true); }} />
+        <HomeScreen tab={tab} onTabChange={setTab} completed={completed} focusTarget={pendingPathFocus} onFocusSettled={() => setPendingPathFocus(null)} onStartUnit={setLessonUnit} onOpenShop={() => setShowShop(true)} onOpenWater={() => { playSproutFeedback('waterOpen'); setShowWater(true); }} onOpenScan={new URLSearchParams(window.location.search).get('scan') === '1' ? () => setShowScan(true) : undefined} />
       )}
       {tab === 'garden' && <GardenScreen tab={tab} onTabChange={setTab} completed={completed} onOpenTales={() => setShowTales(true)} />}
       {tab === 'words' && <WordsScreen tab={tab} onTabChange={setTab} />}
