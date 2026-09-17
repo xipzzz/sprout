@@ -1,9 +1,9 @@
-/* LessonScreen — the lesson flow as a small state machine:
-   answering → (check) → feedback → (continue) → next … → complete.
-   Handles multiple exercise kinds (choice, arrange). Calm: a wrong answer
-   teaches kindly and you move on — no lives lost. */
+/* LessonScreen — Lock B chrome lesson flow (SoT-approved design).
+   Pip + bubble + continuous progress + mint/coral feedback sheets.
+   Supports all course exercise types: choice, arrange, match, fill, listen.
+   Calm: a wrong answer teaches kindly and you move on — no lives lost. */
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { getLesson } from '../data/course';
 import type { Exercise } from '../data/course';
 import MultipleChoice from '../components/MultipleChoice';
@@ -11,9 +11,8 @@ import ArrangeWords from '../components/ArrangeWords';
 import MatchPairs from '../components/MatchPairs';
 import FillBlank from '../components/FillBlank';
 import ListenType from '../components/ListenType';
-import FeedbackDrawer from '../components/FeedbackDrawer';
 import LessonComplete from '../components/LessonComplete';
-import Pip from '../components/Pip';
+import PipPose from '../components/PipPose';
 import { playSproutFeedback } from '../utils/feedback';
 
 interface LessonScreenProps {
@@ -23,8 +22,9 @@ interface LessonScreenProps {
   firstLesson?: boolean;
 }
 
-type Phase = 'answering' | 'feedback' | 'complete';
+type Phase = 'answering' | 'selected' | 'check' | 'feedback' | 'complete';
 type Answer = string | string[] | null;
+type Result = 'correct' | 'almost';
 
 function isComplete(ex: Exercise, a: Answer): boolean {
   if (ex.kind === 'choice') return typeof a === 'string';
@@ -41,6 +41,15 @@ function isCorrect(ex: Exercise, a: Answer): boolean {
   return true; // match: completing it means every pair was matched correctly
 }
 
+function getPromptForExercise(ex: Exercise): string {
+  if (ex.kind === 'choice') return `Which picture shows "${ex.word}"?`;
+  if (ex.kind === 'arrange') return ex.prompt;
+  if (ex.kind === 'fill') return 'Fill in the blank';
+  if (ex.kind === 'listen') return 'Listen and type what you hear';
+  if (ex.kind === 'match') return 'Match each word to its picture';
+  return '';
+}
+
 export default function LessonScreen({ onExit, onComplete, unitId, firstLesson }: LessonScreenProps) {
   const lesson = getLesson(unitId);
   const exercises = lesson.exercises;
@@ -49,45 +58,46 @@ export default function LessonScreen({ onExit, onComplete, unitId, firstLesson }
   const [index, setIndex] = useState(0);
   const [answer, setAnswer] = useState<Answer>(null);
   const [phase, setPhase] = useState<Phase>('answering');
-  const [result, setResult] = useState<'correct' | 'wrong'>('correct');
+  const [result, setResult] = useState<Result>('correct');
   const [correctCount, setCorrectCount] = useState(0);
   const [confirmQuit, setConfirmQuit] = useState(false);
 
   const ex = exercises[index];
 
-  function check() {
-    if (!isComplete(ex, answer)) return;
-    const ok = isCorrect(ex, answer);
-    setResult(ok ? 'correct' : 'wrong');
-    if (ok) setCorrectCount((c) => c + 1);
-    if (ok) playSproutFeedback('correct');
-    setPhase('feedback');
+  function progressPct() {
+    const base = (index / total) * 100;
+    const bump = phase === 'feedback' ? (1 / total) * 100 : 0;
+    return Math.min(100, Math.round(base + bump * 0.55 + 28));
   }
 
-  useEffect(() => {
-    if (phase !== 'answering' || !isComplete(ex, answer)) return;
-
-    function submitFromKeyboard(event: KeyboardEvent) {
-      const target = event.target as HTMLElement | null;
-      const tagName = target?.tagName.toLowerCase();
-      const isTextInput = tagName === 'input' || tagName === 'textarea' || target?.isContentEditable;
-      const isSubmitKey = event.key === 'Enter' || (event.key === ' ' && !isTextInput);
-      if (!isSubmitKey) return;
-
-      event.preventDefault();
-      if (!isComplete(ex, answer)) return;
-      const ok = isCorrect(ex, answer);
-      setResult(ok ? 'correct' : 'wrong');
-      if (ok) setCorrectCount((c) => c + 1);
-      if (ok) playSproutFeedback('correct');
-      setPhase('feedback');
+  const onSelect = useCallback((value: Answer) => {
+    if (phase !== 'answering' && phase !== 'selected') return;
+    setAnswer(value);
+    if (isComplete(ex, value)) {
+      setPhase('selected');
+    } else {
+      setPhase('answering');
     }
+  }, [phase, ex]);
 
-    window.addEventListener('keydown', submitFromKeyboard, { capture: true });
-    return () => window.removeEventListener('keydown', submitFromKeyboard, { capture: true });
-  }, [answer, ex, phase]);
+  const onCheck = useCallback(() => {
+    if (phase !== 'selected') return;
+    if (!isComplete(ex, answer)) return;
+    setPhase('check');
 
-  function next() {
+    setTimeout(() => {
+      const ok = isCorrect(ex, answer);
+      setResult(ok ? 'correct' : 'almost');
+      if (ok) {
+        setCorrectCount((c) => c + 1);
+        playSproutFeedback('correct');
+      }
+      setPhase('feedback');
+    }, 180);
+  }, [phase, ex, answer]);
+
+  const onAdvance = useCallback(() => {
+    if (phase !== 'feedback') return;
     if (index + 1 >= total) {
       playSproutFeedback('complete');
       setPhase('complete');
@@ -96,11 +106,24 @@ export default function LessonScreen({ onExit, onComplete, unitId, firstLesson }
       setAnswer(null);
       setPhase('answering');
     }
-  }
+  }, [phase, index, total]);
+
+  useEffect(() => {
+    function handleKeyboard(event: KeyboardEvent) {
+      if (event.key === 'Enter') {
+        if (phase === 'selected') onCheck();
+        else if (phase === 'feedback') onAdvance();
+      }
+    }
+    window.addEventListener('keydown', handleKeyboard);
+    return () => window.removeEventListener('keydown', handleKeyboard);
+  }, [phase, onCheck, onAdvance]);
+
+  const pipPose = phase === 'feedback' && result === 'correct' ? 'correct' : phase === 'feedback' && result === 'almost' ? 'almost' : 'neutral';
+  const showBubble = phase !== 'feedback';
 
   if (phase === 'complete') {
     const accuracy = Math.round((correctCount / total) * 100);
-    // Pull the actual vocab words taught by this lesson (choice exercises' word field)
     const learnedWords = Array.from(new Set(
       exercises.flatMap((e) => (e.kind === 'choice' ? [e.word] : []))
     )).slice(0, 8);
@@ -116,35 +139,36 @@ export default function LessonScreen({ onExit, onComplete, unitId, firstLesson }
   }
 
   return (
-    <div className="screen lesson">
+    <div className="screen lesson lesson--sot">
       <header className="lesson__top">
-        <button type="button" className="lesson__close" onClick={() => { playSproutFeedback('modalOpen'); setConfirmQuit(true); }} aria-label="Close lesson">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor"
-               strokeWidth="2.4" strokeLinecap="round">
+        <button
+          type="button"
+          className="lesson__close"
+          onClick={() => {
+            playSproutFeedback('modalOpen');
+            setConfirmQuit(true);
+          }}
+          aria-label="Close lesson"
+        >
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path d="M6 6l12 12M18 6L6 18" />
           </svg>
         </button>
-        {/* Segmented progress — one segment per exercise (per the design). */}
         <div
-          className="progress"
+          className="lesson__progress-bar"
           role="progressbar"
+          aria-valuenow={progressPct()}
           aria-valuemin={0}
-          aria-valuemax={total}
-          aria-valuenow={index}
+          aria-valuemax={100}
         >
-          {exercises.map((_, i) => (
-            <span
-              key={i}
-              className={`progress__seg${i < index ? ' progress__seg--done' : i === index ? ' progress__seg--current' : ''}`}
-            />
-          ))}
+          <i className="lesson__progress-fill" style={{ width: `${progressPct()}%` }} />
         </div>
       </header>
 
       {confirmQuit && (
         <div className="quit" role="dialog" aria-label="Leave the lesson?">
           <div className="quit__sheet">
-            <Pip className="quit__pip" />
+            <PipPose className="quit__pip" pose="neutral" />
             <h2 className="quit__title">Leave the lesson?</h2>
             <p className="quit__sub">Your sprout keeps what you've grown so far. 🌱</p>
             <button type="button" className="btn-primary quit__stay" onClick={() => { playSproutFeedback('modalClose'); setConfirmQuit(false); }}>Keep going</button>
@@ -152,6 +176,17 @@ export default function LessonScreen({ onExit, onComplete, unitId, firstLesson }
           </div>
         </div>
       )}
+
+      <section className="lesson__q-row">
+        <div className={`lesson__pip-wrap${pipPose === 'correct' ? ' lesson__pip-wrap--proud' : pipPose === 'almost' ? ' lesson__pip-wrap--soft' : ''}`} aria-hidden="true">
+          <PipPose pose={pipPose} />
+        </div>
+        {showBubble && (
+          <div className="lesson__bubble">
+            <p className="lesson__bubble-text">{getPromptForExercise(ex)}</p>
+          </div>
+        )}
+      </section>
 
       <main className="screen__body">
         {ex.kind === 'choice' ? (
@@ -162,7 +197,7 @@ export default function LessonScreen({ onExit, onComplete, unitId, firstLesson }
             selectedId={typeof answer === 'string' ? answer : null}
             answerId={ex.answerId}
             revealed={phase === 'feedback'}
-            onSelect={setAnswer}
+            onSelect={(id) => onSelect(id)}
           />
         ) : ex.kind === 'arrange' ? (
           <ArrangeWords
@@ -170,7 +205,7 @@ export default function LessonScreen({ onExit, onComplete, unitId, firstLesson }
             prompt={ex.prompt}
             tiles={ex.tiles}
             revealed={phase === 'feedback'}
-            onChange={setAnswer}
+            onChange={onSelect}
           />
         ) : ex.kind === 'fill' ? (
           <FillBlank
@@ -179,7 +214,7 @@ export default function LessonScreen({ onExit, onComplete, unitId, firstLesson }
             after={ex.after}
             value={typeof answer === 'string' ? answer : ''}
             revealed={phase === 'feedback'}
-            onChange={setAnswer}
+            onChange={onSelect}
           />
         ) : ex.kind === 'listen' ? (
           <ListenType
@@ -188,7 +223,7 @@ export default function LessonScreen({ onExit, onComplete, unitId, firstLesson }
             options={ex.options}
             value={typeof answer === 'string' ? answer : ''}
             revealed={phase === 'feedback'}
-            onChange={setAnswer}
+            onChange={onSelect}
           />
         ) : (
           <MatchPairs
@@ -196,22 +231,46 @@ export default function LessonScreen({ onExit, onComplete, unitId, firstLesson }
             pairs={ex.pairs}
             audio={ex.audio}
             revealed={phase === 'feedback'}
-            onChange={setAnswer}
+            onChange={onSelect}
           />
         )}
       </main>
 
-      {phase === 'answering' && (
-        <footer className="lesson__foot">
-          <button type="button" className="btn-primary" disabled={!isComplete(ex, answer)} onClick={check}>
-            CHECK
+      <footer className={`lesson__foot${phase === 'feedback' ? ' lesson__foot--has-sheet' : ''}`}>
+        {phase !== 'feedback' && (
+          <button
+            type="button"
+            className="lesson__check"
+            disabled={phase !== 'selected'}
+            onClick={onCheck}
+          >
+            Check
           </button>
-        </footer>
-      )}
+        )}
 
-      {phase === 'feedback' && (
-        <FeedbackDrawer result={result} ex={ex} onContinue={next} />
-      )}
+        {phase === 'feedback' && (
+          <div className={`lesson__sheet lesson__sheet--show lesson__sheet--${result}`} role="status">
+            <div className="lesson__sheet-title-row">
+              <span className="lesson__sheet-check" aria-hidden="true">
+                {result === 'correct' ? '✓' : '!'}
+              </span>
+              <h2 className="lesson__sheet-title">
+                {result === 'correct' ? 'Excellent!' : 'Almost!'}
+              </h2>
+            </div>
+            <p className="lesson__sheet-body">
+              {result === 'correct' ? 'Pip is proud of you.' : 'No hearts lost — try the next one.'}
+            </p>
+            <button
+              type="button"
+              className={`lesson__sheet-cta lesson__sheet-cta--${result === 'correct' ? 'green' : 'red'}`}
+              onClick={onAdvance}
+            >
+              {result === 'correct' ? 'Continue' : 'Got it'}
+            </button>
+          </div>
+        )}
+      </footer>
     </div>
   );
 }
