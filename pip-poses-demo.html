@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pip Poses - Before/After</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 1200px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    h1 {
+      text-align: center;
+      color: #3f7a2e;
+    }
+    .container {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 30px;
+      margin-top: 40px;
+    }
+    .pose-card {
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    .pose-card h2 {
+      margin-top: 0;
+      color: #4D9E3F;
+      font-size: 20px;
+    }
+    .pose-card svg {
+      width: 120px;
+      height: 120px;
+      margin: 20px auto;
+      display: block;
+    }
+    .notes {
+      margin-top: 15px;
+      padding: 15px;
+      background: #f9f9f9;
+      border-radius: 8px;
+      font-size: 14px;
+      text-align: left;
+      color: #555;
+      line-height: 1.6;
+    }
+    .notes strong {
+      color: #3f7a2e;
+    }
+    .banner {
+      background: #6FBF5E;
+      color: white;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 30px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>🌱 Pip Art Fixes - All Three Poses</h1>
+  
+  <div class="banner">
+    <strong>✓ Fixed:</strong> Leaves now attach to head with junction seal (no white gap)<br>
+    <strong>✓ Fixed:</strong> Happier expressions across all poses (bigger smiles, joyful eyes)<br>
+    <strong>✓ Correct pose:</strong> Uses celebrate Pip geometry from pip-celebrate.svg
+  </div>
+
+  <div class="container">
+    <!-- Neutral -->
+    <div class="pose-card">
+      <h2>Neutral Pose</h2>
+      <svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <g id="Art">
+          <rect id="stem" x="26.25" y="13.3" width="3.5" height="19.6" rx="1.75" fill="#3f7a2e"/>
+          <ellipse id="leaf-left" cx="23" cy="15" rx="10.5" ry="6" fill="#6FBF5E" transform="rotate(-35 28 16.8)"/>
+          <ellipse id="leaf-right" cx="33" cy="15" rx="10.5" ry="6" fill="#4D9E3F" transform="rotate(35 28 16.8)"/>
+          <circle id="junction" cx="28" cy="16.8" r="2.4" fill="#3f7a2e"/>
+          <circle id="head" cx="28" cy="37.1" r="12.6" fill="#6FBF5E"/>
+          <circle id="head-highlight" cx="28" cy="37.1" r="12.6" fill="#ffffff" opacity="0.06"/>
+          <ellipse id="eye-left" cx="23.8" cy="35" rx="1.8" ry="2.3" fill="#2f3b24"/>
+          <ellipse id="eye-right" cx="32.2" cy="35" rx="1.8" ry="2.3" fill="#2f3b24"/>
+          <path id="smile" d="M22 38 q6 7 12 0" stroke="#2f3b24" stroke-width="2.1" fill="none" stroke-linecap="round"/>
+          <circle id="cheek-left" cx="19.95" cy="39.2" r="1.82" fill="#ffffff" opacity="0.28"/>
+          <circle id="cheek-right" cx="36.05" cy="39.2" r="1.82" fill="#ffffff" opacity="0.28"/>
+        </g>
+      </svg>
+      <div class="notes">
+        <strong>Default state</strong><br>
+        • Junction seal connects leaves to stem<br>
+        • Gentle smile with happy eyes<br>
+        • Symmetric leaf positioning
+      </div>
+    </div>
+
+    <!-- Correct -->
+    <div class="pose-card">
+      <h2>Correct Pose (Celebrate!)</h2>
+      <svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <g id="Art">
+          <rect id="stem" x="26.25" y="8.4" width="3.5" height="23.8" rx="1.75" fill="#3f7a2e"/>
+          <ellipse id="leaf-left" cx="23.1" cy="9.1" rx="11.2" ry="6.65" fill="#6FBF5E" transform="rotate(-36 28 12.6)"/>
+          <ellipse id="leaf-right" cx="32.9" cy="9.1" rx="11.2" ry="6.65" fill="#4D9E3F" transform="rotate(36 28 12.6)"/>
+          <circle id="junction" cx="28" cy="12.6" r="2.24" fill="#3f7a2e"/>
+          <circle id="head" cx="28" cy="37.1" r="12.6" fill="#6FBF5E"/>
+          <circle id="head-highlight" cx="28" cy="37.1" r="12.6" fill="#ffffff" opacity="0.06"/>
+          <circle id="eye-left" cx="23.8" cy="34.65" r="1.89" fill="#2f3b24"/>
+          <circle id="eye-right" cx="32.2" cy="34.65" r="1.89" fill="#2f3b24"/>
+          <path id="grin" d="M20.65 36.75 q7.35 10.85 14.7 0" stroke="#2f3b24" stroke-width="2.1" fill="none" stroke-linecap="round"/>
+          <circle id="cheek-left" cx="19.95" cy="39.2" r="1.82" fill="#ffffff" opacity="0.28"/>
+          <circle id="cheek-right" cx="36.05" cy="39.2" r="1.82" fill="#ffffff" opacity="0.28"/>
+        </g>
+      </svg>
+      <div class="notes">
+        <strong>Source: pip-celebrate.svg</strong><br>
+        • Arms-up leaf celebration pose<br>
+        • BIG happy grin (deeper curve)<br>
+        • Circle eyes lower = more joy<br>
+        • Taller stem for arms-up reach
+      </div>
+    </div>
+
+    <!-- Almost -->
+    <div class="pose-card">
+      <h2>Almost Pose</h2>
+      <svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <g id="Art">
+          <rect id="stem" x="26.25" y="13.3" width="3.5" height="19.6" rx="1.75" fill="#3f7a2e"/>
+          <ellipse id="leaf-left" cx="21" cy="14" rx="11" ry="6.2" fill="#6FBF5E" transform="rotate(-45 28 17)"/>
+          <ellipse id="leaf-right" cx="35" cy="14" rx="11" ry="6.2" fill="#4D9E3F" transform="rotate(40 28 16)"/>
+          <circle id="junction" cx="28" cy="16.8" r="2.4" fill="#3f7a2e"/>
+          <circle id="head" cx="28" cy="37.1" r="12.6" fill="#6FBF5E"/>
+          <circle id="head-highlight" cx="28" cy="37.1" r="12.6" fill="#ffffff" opacity="0.06"/>
+          <ellipse id="eye-left" cx="23.8" cy="34.8" rx="1.8" ry="2.4" fill="#2f3b24"/>
+          <ellipse id="eye-right" cx="32.2" cy="34.6" rx="1.8" ry="2.4" fill="#2f3b24"/>
+          <path id="smile" d="M22.5 38.5 q5.5 6 11 0" stroke="#2f3b24" stroke-width="2.1" fill="none" stroke-linecap="round"/>
+          <circle id="cheek-left" cx="19.95" cy="39.2" r="1.82" fill="#ffffff" opacity="0.28"/>
+          <circle id="cheek-right" cx="36.05" cy="39.2" r="1.82" fill="#ffffff" opacity="0.28"/>
+        </g>
+      </svg>
+      <div class="notes">
+        <strong>Encouragement state</strong><br>
+        • Asymmetric leaf wobble (almost!)<br>
+        • Supportive smile<br>
+        • Slightly offset eye positioning<br>
+        • Junction seal keeps leaves attached
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top: 50px; padding: 20px; background: white; border-radius: 12px;">
+    <h3 style="color: #3f7a2e;">Key Changes</h3>
+    <ul style="line-height: 1.8; color: #555;">
+      <li><strong>Leaf attachment fix:</strong> Replaced disconnected Figma-export paths with overlapping ellipses + junction seal circle. No more white gap between left leaf and head.</li>
+      <li><strong>Happier faces:</strong> Bigger smiles with deeper curves, more joyful eye positioning (taller ellipses for neutral/almost, circles for correct).</li>
+      <li><strong>Celebrate Pip integration:</strong> Correct pose now uses the exact geometry from pip-celebrate.svg (arms-up leaves, big grin path).</li>
+      <li><strong>Consistent geometry:</strong> All poses use rect stem + ellipse leaves + circle junction instead of complex path elements.</li>
+      <li><strong>Correct colors:</strong> #6FBF5E / #4D9E3F / #3f7a2e / #2f3b24 as specified.</li>
+    </ul>
+  </div>
+</body>
+</html>
