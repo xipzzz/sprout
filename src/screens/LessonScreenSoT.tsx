@@ -63,19 +63,21 @@ const QUESTIONS: Question[] = [
 interface LessonScreenSoTProps {
   onExit: () => void;
   onComplete?: () => void;
+  questions?: Question[];
 }
 
 type Phase = 'question' | 'selected' | 'check' | 'feedback';
 type Result = 'correct' | 'almost';
 
-export default function LessonScreenSoT({ onExit, onComplete }: LessonScreenSoTProps) {
+export default function LessonScreenSoT({ onExit, onComplete, questions }: LessonScreenSoTProps) {
   const [index, setIndex] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
   const [phase, setPhase] = useState<Phase>('question');
   const [result, setResult] = useState<Result>('correct');
 
-  const q = QUESTIONS[index];
-  const total = QUESTIONS.length;
+  const activeQuestions = questions || QUESTIONS;
+  const q = activeQuestions[index];
+  const total = activeQuestions.length;
 
   function progressPct() {
     const base = (index / total) * 100;
