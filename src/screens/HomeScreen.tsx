@@ -19,6 +19,7 @@ interface HomeScreenProps {
   onStartUnit: (unitId: string) => void;
   onOpenShop: () => void;
   onOpenWater: () => void;
+  onOpenScan?: () => void;
   tab: TabKey;
   onTabChange: (tab: TabKey) => void;
 }
@@ -51,7 +52,7 @@ function loadTodayDone(key: string): string[] {
   try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch { return []; }
 }
 
-export default function HomeScreen({ completed, focusTarget, onFocusSettled, onStartUnit, onOpenShop, onOpenWater, tab, onTabChange }: HomeScreenProps) {
+export default function HomeScreen({ completed, focusTarget, onFocusSettled, onStartUnit, onOpenShop, onOpenWater, onOpenScan, tab, onTabChange }: HomeScreenProps) {
   const sections = courseWithProgress(completed);
 
   // The "Today Card": a calm pointer to the next lesson (or a rested state).
@@ -106,6 +107,19 @@ export default function HomeScreen({ completed, focusTarget, onFocusSettled, onS
           >
             {current ? "Start today's lesson" : 'Practice a lesson'}
           </button>
+          {onOpenScan && (
+            <button
+              type="button"
+              className="today__scan"
+              onClick={() => {
+                playSproutFeedback('gardenGrowth');
+                onOpenScan();
+              }}
+            >
+              <span className="today__scan-icon" aria-hidden="true">📷</span>
+              Scan homework
+            </button>
+          )}
           <ul className="today__checklist" aria-label="Today's plan">
             {TODAY_TASKS.map((t) => {
               const checked = doneTasks.includes(t.id);
