@@ -1300,8 +1300,9 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 
 /* Footer with big CTA */
 .ob__foot {
+  /* Same rule as Lesson Continue: 24px + safe-area + ~56px in-tab browser chrome */
   flex-shrink: 0;
-  padding: 14px 18px calc(30px + env(safe-area-inset-bottom));
+  padding: 14px 18px calc(24px + env(safe-area-inset-bottom, 0px) + 56px);
 }
 .ob__cta {
   width: 100%;
@@ -2066,4 +2067,10 @@ body.calm-motion *, body.calm-motion *::before, body.calm-motion *::after { anim
     transform: translateY(0);
     opacity: 1;
   }
+}
+
+
+/* Shared bottom primary CTA clearance (Lesson Continue / Welcome Get started) */
+.cta-bottom-safe {
+  padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px) + 56px);
 }
