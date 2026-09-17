@@ -1,6 +1,5 @@
 /* PipPose — Pip mascot poses (neutral, correct/celebrate, almost/coach).
-   Geometry from figma bro SoT SVGs: two separate leaves with air gap between
-   them, each still attached to the stem (junction seal). */
+   Celebrate geometry from figma bro SoT (two leaves + clear V-gap at stem tip). */
 
 interface PipPoseProps {
   pose?: 'neutral' | 'correct' | 'almost';
@@ -9,7 +8,7 @@ interface PipPoseProps {
 
 export default function PipPose({ pose = 'neutral', className }: PipPoseProps) {
   if (pose === 'correct') {
-    // Celebrate — arms-up leaves, deeper grin
+    // Celebrate — figma bro: separate L/R leaves, V-gap, both attached to stem
     return (
       <svg
         className={className}
@@ -21,10 +20,9 @@ export default function PipPose({ pose = 'neutral', className }: PipPoseProps) {
         role="img"
         aria-label="Pip celebrating"
       >
-        <rect x="37.5" y="14" width="5" height="32" rx="2.5" fill="#3f7a2e" />
-        <ellipse cx="25" cy="13" rx="12.5" ry="7.2" fill="#6FBF5E" transform="rotate(-50 36 17)" />
-        <ellipse cx="55" cy="13" rx="12.5" ry="7.2" fill="#4D9E3F" transform="rotate(50 44 17)" />
-        <circle cx="40" cy="18" r="2.8" fill="#3f7a2e" />
+        <ellipse cx="29" cy="14" rx="13" ry="8" fill="#6FBF5E" transform="rotate(-48 37 18)" />
+        <ellipse cx="51" cy="14" rx="13" ry="8" fill="#4D9E3F" transform="rotate(48 43 18)" />
+        <rect x="37.5" y="16" width="5" height="30" rx="2.5" fill="#3f7a2e" />
         <circle cx="40" cy="53" r="18" fill="#6FBF5E" />
         <circle cx="40" cy="53" r="18" fill="#ffffff" opacity="0.06" />
         <circle cx="34" cy="49.5" r="2.7" fill="#2f3b24" />
@@ -37,7 +35,6 @@ export default function PipPose({ pose = 'neutral', className }: PipPoseProps) {
   }
 
   if (pose === 'almost') {
-    // Coach / soft — separate leaves, gentler smile
     return (
       <svg
         className={className}
@@ -64,7 +61,6 @@ export default function PipPose({ pose = 'neutral', className }: PipPoseProps) {
     );
   }
 
-  // Neutral — two distinct leaves with clear gap
   return (
     <svg
       className={className}
