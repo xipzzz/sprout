@@ -37,7 +37,9 @@ function questionToDraft(q: WordPickQuestion): DraftState {
 }
 
 export default function ScanHomeworkScreen({ onCancel, onParsed }: ScanHomeworkScreenProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [phase, setPhase] = useState<Phase>('pick');
   const [errorMsg, setErrorMsg] = useState('');
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -133,7 +135,9 @@ export default function ScanHomeworkScreen({ onCancel, onParsed }: ScanHomeworkS
     setErrorMsg('');
     setDraft(null);
     setPreviewUrl(null);
-    if (inputRef.current) inputRef.current.value = '';
+    if (galleryInputRef.current) galleryInputRef.current.value = '';
+    if (cameraInputRef.current) cameraInputRef.current.value = '';
+    if (fileInputRef.current) fileInputRef.current.value = '';
   }
 
   return (
@@ -265,23 +269,62 @@ export default function ScanHomeworkScreen({ onCancel, onParsed }: ScanHomeworkS
               {!providerReady && ' Live scan is unavailable right now; use the sample below.'}
             </p>
 
+            {/* Hidden file inputs for each action */}
             <input
-              ref={inputRef}
+              ref={galleryInputRef}
+              className="scan__file"
+              type="file"
+              accept="image/*"
+              aria-label="Choose image from gallery"
+              onChange={(e) => onFileChosen(e.target.files?.[0])}
+            />
+            <input
+              ref={cameraInputRef}
               className="scan__file"
               type="file"
               accept="image/*"
               capture="environment"
-              aria-label="Take or choose a homework photo"
+              aria-label="Take photo with camera"
+              onChange={(e) => onFileChosen(e.target.files?.[0])}
+            />
+            <input
+              ref={fileInputRef}
+              className="scan__file"
+              type="file"
+              accept="image/*"
+              aria-label="Choose file"
               onChange={(e) => onFileChosen(e.target.files?.[0])}
             />
 
-            <button
-              type="button"
-              className="btn-primary scan__cta"
-              onClick={() => inputRef.current?.click()}
-            >
-              Take or choose photo
-            </button>
+            {/* Three visible action buttons */}
+            <div className="scan__actions">
+              <button
+                type="button"
+                className="scan__action-btn scan__action-btn--gallery"
+                onClick={() => galleryInputRef.current?.click()}
+              >
+                <span className="scan__action-icon" aria-hidden="true">🖼️</span>
+                <span className="scan__action-label">Attach image</span>
+              </button>
+
+              <button
+                type="button"
+                className="scan__action-btn scan__action-btn--camera"
+                onClick={() => cameraInputRef.current?.click()}
+              >
+                <span className="scan__action-icon" aria-hidden="true">📷</span>
+                <span className="scan__action-label">Take photo</span>
+              </button>
+
+              <button
+                type="button"
+                className="scan__action-btn scan__action-btn--file"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <span className="scan__action-icon" aria-hidden="true">📁</span>
+                <span className="scan__action-label">Choose file</span>
+              </button>
+            </div>
 
             <button
               type="button"
