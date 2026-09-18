@@ -24,19 +24,19 @@ const GROWS_BASE: { id: GrowId; icon: string; childLabel: string; selfLabel: str
 
 export default function OnboardingSplash({ onStart }: OnboardingSplashProps) {
   const [step, setStep] = useState(0);
-  const [audience, setAudience] = useState<Audience | null>(null);
   const [grow, setGrow] = useState<GrowId[]>([]);
 
-  // The flow grows a "reassure" beat only on the child path.
+  // Kids-only product: always use child path, skip audience selection.
+  const audience: Audience = 'child';
   const seq = useMemo<string[]>(
-    () => ['welcome', 'audience', ...(audience === 'child' ? ['reassure'] : []), 'grow', 'ready'],
-    [audience]
+    () => ['welcome', 'reassure', 'grow', 'ready'],
+    []
   );
   const key = seq[Math.min(step, seq.length - 1)] || 'ready';
-  const forChild = audience === 'child';
+  const forChild = true;
 
-  // Only the two real questions advance the progress bar.
-  const questionKeys = ['audience', 'grow'];
+  // Only the one real question advances the progress bar (grow).
+  const questionKeys = ['grow'];
   const qIndex = questionKeys.indexOf(key);
   const showChrome = qIndex >= 0;
 
@@ -45,7 +45,7 @@ export default function OnboardingSplash({ onStart }: OnboardingSplashProps) {
     setGrow((g) => (g.includes(id) ? g.filter((x) => x !== id) : [...g, id]));
   }
 
-  const canContinue = key === 'audience' ? !!audience : key === 'grow' ? grow.length > 0 : true;
+  const canContinue = key === 'grow' ? grow.length > 0 : true;
   const back = () => setStep((s) => Math.max(0, s - 1));
   const next = () => setStep((s) => Math.min(seq.length - 1, s + 1));
 
@@ -64,9 +64,9 @@ export default function OnboardingSplash({ onStart }: OnboardingSplashProps) {
             </svg>
           </button>
           <div className="ob__progress">
-            <p className="ob__step">Step {Math.min(qIndex + 1, 2)} of 2</p>
+            <p className="ob__step">Step {Math.min(qIndex + 1, 1)} of 1</p>
             <div className="ob__bars" aria-hidden="true">
-              {Array.from({ length: 2 }).map((_, i) => {
+              {Array.from({ length: 1 }).map((_, i) => {
                 const w = i < qIndex ? 100 : i === qIndex ? 50 : 0;
                 return (
                   <span key={i} className="ob__bar"><span className="ob__bar-fill" style={{ width: `${w}%` }} /></span>
@@ -83,14 +83,6 @@ export default function OnboardingSplash({ onStart }: OnboardingSplashProps) {
             <Pip className="ob__pip-xl" />
             <h1 className="ob__title-big">Hi, I'm Pip!</h1>
             <p className="ob__lead">Let's grow your English together — a few gentle minutes a day. 🌱</p>
-          </div>
-        )}
-
-        {key === 'audience' && (
-          <div role="radiogroup" aria-label="Who's growing a garden today?">
-            <Bubble text="First — who's growing a garden today?" />
-            <Option icon="🧒" title="My child" sub="I'm setting it up for a young learner" selected={audience === 'child'} onClick={() => setAudience('child')} />
-            <Option icon="🌱" title="Me" sub="I'm learning English myself" selected={audience === 'self'} onClick={() => setAudience('self')} />
           </div>
         )}
 
