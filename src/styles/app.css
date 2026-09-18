@@ -227,6 +227,42 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   border-radius: 6px;
 }
 .scan__file { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.scan__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: var(--s3);
+  width: 100%;
+}
+.scan__action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: var(--s4) var(--s3);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  border: 2px solid var(--green-tint-2);
+  box-shadow: var(--shadow-sm);
+  font-weight: 800;
+  color: var(--ink);
+  transition: transform 120ms var(--ease), border-color 120ms var(--ease);
+  touch-action: manipulation;
+}
+.scan__action-btn:active {
+  transform: scale(0.96);
+  border-color: var(--green);
+}
+.scan__action-icon {
+  font-size: 2.2rem;
+  line-height: 1;
+}
+.scan__action-label {
+  font-size: var(--fs-caption);
+  font-weight: 800;
+  text-align: center;
+  line-height: 1.2;
+}
 .scan__cta { width: 100%; }
 .scan__sample {
   width: 100%;
