@@ -6,6 +6,7 @@
  */
 
 import { createWorker } from 'tesseract.js';
+import { draftHaveHasWordPick } from './haveHasOcrRules';
 
 export interface WordPickQuestion {
   prompt: string;
@@ -124,6 +125,9 @@ export function wordPickFromJson(json: WordPickJson, source: WordPickQuestion['s
  * Returns null when text is blank / too weak.
  */
 export function draftWordPickFromOcrText(text: string): WordPickJson | null {
+  const haveHasDraft = draftHaveHasWordPick(text);
+  if (haveHasDraft) return haveHasDraft;
+
   const raw = (text || '').replace(/\u0000/g, '').trim();
   if (raw.replace(/\s+/g, '').length < 6) return null;
 
@@ -304,7 +308,7 @@ function uniquePreserve(items: string[]): string[] {
 
 const STOPWORDS = new Set([
   'the', 'and', 'for', 'are', 'but', 'not', 'you', 'all', 'can', 'had', 'her',
-  'was', 'one', 'our', 'out', 'has', 'have', 'been', 'they', 'with', 'this',
+  'was', 'one', 'our', 'out', 'been', 'they', 'with', 'this',
   'that', 'from', 'which', 'what', 'when', 'where', 'your', 'their',
   'will', 'would', 'could', 'should', 'about', 'into', 'than', 'then', 'them',
   'these', 'those', 'circle', 'choose', 'pick', 'select', 'match', 'find',
