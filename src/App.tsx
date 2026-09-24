@@ -20,7 +20,7 @@ import SettingsScreen from './screens/SettingsScreen';
 import OnboardingSplash from './screens/OnboardingSplash';
 import ComebackScreen from './screens/ComebackScreen';
 import ScanHomeworkScreen from './screens/ScanHomeworkScreen';
-import type { WordPickQuestion } from './lib/homeworkParse';
+import type { PlayableQuestion } from './lib/homeworkQuestions';
 import Modal from './components/Modal';
 import Pip from './components/Pip';
 import { loadCompleted, saveCompleted } from './state/progress';
@@ -42,7 +42,7 @@ export default function App() {
   const [showTales, setShowTales] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showScan, setShowScan] = useState(false);
-  const [scanQuestion, setScanQuestion] = useState<WordPickQuestion | null>(null);
+  const [scanQuestions, setScanQuestions] = useState<PlayableQuestion[] | null>(null);
   const [showDailyGoal, setShowDailyGoal] = useState(false);
   const [dailyGoalShown, setDailyGoalShown] = useState(false);
   const [goldenBloom, setGoldenBloom] = useState<string | null>(null);
@@ -134,14 +134,14 @@ export default function App() {
     );
   }
 
-  if (scanQuestion) {
+  if (scanQuestions && scanQuestions.length >= 4) {
     return (
       <div className="app">
         <LessonScreenSoT
-          questions={[{ prompt: scanQuestion.prompt, choices: scanQuestion.choices, correct: scanQuestion.correct }]}
-          onExit={() => setScanQuestion(null)}
+          questions={scanQuestions}
+          onExit={() => setScanQuestions(null)}
           onComplete={() => {
-            setScanQuestion(null);
+            setScanQuestions(null);
             markTodayDone('lesson');
             playSproutFeedback('gardenGrowth');
           }}
@@ -155,9 +155,9 @@ export default function App() {
       <div className="app">
         <ScanHomeworkScreen
           onCancel={() => setShowScan(false)}
-          onParsed={(q) => {
+          onPlay={(questions) => {
             setShowScan(false);
-            setScanQuestion(q);
+            setScanQuestions(questions);
           }}
         />
       </div>

@@ -1,8 +1,6 @@
-/* homeworkParse — swappable homework photo → ONE Lock B word-pick.
- *
- * Default: Tesseract.js (open-source OCR in the browser). No cloud keys.
- * Sample path always works. Provider interface stays swappable for future
- * parsers — do NOT commit paid API keys.
+/* homeworkParse — legacy single word-pick helper.
+ * The scan play flow uses homeworkScan.ts (deskew + multi-question OCR).
+ * Do not add canned choices here. No paid API keys.
  */
 
 import { createWorker } from 'tesseract.js';
@@ -40,20 +38,6 @@ export interface HomeworkParseProvider {
   isAvailable: () => boolean;
   parseImage: (file: File) => Promise<ParseOutcome>;
 }
-
-/** Sample exercise tied to public/sample-homework.png — always available. */
-export const SAMPLE_WORD_PICK: WordPickQuestion = {
-  prompt: 'Which word means a baby plant?',
-  choices: ['bloom', 'seedling', 'root', 'fence'],
-  correct: 'seedling',
-  source: 'sample',
-};
-
-/** Common English kids-worksheet distractors / fillers for thin OCR. */
-const FALLBACK_DISTRACTORS = [
-  'bloom', 'root', 'leaf', 'stem', 'fence', 'garden', 'soil', 'water',
-  'sunshine', 'flower', 'sprout', 'seed', 'branch', 'grass',
-];
 
 let activeProvider: HomeworkParseProvider | null = null;
 
@@ -171,17 +155,8 @@ export function draftWordPickFromOcrText(text: string): WordPickJson | null {
   const uniq = uniquePreserve(optionWords.length >= 2 ? optionWords : tokens);
   if (uniq.length < 2) return null;
 
-  // Prefer 3–4 choices
-  let choices = uniq.slice(0, 4);
-  while (choices.length < 3) {
-    const filler = FALLBACK_DISTRACTORS.find(
-      (d) => !choices.some((c) => c.toLowerCase() === d.toLowerCase()),
-    );
-    if (!filler) break;
-    choices.push(filler);
-  }
+  const choices = uniq.slice(0, 4);
   if (choices.length < 2) return null;
-  choices = choices.slice(0, 4);
 
   // Correct = first substantive option / first unique token (parent can edit)
   const correct = choices[0];
@@ -207,7 +182,7 @@ export function createTesseractProvider(): HomeworkParseProvider {
             ok: false,
             reason: 'parse_failed',
             message:
-              'Could not read enough clear text from that photo. Try a sharper printed worksheet, or use the sample homework.',
+              'Could not read enough clear text from that photo. Try a sharper printed worksheet.',
           };
         }
         const question = wordPickFromJson(draft, 'provider');
@@ -216,7 +191,7 @@ export function createTesseractProvider(): HomeworkParseProvider {
             ok: false,
             reason: 'parse_failed',
             message:
-              'We read some text but could not build a word-pick. Edit via sample, or try another photo.',
+              'We read some text but could not build a word-pick. Try another photo.',
           };
         }
         return { ok: true, question };
@@ -225,7 +200,7 @@ export function createTesseractProvider(): HomeworkParseProvider {
           ok: false,
           reason: 'parse_failed',
           message:
-            'Open-source text scan failed on that photo. Try again, or use the sample homework.',
+            'Open-source text scan failed on that photo. Try again.',
         };
       } finally {
         if (worker) {
@@ -238,22 +213,16 @@ export function createTesseractProvider(): HomeworkParseProvider {
   };
 }
 
-/** Instant sample path — no network OCR required, always works. */
-export async function parseSampleHomework(): Promise<ParseOutcome> {
-  await wait(420);
-  return { ok: true, question: { ...SAMPLE_WORD_PICK } };
-}
-
 /**
  * Parse a user-uploaded homework image via the registered provider.
- * With no provider: never invent a parse — clear no_provider error + sample offer.
+ * With no provider: never invent a parse.
  */
 export async function parseHomeworkImage(file: File): Promise<ParseOutcome> {
   if (!file || !file.type.startsWith('image/')) {
     return {
       ok: false,
       reason: 'bad_image',
-      message: 'That file does not look like a photo. Try a homework picture, or use the sample.',
+      message: 'That file does not look like a photo. Try a homework picture.',
     };
   }
 
@@ -263,7 +232,7 @@ export async function parseHomeworkImage(file: File): Promise<ParseOutcome> {
       ok: false,
       reason: 'no_provider',
       message:
-        'Live photo parsing is not available right now. You can still try the sample homework demo.',
+        'Live photo parsing is not available right now.',
     };
   }
 
@@ -273,7 +242,7 @@ export async function parseHomeworkImage(file: File): Promise<ParseOutcome> {
     return {
       ok: false,
       reason: 'parse_failed',
-      message: 'We could not read that photo. Try again, or use the sample homework.',
+      message: 'We could not read that photo. Try again.',
     };
   }
 }
@@ -324,8 +293,4 @@ function loadImage(url: string): Promise<HTMLImageElement> {
     img.onerror = () => reject(new Error('image load failed'));
     img.src = url;
   });
-}
-
-function wait(ms: number) {
-  return new Promise((r) => setTimeout(r, ms));
 }
