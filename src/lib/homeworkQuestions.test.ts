@@ -349,6 +349,33 @@ assert(/Many birds _____ their nests/i.test(verbs[5].stem), `Q6 stem: ${verbs[5]
 assert(verbs[5].choices.join(',') === 'build,builds', `Q6 choices: ${verbs[5]?.choices}`);
 assert(!/Many birds/i.test(verbs[0].stem), 'Q6 text must not join Q1');
 
+const exercise39 = `Exercise 39: Verbs (Subject-verb Agreement)
+1. James (find, finds) a wallet on the street.
+2. My parents (buy, buys) fruit at the market.
+3. My father (watch, watches) the news.
+4. Tim (meet, meets) his class.
+5. My mother (mop, mops) the floor.
+6. The puppy (bark, barks) at night.
+7. The men (carry, carries) the boxes.
+8. The pilot (fly, flies) the plane.
+9. I (save, saves) coins.
+10. We (sing, sings) a song.`;
+const ex39 = parseWorksheetOcr(exercise39, undefined, 80);
+assert(ex39.length >= 4, `Exercise 39 yielded ${ex39.length} questions`);
+assert(ex39.length === 10, `expected 10 Exercise 39 questions, got ${ex39.length}`);
+assert(/James _____ a wallet/i.test(ex39[0].stem), `Ex39 Q1 stem: ${ex39[0]?.stem}`);
+assert(ex39[0].choices.join(',') === 'find,finds', `Ex39 Q1 choices: ${ex39[0]?.choices}`);
+assert(!/My parents|We \(sing/i.test(ex39[0].stem), `later Ex39 text leaked into Q1: ${ex39[0].stem}`);
+
+const exercise39Noisy = parseWorksheetOcr(`l. James (find finds) a wallet on the street.2.My parents (buy buys) fruit.
+3 My father (watch watches) the news
+4.Tim (meet meets) his class
+I. We (sing sings) a song`, undefined, 70);
+assert(exercise39Noisy.length >= 4, `noisy Exercise 39 yielded ${exercise39Noisy.length}`);
+assert(/James _____ a wallet/i.test(exercise39Noisy[0].stem), `noisy Q1 stem: ${exercise39Noisy[0]?.stem}`);
+assert(exercise39Noisy[0].choices.join(',') === 'find,finds', `noisy Q1 choices: ${exercise39Noisy[0]?.choices}`);
+assert(!exercise39Noisy[0].choices.some((choice) => /^(james|my|the|tim)$/i.test(choice)), 'noisy Q1 choices are the verbs');
+
 assert(parseWorksheetOcr('', undefined, 90).length === 0, 'empty OCR text produces no drafts');
 assert(parseWorksheetOcr('   \n\n  ', undefined, 40).length === 0, 'blank OCR text produces no drafts');
 

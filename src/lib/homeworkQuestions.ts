@@ -190,8 +190,17 @@ export function parseWorksheetOcr(
 }
 
 function explodeNumberedPieces(line: string): string[] {
-  const parts = line.split(/\s+(?=\d{1,2}\s*[.)]\s+[A-Za-z])/).map((part) => part.trim()).filter(Boolean);
-  return parts.length > 0 ? parts : [line];
+  const normalized = normalizeLeadingNumber(line);
+  const parts = normalized
+    .split(/(?<=\S)\s*(?=\d{1,2}(?:[.)]\s*|\s+)[A-Za-z])/)
+    .map((part) => normalizeLeadingNumber(part.trim()))
+    .filter(Boolean);
+  return parts.length > 0 ? parts : [normalized];
+}
+
+function normalizeLeadingNumber(line: string): string {
+  // Tesseract reads a leading "1." as "l." or "I." or "|".
+  return line.replace(/^(?:[lI|]\s*[.)]\s*|[l|]\s+)(?=[A-Za-z])/, '1. ');
 }
 
 function stripQuestionNumber(line: string): string {
@@ -236,11 +245,31 @@ function extractChoices(chunk: string): ParsedChoice[] {
 
 function parenVerbPair(chunk: string): string[] | null {
   const paren = chunk.match(/\(([^)]{2,80})\)/);
-  if (!paren || !/[/，,]/.test(paren[1])) return null;
+  if (!paren) return null;
+  const verbs = verbPairParts(paren[1]);
+  if (verbs) return verbs;
+  if (!/[/，,]/.test(paren[1])) return null;
   const parts = paren[1].split(/\s*[/，,]\s*/).map((part) => part.trim()).filter(Boolean);
   if (parts.length < 2 || parts.length > 4) return null;
   if (!parts.every((part) => /^\*?[A-Za-z][A-Za-z'’*-]{0,20}\*?$/.test(part))) return null;
   return parts;
+}
+
+function verbPairParts(inner: string): string[] | null {
+  const parts = inner.split(/[\s/，,|.;:~]+/).map((part) => part.trim()).filter(Boolean);
+  if (parts.length < 2 || parts.length > 4) return null;
+  if (!parts.every((part) => /^\*?[A-Za-z][A-Za-z'’*-]{0,20}\*?$/.test(part))) return null;
+  const stems = parts.map((part) => verbStem(part.replace(/\*/g, '')));
+  if (!stems.every((stem) => stem.length >= 2 && stem === stems[0])) return null;
+  return parts;
+}
+
+function verbStem(word: string): string {
+  const w = word.toLowerCase();
+  if (w.endsWith('ies') && w.length > 4) return `${w.slice(0, -3)}y`;
+  if (/(?:ches|shes|xes|zes|oes|ses)$/.test(w) && w.length > 4) return w.slice(0, -2);
+  if (w.endsWith('s') && !w.endsWith('ss') && w.length > 3) return w.slice(0, -1);
+  return w;
 }
 
 function bareWordChoices(lines: string[]): ParsedChoice[] {
@@ -285,6 +314,7 @@ function cleanStem(first: string, rest: string[]): string {
   stem = stem.replace(/(?:^|\s)[([]?\s*[1-4A-Da-d]\s*[)\].:]\s*\*?[A-Za-z][A-Za-z'’*-]{0,20}\*?/g, ' ');
   stem = stem.replace(/\(([^)]+)\)/g, (full, inner: string) => {
     if (/^\s*(i|you|he|she|it|we|they)\s*$/i.test(inner)) return full;
+    if (verbPairParts(inner)) return '_____';
     const parts = inner.split(/\s*[/，,]\s*/).map((part) => part.trim());
     if (parts.length >= 2 && parts.every((part) => /^[A-Za-z'’-]+$/.test(part))) return '_____';
     return ' ';
