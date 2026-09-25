@@ -25,7 +25,7 @@ const HAS_MISREADS = /\b(bas|lias|hass|haz|hss|has\.|bas)\b/gi;
 
 export function normalizeHaveHasOcr(text: string): string {
   return (text || '')
-    .replace(/\u0000/g, '')
+    .split('\0').join('')
     .replace(HAVE_MISREADS, 'have')
     .replace(HAS_MISREADS, 'has')
     .replace(/\bhavc\b/gi, 'have')
@@ -84,7 +84,7 @@ function questionPromptFromText(text: string, subject: string | null): string {
     lines.find((l) => /\?/.test(l)) ||
     lines.find((l) => /^(choose|circle|pick|fill|write|select)\b/i.test(l));
   if (q && q.length >= 8) {
-    let p = q.replace(/^(?:[\(\[]?[A-Da-d1-4][\)\]\.\:]|\u2022|-|\*)\s+/, '').trim();
+    let p = q.replace(/^(?:[[(]?[A-Da-d1-4][)\].:]|\u2022|-|\*)\s+/, '').trim();
     if (!/[?.!]$/.test(p)) p = `${p}?`;
     return p;
   }

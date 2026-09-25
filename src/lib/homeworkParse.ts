@@ -112,7 +112,7 @@ export function draftWordPickFromOcrText(text: string): WordPickJson | null {
   const haveHasDraft = draftHaveHasWordPick(text);
   if (haveHasDraft) return haveHasDraft;
 
-  const raw = (text || '').replace(/\u0000/g, '').trim();
+  const raw = (text || '').split('\0').join('').trim();
   if (raw.replace(/\s+/g, '').length < 6) return null;
 
   const lines = raw
@@ -121,7 +121,7 @@ export function draftWordPickFromOcrText(text: string): WordPickJson | null {
     .filter((l) => l.length > 0);
 
   // Letter/number-prefixed options: A) word  1. word  (b) word  • word
-  const optionRe = /^(?:[\(\[]?[A-Da-d1-4][\)\]\.\:]|\u2022|-|\*)\s+(.+)$/;
+  const optionRe = /^(?:[[(]?[A-Da-d1-4][)\].:]|\u2022|-|\*)\s+(.+)$/;
   const optionWords: string[] = [];
   for (const line of lines) {
     const m = line.match(optionRe);

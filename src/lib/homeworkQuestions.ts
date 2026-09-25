@@ -1,7 +1,8 @@
 /* Turn one worksheet's OCR into draft questions.
    Nothing here is a canned bank: stems, choices, and answers come from the text
-   (or a parent edit). Possessive / have-has grammar only picks a correct choice
-   when that word is already one of the OCR choices. */
+   (or a parent edit). If OCR drops a fill-in underline, the blank is restored.
+   Possessive / have-has grammar only picks a correct choice when that word is
+   already one of the OCR choices. */
 
 import { correctHaveHasForSubject, normalizeHaveHasOcr } from './haveHasOcrRules';
 
@@ -156,19 +157,21 @@ export function parseWorksheetOcr(
     else blocks[blocks.length - 1].lines.push(line);
   }
 
-  const shared = extractChoices(preamble.join(' '));
+  const preambleText = preamble.join(' ');
+  const shared = extractChoices(preambleText);
 
   return blocks.flatMap((block, index) => {
     const raw = block.lines.join(' ');
     const local = extractChoices(raw.replace(/^\d{1,2}(?:\s*[.)]\s+|\s+)/, ''));
     const picked = local.length >= 2 ? local : shared;
     if (picked.length < 2) return [];
-    const stem = cleanStem(block.lines[0], block.lines.slice(1));
+    const choiceText = picked.map((choice) => choice.text);
+    const stem = restoreFillBlank(cleanStem(block.lines[0], block.lines.slice(1)), choiceText, preambleText);
     if (!stem) return [];
     const key = keyRefs.find((item) => item.n === block.n);
     const fromKey = key ? resolveKey(key.raw, picked) : null;
     const marked = picked.find((choice) => choice.marked)?.text ?? null;
-    const correct = fromKey || marked || guessCorrect(stem, picked.map((choice) => choice.text));
+    const correct = fromKey || marked || guessCorrect(stem, choiceText, preambleText);
     const confidence = confidenceForBlock(raw, words, pageConfidence);
     return [{
       id: `q${block.n || index + 1}`,
@@ -241,9 +244,132 @@ function cleanStem(first: string, rest: string[]): string {
     if (parts.length >= 2 && parts.every((part) => /^[A-Za-z'’-]+$/.test(part))) return '_____';
     return ' ';
   });
-  stem = stem.replace(/\s+/g, ' ').trim();
-  if (!/[?.!]$/.test(stem) && stem.length > 0) stem = `${stem}.`;
-  return stem;
+  return finishStem(stem);
+}
+
+const BLANK = '_____';
+
+const POSSESSIVE_WORDS = new Set([
+  'my', 'your', 'his', 'her', 'its', 'our', 'their',
+  'mine', 'yours', 'hers', 'ours', 'theirs', "it's",
+]);
+
+const CLOSED = new Set([
+  'a', 'an', 'the', 'my', 'your', 'his', 'her', 'its', 'our', 'their',
+  'mine', 'yours', 'hers', 'ours', 'theirs',
+  'this', 'that', 'these', 'those', 'some', 'any', 'no', 'every', 'each',
+  'me', 'you', 'him', 'us', 'them', 'it', 'she', 'he', 'we', 'they', 'i',
+  'nice', 'good', 'bad', 'big', 'small', 'red', 'blue', 'green', 'yellow',
+  'happy', 'sad', 'kind', 'old', 'new', 'tall', 'short', 'long', 'ready',
+  'here', 'there', 'fine', 'ok', 'okay', 'great', 'fun', 'easy', 'hard',
+  'right', 'wrong', 'true', 'false', 'very', 'so', 'too', 'not', 'also',
+  'just', 'still', 'already', 'pretty', 'really', 'quite', 'more', 'most',
+  'little', 'much', 'many', 'few', 'hot', 'cold', 'warm', 'fast', 'slow',
+  'young', 'clean', 'dirty', 'open', 'closed', 'full', 'empty', 'late',
+  'early', 'busy', 'free', 'sick', 'well', 'angry', 'afraid', 'tired',
+  'hungry', 'thirsty', 'beautiful', 'cute', 'smart', 'black', 'white',
+  'brown', 'pink', 'orange', 'purple', 'grey', 'gray',
+  'in', 'on', 'at', 'to', 'for', 'with', 'from', 'of', 'by', 'up', 'out',
+  'off', 'over', 'under', 'about', 'into', 'onto', 'outside', 'inside',
+  'away', 'back', 'home', 'now', 'then',
+]);
+
+const INSTRUCTION = new Set([
+  'choose', 'circle', 'pick', 'fill', 'write', 'select', 'match', 'read',
+  'look', 'answer', 'question', 'complete', 'underline', 'put', 'use',
+]);
+
+function finishStem(stem: string): string {
+  const trimmed = stem.replace(/\s+/g, ' ').trim();
+  const cue = trimmed.match(/^(.*?)(\s+\([^)]*\))\s*$/);
+  if (cue) {
+    let body = cue[1].trim();
+    if (body && !/[?.!]$/.test(body)) body = `${body}.`;
+    return `${body}${cue[2]}`.trim();
+  }
+  if (trimmed && !/[?.!]$/.test(trimmed)) return `${trimmed}.`;
+  return trimmed;
+}
+
+function hasBlank(stem: string): boolean {
+  return /_{2,}/.test(stem);
+}
+
+function normalizeBlankMarks(stem: string): string {
+  let next = stem;
+  next = next.replace(/([A-Za-z])_{1,}([A-Za-z])/g, `$1 ${BLANK} $2`);
+  next = next.replace(/(?:\s*[_\-—–]\s*){2,}/g, ` ${BLANK} `);
+  next = next.replace(/(?:\s*\.\s*){3,}/g, ` ${BLANK} `);
+  next = next.replace(/_{2,}/g, ` ${BLANK} `);
+  next = next.replace(/(?:^|\s)[-—–_](?=\s|$)/g, ` ${BLANK} `);
+  next = next.replace(/\.{3,}/g, ` ${BLANK} `);
+  next = next.replace(/-{2,}/g, ` ${BLANK} `);
+  next = next.replace(/[—–]+/g, ` ${BLANK} `);
+  next = next.replace(/\[\s*\]/g, ` ${BLANK} `);
+  next = next.replace(/\(\s*\)/g, ` ${BLANK} `);
+  next = next.replace(new RegExp(`(?:${BLANK}\\s*){2,}`, 'g'), `${BLANK} `);
+  return next.replace(/\s+/g, ' ').trim();
+}
+
+function possessiveSignal(stem: string, choices: string[], preamble: string): boolean {
+  if (/\(\s*(?:i|you|he|she|it|we|they)\s*\)/i.test(stem)) return true;
+  if (/possessive/i.test(preamble)) return true;
+  const hits = choices.filter((choice) => POSSESSIVE_WORDS.has(choice.toLowerCase().replace(/[^a-z']/g, '')));
+  return hits.length >= 2;
+}
+
+function haveHasSignal(choices: string[]): boolean {
+  const lower = new Set(choices.map((choice) => choice.toLowerCase()));
+  return lower.has('have') && lower.has('has');
+}
+
+/** Put a blank back when OCR swallowed the underline on a fill-in line. */
+function restoreFillBlank(stem: string, choices: string[], preamble: string): string {
+  const normalized = finishStem(normalizeBlankMarks(stem));
+  if (hasBlank(normalized)) return normalized;
+  if (haveHasSignal(choices)) {
+    const filled = finishStem(restoreHaveHasGap(normalized));
+    if (hasBlank(filled)) return filled;
+  }
+  if (possessiveSignal(normalized, choices, preamble)) {
+    return finishStem(restorePossessiveGaps(normalized));
+  }
+  return normalized;
+}
+
+function restoreHaveHasGap(stem: string): string {
+  const re = /\b(I|You|He|She|It|We|They|[A-Z][a-z]+|[Tt]he\s+[a-z]+)\s+(?=(?:a|an|the|some|two|three|four|five|six|seven|eight|nine|ten|\d+)\b)/g;
+  return stem.replace(re, (full, subject: string) => {
+    const head = subject.split(/\s+/)[0]?.toLowerCase() ?? '';
+    if (INSTRUCTION.has(head)) return full;
+    return `${subject} ${BLANK} `;
+  });
+}
+
+function restorePossessiveGaps(stem: string): string {
+  let next = stem.replace(/(^|[.?!]\s+)([a-z][a-z']*)\s+(is|are|am|was|were)\b/g, (full, prefix: string, noun: string, verb: string) => {
+    if (CLOSED.has(noun.toLowerCase())) return full;
+    return `${prefix}${BLANK} ${noun} ${verb}`;
+  });
+  if (hasBlank(next)) return next;
+
+  next = next.replace(/\b(is|are|am|was|were)\s+((?:[a-z][a-z']*\s+){0,2}[a-z][a-z']*)\b/gi, (full, copula: string, rest: string) => {
+    const words = rest.split(/\s+/);
+    if (CLOSED.has(words[0]?.toLowerCase() ?? '')) return full;
+    if (words.every((word) => CLOSED.has(word.toLowerCase()))) return full;
+    return `${copula} ${BLANK} ${rest}`;
+  });
+  if (hasBlank(next)) return next;
+
+  next = next.replace(/\b(is|are|am|was|were)\s*([.?!])/gi, `$1 ${BLANK}$2`);
+  if (hasBlank(next)) return next;
+
+  next = next.replace(/\b([A-Za-z]+(?:ed|ing)|love|loves|like|likes|want|wants|need|needs|see|sees|saw|wash|washes|clean|cleans|open|opens|lose|loses|lost|wag|wags|brush|brushes|feed|feeds|wear|wears|read|reads|play|plays|keep|keeps|hold|holds|make|makes|use|uses|found|took|takes|take|bought|buy|buys|broke|break|breaks)\s+([a-z][a-z']*)\b/g, (full, verb: string, word: string) => {
+    if (CLOSED.has(word.toLowerCase())) return full;
+    if (/^(?:is|are|am|was|were|be|been|being)$/i.test(verb)) return full;
+    return `${verb} ${BLANK} ${word}`;
+  });
+  return next;
 }
 
 function resolveKey(raw: string, choices: ParsedChoice[]): string | null {
@@ -262,21 +388,63 @@ function resolveKey(raw: string, choices: ParsedChoice[]): string | null {
   return choices[index]?.text ?? null;
 }
 
-function guessCorrect(stem: string, choices: string[]): string | null {
-  const lower = choices.map((choice) => choice.toLowerCase());
-  if (lower.every((choice) => choice === 'have' || choice === 'has')) {
-    const subject = stem.match(/\b(I|you|he|she|it|we|they|[A-Z][a-z]+)\b/);
-    if (!subject) return null;
-    const which = correctHaveHasForSubject(subject[1]);
-    return choices.find((choice) => choice.toLowerCase() === which) ?? null;
+function guessCorrect(stem: string, choices: string[], preamble = ''): string | null {
+  const haveHas = guessHaveHas(stem, choices);
+  if (haveHas) return haveHas;
+  return guessPossessive(stem, choices, preamble);
+}
+
+function guessHaveHas(stem: string, choices: string[]): string | null {
+  if (!haveHasSignal(choices)) return null;
+  const subject = findHaveHasSubject(stem);
+  if (!subject) return null;
+  const which = correctHaveHasForSubject(subject);
+  return choices.find((choice) => choice.toLowerCase() === which) ?? null;
+}
+
+function findHaveHasSubject(stem: string): string | null {
+  const pattern = /\b(I|You|He|She|It|We|They|[A-Z][a-z]+|[Tt]he\s+[A-Za-z]+)\b/;
+  if (/_{2,}/.test(stem)) {
+    const before = stem.split(/_{2,}/)[0] ?? '';
+    const trailing = before.match(new RegExp(`${pattern.source}\\s*$`, 'i'));
+    return trailing?.[1] ?? null;
   }
-  const cue = stem.match(/\(\s*(I|you|he|she|it|we|they)\s*\)/i)?.[1]?.toLowerCase();
+  const lead = stem.match(new RegExp(`^${pattern.source}`, 'i'));
+  return lead?.[1] ?? null;
+}
+
+function guessPossessive(stem: string, choices: string[], preamble: string): string | null {
+  if (!possessiveSignal(stem, choices, preamble)) return null;
+  const cue = possessiveCue(stem);
   if (!cue) return null;
+  const adjective = ADJECTIVE[cue];
+  const pronoun = PRONOUN[cue];
   const form = blankForm(stem);
-  const expected = form === 'pro' ? PRONOUN[cue] : ADJECTIVE[cue];
+  const preferAdj = /possessive\s+(?:determiners?|adjectives?)/i.test(preamble);
+  let expected: string | undefined;
+  if (form === 'pro') expected = pronoun;
+  else if (form === 'adj') expected = adjective;
+  else if (preferAdj) expected = adjective;
+  else {
+    const adjHit = Boolean(adjective && choices.some((choice) => choice.toLowerCase() === adjective));
+    const proHit = Boolean(pronoun && choices.some((choice) => choice.toLowerCase() === pronoun));
+    if (adjHit && proHit) return null;
+    expected = adjHit ? adjective : pronoun;
+  }
   if (!expected) return null;
   const hits = choices.filter((choice) => choice.toLowerCase() === expected);
   return hits.length === 1 ? hits[0] : null;
+}
+
+function possessiveCue(stem: string): string | null {
+  const paren = stem.match(/\(\s*(I|you|he|she|it|we|they)\s*\)/i);
+  if (paren) return paren[1].toLowerCase();
+  const before = stem.split(/_{2,}/)[0] ?? stem;
+  const pronouns = [...before.matchAll(/\b(I|you|he|she|it|we|they)\b/gi)];
+  if (pronouns.length > 0) return pronouns[pronouns.length - 1][1].toLowerCase();
+  if (/\b(these|those)\b/i.test(before) || /\b(?:the|these|those)\s+[a-z]+s\b/i.test(before)) return 'they';
+  if (/\b(?:the|this|that)\s+(?!is\b|are\b|am\b|was\b|were\b|has\b|have\b)[a-z]+\b/i.test(before)) return 'it';
+  return null;
 }
 
 function blankForm(stem: string): 'adj' | 'pro' | 'unknown' {

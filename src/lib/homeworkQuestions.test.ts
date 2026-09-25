@@ -100,4 +100,95 @@ assert(garbage.garbage && !garbage.canAccept, 'garbage cannot be accepted');
 
 assert(!canStartPractice(3) && canStartPractice(4), 'play unlocks at 4 accepted questions');
 
+const dropped = parseWorksheetOcr(`Possessive Determiners
+Choose the correct word.
+
+1. This is book. (I)
+(1) my
+(2) mine
+(3) me
+
+2. The cat licked paw.
+(1) it
+(2) its
+(3) it's
+
+3. Those toys are. (they)
+(1) their
+(2) theirs
+(3) them
+
+4. sister is kind. (she)
+(1) Her
+(2) Hers
+(3) She
+
+5. She a red bag.
+(1) have
+(2) has
+
+6. They two cats.
+(1) have
+(2) has
+`, undefined, 90);
+
+assert(dropped.length === 6, `expected 6 restored drafts, got ${dropped.length}`);
+assert(/This is _____ book/i.test(dropped[0].stem), `blank missing: ${dropped[0].stem}`);
+assert(dropped[0].correct === 'my', 'dropped blank still picks my from (I)');
+assert(/licked _____ paw/i.test(dropped[1].stem), `blank missing: ${dropped[1].stem}`);
+assert(dropped[1].correct === 'its', 'the cat → its when its is a choice');
+assert(/are _____/i.test(dropped[2].stem), `blank missing: ${dropped[2].stem}`);
+assert(dropped[2].correct === 'theirs', 'blank at the end picks theirs');
+assert(dropped[3].stem.startsWith('_____'), `leading blank missing: ${dropped[3].stem}`);
+assert(dropped[3].correct === 'Her', 'she → Her from the OCR choices');
+assert(/She _____ a red bag/i.test(dropped[4].stem), `blank missing: ${dropped[4].stem}`);
+assert(dropped[4].correct === 'has', 'she → has');
+assert(/They _____ two cats/i.test(dropped[5].stem), `blank missing: ${dropped[5].stem}`);
+assert(dropped[5].correct === 'have', 'they → have');
+
+const missingWord = parseWorksheetOcr(`1. This is book. (I)
+(1) your
+(2) yours
+(3) you`, undefined, 90);
+assert(missingWord.length === 1 && /_____/.test(missingWord[0].stem), 'blank is restored even when my was not read');
+assert(missingWord[0].correct === null, 'do not invent a correct word that OCR never saw');
+const locked = assessAcceptance({ ...missingWord[0], parentEdited: false });
+assert(!locked.canAccept, 'parent gate stays locked until a real correct choice is marked');
+
+const intact = parseWorksheetOcr(`1. This is a book.
+(1) my
+(2) mine`, undefined, 90);
+assert(intact.length === 1 && !/_____/.test(intact[0].stem), `complete sentence stayed intact: ${intact[0]?.stem}`);
+
+const named = parseWorksheetOcr(`Have or Has
+1. Tom a bike.
+(1) have
+(2) has`, undefined, 88);
+assert(named.length === 1 && /Tom _____ a bike/i.test(named[0].stem), `name blank missing: ${named[0]?.stem}`);
+assert(named[0].correct === 'has', 'a name takes has when has is a choice');
+
+const twoSentences = parseWorksheetOcr(`Possessive Determiners
+1. I have a brother. name is Tom.
+(1) My
+(2) Mine
+(3) Me`, undefined, 90);
+assert(twoSentences.length === 1 && /_____ name is Tom/i.test(twoSentences[0].stem), `two-sentence blank missing: ${twoSentences[0]?.stem}`);
+assert(twoSentences[0].correct === 'My', 'I → My on a possessive determiners sheet');
+
+const dashes = parseWorksheetOcr(`1. This is --- book. (I)
+(1) my
+(2) mine`, undefined, 90);
+assert(dashes.length === 1 && /This is _____ book/i.test(dashes[0].stem), `dash blank not normalized: ${dashes[0]?.stem}`);
+assert(dashes[0].correct === 'my', 'a dash blank still picks my');
+
+const keyWins = parseWorksheetOcr(`1. She _____ a red bag.
+(1) have
+(2) has
+Answers
+1. have`, undefined, 90);
+assert(keyWins.length === 1 && keyWins[0].correct === 'have', 'printed answer key beats the have/has rule');
+
+const readyDropped = assessAcceptance({ ...dropped[0], parentEdited: false });
+assert(readyDropped.canAccept && !readyDropped.garbage, 'a restored high-confidence draft can be accepted');
+
 console.log('homework question tests passed');
