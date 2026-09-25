@@ -88,7 +88,7 @@ export default function WindingPath({ nodes, onSelect }: WindingPathProps) {
                 {node.status === 'current' && <span className="start-bubble">START</span>}
                 <span className="node__disc">{nodeIcon(node)}</span>
                 {node.status === 'current' && (
-                  <span className="node__pip"><Pip /></span>
+                  <span className="node__pip"><Pip idle /></span>
                 )}
               </button>
             </div>

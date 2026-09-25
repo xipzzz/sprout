@@ -519,12 +519,33 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   pointer-events: none;
 }
 .pip { transform-origin: 50% 92%; display: block; width: 100%; height: 100%; }
+/* Idle pivots at the feet / leaf base so squash reads as a breath, not a bounce. */
+.pip__body,
+.pip__leaves,
+.pip__eyes { transform-box: fill-box; }
+.pip__body { transform-origin: center bottom; }
+.pip__leaves { transform-origin: center bottom; }
+.pip__eyes { transform-origin: center center; }
 
 @media (prefers-reduced-motion: no-preference) {
   .start-bubble { animation: bob 1.9s var(--ease) infinite; }
   .node__halo { animation: nodeHaloPulse 2.2s ease-in-out infinite; }
   .node--current .node__disc { animation: currentNodeBreath 2.2s ease-in-out infinite; }
-  .pip { animation: sway 3.4s ease-in-out infinite; }
+  .pip:not(.pip--idle) { animation: sway 3.4s ease-in-out infinite; }
+  /* Layered idle — desynced periods so the loop is not one repeated beat.
+     body.calm-motion still collapses every animation to a single instant. */
+  .pip.pip--idle {
+    animation: pip-idle-sway 4.7s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+  }
+  .pip.pip--idle .pip__body {
+    animation: pip-idle-breath 3.2s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+  }
+  .pip.pip--idle .pip__leaves {
+    animation: pip-idle-leaf 5.35s cubic-bezier(0.42, 0.02, 0.58, 0.98) infinite;
+  }
+  .pip.pip--idle .pip__eyes {
+    animation: pip-idle-blink 4.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
 }
 @keyframes bob {
   0%, 100% { transform: translateX(-50%) translateY(0); }
@@ -541,6 +562,29 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 @keyframes sway {
   0%, 100% { transform: rotate(-3deg); }
   50%      { transform: rotate(3deg); }
+}
+/* Feet-pivoted tilt. 0% and 100% match so the loop has no hitch. */
+@keyframes pip-idle-sway {
+  0%, 100% { transform: rotate(0deg); }
+  28%      { transform: rotate(-2.2deg); }
+  62%      { transform: rotate(1.8deg); }
+}
+/* Vertical squash/stretch with inverse horizontal scale (volume stays put). */
+@keyframes pip-idle-breath {
+  0%, 100% { transform: scale(1, 1); }
+  50%      { transform: scale(0.957, 1.045); }
+}
+@keyframes pip-idle-leaf {
+  0%, 100% { transform: rotate(0deg) scale(1, 1); }
+  38%      { transform: rotate(-3.2deg) scale(1.025, 0.976); }
+  72%      { transform: rotate(2.8deg) scale(0.98, 1.02); }
+}
+/* One fast blink per ~4.2s (about 100ms closed), not once per breath. */
+@keyframes pip-idle-blink {
+  0%, 86%, 100% { transform: scaleY(1); }
+  87.4%         { transform: scaleY(0.08); }
+  89.8%         { transform: scaleY(0.08); }
+  91.1%         { transform: scaleY(1); }
 }
 
 /* ============================================================
