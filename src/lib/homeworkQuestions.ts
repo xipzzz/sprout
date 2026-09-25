@@ -134,6 +134,7 @@ export function parseWorksheetOcr(
   const text = normalizeHaveHasOcr(ocrText || '');
   const lines = text
     .split(/\r?\n/)
+    .flatMap((line) => explodeNumberedPieces(line))
     .map((line) => normalizeChoiceLabelLine(line.replace(/\s+/g, ' ').trim()))
     .filter(Boolean);
 
@@ -188,6 +189,11 @@ export function parseWorksheetOcr(
   });
 }
 
+function explodeNumberedPieces(line: string): string[] {
+  const parts = line.split(/\s+(?=\d{1,2}\s*[.)]\s+[A-Za-z])/).map((part) => part.trim()).filter(Boolean);
+  return parts.length > 0 ? parts : [line];
+}
+
 function stripQuestionNumber(line: string): string {
   return line.replace(/^\d{1,2}(?:\s*[.)]\s*|\s*)(?=[A-Za-z_[(])/, '');
 }
@@ -222,13 +228,19 @@ function extractChoices(chunk: string): ParsedChoice[] {
   }
   if (found.length >= 2) return found;
 
-  const slash = chunk.match(/\(([^)]{2,80})\)/);
-  const slashSource = slash?.[1] && slash[1].includes('/') ? slash[1] : bareSlash(chunk);
-  if (!slashSource) return found;
-  for (const part of slashSource.split(/\s*\/\s*/)) {
-    pushChoice(found, String(found.length + 1), part);
-  }
+  const pair = parenVerbPair(chunk) ?? (bareSlash(chunk)?.split(/\s*\/\s*/) ?? null);
+  if (!pair) return found;
+  for (const part of pair) pushChoice(found, String(found.length + 1), part);
   return found;
+}
+
+function parenVerbPair(chunk: string): string[] | null {
+  const paren = chunk.match(/\(([^)]{2,80})\)/);
+  if (!paren || !/[/，,]/.test(paren[1])) return null;
+  const parts = paren[1].split(/\s*[/，,]\s*/).map((part) => part.trim()).filter(Boolean);
+  if (parts.length < 2 || parts.length > 4) return null;
+  if (!parts.every((part) => /^\*?[A-Za-z][A-Za-z'’*-]{0,20}\*?$/.test(part))) return null;
+  return parts;
 }
 
 function bareWordChoices(lines: string[]): ParsedChoice[] {
@@ -241,7 +253,7 @@ function bareWordChoices(lines: string[]): ParsedChoice[] {
       const word = part.toLowerCase().replace(/[^a-z']/g, '');
       return word === 'have' || word === 'has' || POSSESSIVE_WORDS.has(word) || PRONOUN_WORDS.has(word);
     });
-    const take = parts.length === 1 || (grammar && parts.length <= 4) || (parts.length >= 3 && parts.length <= 4);
+    const take = grammar && parts.length >= 1 && parts.length <= 4;
     if (!take) continue;
     for (const part of parts) pushChoice(found, String(found.length + 1), part);
   }
@@ -273,7 +285,7 @@ function cleanStem(first: string, rest: string[]): string {
   stem = stem.replace(/(?:^|\s)[([]?\s*[1-4A-Da-d]\s*[)\].:]\s*\*?[A-Za-z][A-Za-z'’*-]{0,20}\*?/g, ' ');
   stem = stem.replace(/\(([^)]+)\)/g, (full, inner: string) => {
     if (/^\s*(i|you|he|she|it|we|they)\s*$/i.test(inner)) return full;
-    const parts = inner.split(/\s*\/\s*/).map((part) => part.trim());
+    const parts = inner.split(/\s*[/，,]\s*/).map((part) => part.trim());
     if (parts.length >= 2 && parts.every((part) => /^[A-Za-z'’-]+$/.test(part))) return '_____';
     return ' ';
   });

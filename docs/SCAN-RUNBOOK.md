@@ -6,7 +6,7 @@ Photo or file → straighten the page → on-device OCR → draft questions → 
 
 1. **Deskew.** `straightenHomeworkFile` (`src/lib/homeworkScan.ts`) turns the photo into a raster and calls `deskewRaster` (`src/lib/deskew.ts`). Four page corners are required. If they are missing, OCR does not run.
 2. **OCR.** `readStraightenedSheet` runs Tesseract.js (`eng`) on the straightened image only.
-3. **Draft parse.** `parseWorksheetOcr` (`src/lib/homeworkQuestions.ts`) builds numbered questions from that text. `restoreFillBlank` puts `_____` back when an underline was dropped or read as a dash, ellipsis, or spaced underscore. Have/has agreement uses `correctHaveHasForSubject` (`src/lib/haveHasOcrRules.ts`). A printed answer key wins. Grammar sets `correct` only when that word is already one of the OCR choices.
+3. **Draft parse.** `parseWorksheetOcr` (`src/lib/homeworkQuestions.ts`) builds numbered questions from that text. `restoreFillBlank` puts `_____` back when an underline was dropped or read as a dash, ellipsis, or spaced underscore. A bracket pair on the same line, `(rise, rises)` or `(rise / rises)`, is that line’s choices and becomes the blank. Have/has agreement uses `correctHaveHasForSubject` (`src/lib/haveHasOcrRules.ts`). A printed answer key wins. Grammar sets `correct` only when that word is already one of the OCR choices.
 4. **Parent gate.** `assessAcceptance` blocks garbage, blocks low confidence until a parent edits, and blocks a draft with no real correct choice. `canStartPractice` stays false until 4 accepted questions.
 5. **Lock B play.** `ScanHomeworkScreen` passes accepted questions to `LessonScreenSoT` via `toPlayable`. Check → result sheet → Continue → 3–5 stars (`starsForAccuracy`).
 

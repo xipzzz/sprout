@@ -329,6 +329,21 @@ assert(ambiguousCue.length === 1 && ambiguousCue[0].correct === null, 'both my a
 const ambiguousGate = assessAcceptance({ ...ambiguousCue[0], parentEdited: false });
 assert(!ambiguousGate.canAccept, 'an unset possessive cannot be accepted');
 
+const verbs = parseWorksheetOcr(`Exercise 33: Verbs (Subject-verb Agreement)
+1. The sun (rise, rises) in the east.
+2. My mother (go, goes) to the market every day.
+3. Uncle Tan (drive, drives) to work every morning.
+4. Rabbits (eat, eats) carrots.
+5. The children (play, plays) in the park.
+6. Many birds (build, builds) their nests in trees.`, undefined, 80);
+assert(verbs.length === 6, `expected 6 verb questions, got ${verbs.length}`);
+assert(/The sun _____ in the east/i.test(verbs[0].stem), `Q1 stem: ${verbs[0]?.stem}`);
+assert(verbs[0].choices.join(',') === 'rise,rises', `Q1 choices: ${verbs[0]?.choices}`);
+assert(!verbs[0].choices.some((choice) => /^(the|my|uncle|rabbits)$/i.test(choice)), 'sentence starters are not Q1 choices');
+assert(/Many birds _____ their nests/i.test(verbs[5].stem), `Q6 stem: ${verbs[5]?.stem}`);
+assert(verbs[5].choices.join(',') === 'build,builds', `Q6 choices: ${verbs[5]?.choices}`);
+assert(!/Many birds/i.test(verbs[0].stem), 'Q6 text must not join Q1');
+
 assert(parseWorksheetOcr('', undefined, 90).length === 0, 'empty OCR text produces no drafts');
 assert(parseWorksheetOcr('   \n\n  ', undefined, 40).length === 0, 'blank OCR text produces no drafts');
 
