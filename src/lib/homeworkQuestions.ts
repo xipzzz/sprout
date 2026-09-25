@@ -375,10 +375,16 @@ function neighborVerbPair(text: string): string[] | null {
 }
 
 function sameVerb(a: string, b: string): boolean {
-  if (a.toLowerCase() === b.toLowerCase()) return false;
-  const left = verbStem(a);
-  const right = verbStem(b);
-  return left.length >= 2 && left === right;
+  const left = a.toLowerCase();
+  const right = b.toLowerCase();
+  if (left === right || left.length < 2 || right.length < 2) return false;
+  if (right === `${left}s` || left === `${right}s`) return true;
+  if (right === `${left}es` || left === `${right}es`) return true;
+  if (left.endsWith('y') && right === `${left.slice(0, -1)}ies`) return true;
+  if (right.endsWith('y') && left === `${right.slice(0, -1)}ies`) return true;
+  const stemL = verbStem(left);
+  const stemR = verbStem(right);
+  return stemL.length >= 2 && stemL === stemR;
 }
 
 function verbPairParts(inner: string): string[] | null {
@@ -464,7 +470,7 @@ function stripScribble(stem: string, leaked: string[]): string {
   next = next.replace(/\s+[A-Za-z]{1,2}\s*\.?\s*$/g, (tail) => {
     const word = tail.trim().replace('.', '').toLowerCase();
     if (['a', 'i', 'am', 'is', 'we', 'he', 'my', 'to', 'of', 'in', 'on', 'at'].includes(word)) return tail;
-    return hadScribble ? '.' : tail;
+    return hadScribble ? '' : tail;
   });
   next = next.replace(/__CUE(\d+)__/g, (_, index: string) => `(${cues[Number(index)]})`);
   if (hadScribble && !/_{2,}/.test(next)) {

@@ -455,6 +455,38 @@ assert(inkDraft.length === 1 && /He _____ with a pen/i.test(inkDraft[0].stem), `
 assert(!/7d|&|\bpo\b|\bO\b/.test(inkDraft[0].stem), `ink leaked into stem: ${inkDraft[0]?.stem}`);
 assert(inkDraft[0].choices.join(',') === 'writes,write', `ink choices: ${inkDraft[0]?.choices}`);
 
+const warpedFull = `6. He (writes, write) with a pen. 7d & po.
+7. The baby (cry cries) loudly.`;
+const warpedTop = `l. The sun (rise rises) in the east.
+2.My mother (go goes) to the market every day.
+3. Uncle Tan (drive drives) to work every morning.
+4. Rabbits (eat eats) carrots.
+5. The children (play plays) in the park.`;
+const warpedGlyphs = [
+  { text: '6.', confidence: 80, bbox: { x0: 2, y0: 80, x1: 20, y1: 98 } },
+  { text: 'He', confidence: 86, bbox: { x0: 24, y0: 80, x1: 48, y1: 98 } },
+  { text: '(writes,', confidence: 70, bbox: { x0: 52, y0: 80, x1: 120, y1: 98 } },
+  { text: 'write)', confidence: 68, bbox: { x0: 124, y0: 80, x1: 176, y1: 98 } },
+  { text: 'with', confidence: 84, bbox: { x0: 180, y0: 80, x1: 214, y1: 98 } },
+  { text: 'a', confidence: 80, bbox: { x0: 218, y0: 80, x1: 230, y1: 98 } },
+  { text: 'pen.', confidence: 82, bbox: { x0: 234, y0: 80, x1: 270, y1: 98 } },
+  { text: '7d', confidence: 33, bbox: { x0: 278, y0: 82, x1: 304, y1: 100 } },
+  { text: '&', confidence: 20, bbox: { x0: 308, y0: 84, x1: 322, y1: 100 } },
+  { text: 'po.', confidence: 24, bbox: { x0: 326, y0: 84, x1: 350, y1: 102 } },
+];
+const warpedClean = textWithoutHandwriting(warpedGlyphs, warpedFull);
+const warpedPhone = mergeWorksheetReads(warpedClean, warpedTop);
+assert(warpedPhone.length >= 4, `warped phone yielded ${warpedPhone.length}`);
+assert(warpedPhone[0].id === 'q1', `warped phone must not renumber mid-page as Q1: ${warpedPhone[0]?.id}`);
+assert(/The sun _____ in the east/i.test(warpedPhone[0].stem), `warped Q1: ${warpedPhone[0]?.stem}`);
+assert(warpedPhone[0].choices.join(',') === 'rise,rises', `warped Q1 choices: ${warpedPhone[0]?.choices}`);
+const warpedSix = warpedPhone.find((item) => item.id === 'q6');
+assert(Boolean(warpedSix), 'printed item 6 stays item 6');
+assert(/He _____ with a pen/i.test(warpedSix!.stem), `warped item 6 stem: ${warpedSix?.stem}`);
+assert(!/7d|&|\bpo\b/i.test(warpedSix!.stem), `scribble still in item 6: ${warpedSix?.stem}`);
+assert(warpedSix!.choices.join(',') === 'writes,write', `warped item 6 choices: ${warpedSix?.choices}`);
+assert(warpedPhone.some((item) => item.id === 'q5'), 'top-of-page item 5 is kept');
+
 assert(parseWorksheetOcr('', undefined, 90).length === 0, 'empty OCR text produces no drafts');
 assert(parseWorksheetOcr('   \n\n  ', undefined, 40).length === 0, 'blank OCR text produces no drafts');
 
