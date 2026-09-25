@@ -518,14 +518,19 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   width: 62px; height: 62px;
   pointer-events: none;
 }
-.pip { transform-origin: 50% 92%; display: block; width: 100%; height: 100%; }
-/* Idle pivots at the feet / leaf base so squash reads as a breath, not a bounce. */
-.pip__body,
+.pip { transform-origin: 50% 92%; display: block; width: 100%; height: 100%; overflow: visible; }
+/* Inner idle loops are unitless matrix() transforms in viewBox units, pivoted
+   inside the matrix. Origin stays 0,0 so the browser does not pivot a second
+   time around the viewBox center. fill-box + "center bottom" looks correct in
+   Chrome and is a no-op or a wrong pivot on Safari <g> groups — see PIP-IDLE.md. */
 .pip__leaves,
-.pip__eyes { transform-box: fill-box; }
-.pip__body { transform-origin: center bottom; }
-.pip__leaves { transform-origin: center bottom; }
-.pip__eyes { transform-origin: center center; }
+.pip__leaf,
+.pip__body,
+.pip__glance,
+.pip__eyes {
+  transform-box: view-box;
+  transform-origin: 0 0;
+}
 
 @media (prefers-reduced-motion: no-preference) {
   .start-bubble { animation: bob 1.9s var(--ease) infinite; }
@@ -533,18 +538,34 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   .node--current .node__disc { animation: currentNodeBreath 2.2s ease-in-out infinite; }
   .pip:not(.pip--idle) { animation: sway 3.4s ease-in-out infinite; }
   /* Layered idle — desynced periods so the loop is not one repeated beat.
-     body.calm-motion still collapses every animation to a single instant. */
+     Kept inside this media query on purpose: the app stays still when the OS
+     asks for reduced motion. body.calm-motion still collapses every animation
+     to a single instant. The review HTML does not copy this gate. */
   .pip.pip--idle {
-    animation: pip-idle-sway 4.7s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+    transform-origin: 50% 88%;
+    animation: pip-idle-sway 4.6s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
   }
   .pip.pip--idle .pip__body {
-    animation: pip-idle-breath 3.2s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+    animation: pip-idle-breath 2.9s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
   }
   .pip.pip--idle .pip__leaves {
-    animation: pip-idle-leaf 5.35s cubic-bezier(0.42, 0.02, 0.58, 0.98) infinite;
+    animation: pip-idle-stem 5.5s cubic-bezier(0.42, 0.02, 0.58, 0.98) infinite;
+  }
+  .pip.pip--idle .pip__leaf--l {
+    animation: pip-idle-leaf-l 3.4s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+  }
+  .pip.pip--idle .pip__leaf--r {
+    animation: pip-idle-leaf-r 3.95s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+    animation-delay: -0.85s;
+  }
+  .pip.pip--idle .pip__glance {
+    animation: pip-idle-glance 7.3s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
   }
   .pip.pip--idle .pip__eyes {
-    animation: pip-idle-blink 4.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    animation: pip-idle-blink 9.2s linear infinite;
+  }
+  .pip.pip--idle .pip__sheen {
+    animation: pip-idle-sheen 4.2s ease-in-out infinite;
   }
 }
 @keyframes bob {
@@ -563,28 +584,52 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   0%, 100% { transform: rotate(-3deg); }
   50%      { transform: rotate(3deg); }
 }
-/* Feet-pivoted tilt. 0% and 100% match so the loop has no hitch. */
+/* Whole sprout, pivoted at the feet of the SVG box. Percent translate scales
+   with the rendered size; degrees do too. 0% and 100% match. */
 @keyframes pip-idle-sway {
-  0%, 100% { transform: rotate(0deg); }
-  28%      { transform: rotate(-2.2deg); }
-  62%      { transform: rotate(1.8deg); }
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  32%      { transform: translateY(3.5%) rotate(-5deg); }
+  68%      { transform: translateY(-2.5%) rotate(4.2deg); }
 }
-/* Vertical squash/stretch with inverse horizontal scale (volume stays put). */
+/* Squash/stretch around the feet (40, 71) in viewBox units. sx * sy ≈ 1. */
 @keyframes pip-idle-breath {
-  0%, 100% { transform: scale(1, 1); }
-  50%      { transform: scale(0.957, 1.045); }
+  0%, 100% { transform: matrix(1, 0, 0, 1, 0, 0); }
+  50%      { transform: matrix(0.8772, 0, 0, 1.14, 4.912, -9.94); }
 }
-@keyframes pip-idle-leaf {
-  0%, 100% { transform: rotate(0deg) scale(1, 1); }
-  38%      { transform: rotate(-3.2deg) scale(1.025, 0.976); }
-  72%      { transform: rotate(2.8deg) scale(0.98, 1.02); }
+/* Stem lags the body. Pivot (40, 46), where the stem meets the head. */
+@keyframes pip-idle-stem {
+  0%, 100% { transform: matrix(1, 0, 0, 1, 0, 0); }
+  36%      { transform: matrix(0.99897, -0.04536, 0.04536, 0.99897, -2.04552, 1.86187); }
+  70%      { transform: matrix(0.99926, 0.03839, -0.03839, 0.99926, 1.79532, -1.50161); }
 }
-/* One fast blink per ~4.2s (about 100ms closed), not once per breath. */
+/* Each leaf hinges at (40, 28), opposite phase, own period. */
+@keyframes pip-idle-leaf-l {
+  0%, 100% { transform: matrix(1, 0, 0, 1, 0, 0); }
+  42%      { transform: matrix(0.99027, -0.13917, 0.13917, 0.99027, -3.50757, 5.83942); }
+  74%      { transform: matrix(0.99357, 0.1132, -0.1132, 0.99357, 3.42682, -4.34814); }
+}
+@keyframes pip-idle-leaf-r {
+  0%, 100% { transform: matrix(1, 0, 0, 1, 0, 0); }
+  33%      { transform: matrix(0.99144, 0.13053, -0.13053, 0.99144, 3.99694, -4.9815); }
+  68%      { transform: matrix(0.99452, -0.10453, 0.10453, 0.99452, -2.70767, 4.33453); }
+}
+/* Look aside, hold, look the other way. Separate element from the blink. */
+@keyframes pip-idle-glance {
+  0%, 82%, 100% { transform: matrix(1, 0, 0, 1, 0, 0); }
+  18%, 42%      { transform: matrix(1, 0, 0, 1, 1.7, 0.1); }
+  63%           { transform: matrix(1, 0, 0, 1, -1.45, 0); }
+}
+/* One blink early, a double later, then a long open hold. Linear is only the
+   clock — the lids move in the short gaps, they are not a linear scale. */
 @keyframes pip-idle-blink {
-  0%, 86%, 100% { transform: scaleY(1); }
-  87.4%         { transform: scaleY(0.08); }
-  89.8%         { transform: scaleY(0.08); }
-  91.1%         { transform: scaleY(1); }
+  0%, 7.8%, 10.6%, 55%, 57.8%, 60.4%, 100% { transform: matrix(1, 0, 0, 1, 0, 0); }
+  8.8%, 9.8%, 56%, 56.9%                   { transform: matrix(1, 0, 0, 0.08, 0, 46.46); }
+  58.6%, 59.4%                             { transform: matrix(1, 0, 0, 0.12, 0, 44.44); }
+}
+@keyframes pip-idle-sheen {
+  0%, 100% { opacity: 0.05; }
+  45%      { opacity: 0.22; }
+  70%      { opacity: 0.08; }
 }
 
 /* ============================================================
