@@ -33,11 +33,11 @@ export function deskewRaster(src: Raster): DeskewOutcome {
   if (!detected) return { ok: false, message: PAPER_MISS };
 
   const warped = warpQuad(src, detected);
-  const flat = flattenResidualBow(warped);
-  if (warpTooSevere(warpConflict(flat))) {
+  // Column-shift "bow flatten" slices horizontal text into vertical strips. Do not run it.
+  if (warpTooSevere(warpConflict(warped))) {
     return { ok: false, message: WARP_RETAKE };
   }
-  const cleaned = suppressLooseInk(flat);
+  const cleaned = suppressLooseInk(warped);
   applyMildContrast(cleaned.data);
   return { ok: true, image: cleaned, corners: detected };
 }
@@ -381,7 +381,7 @@ export function bowNeedsFlatten(bow: number): boolean {
   return bow > 0.03;
 }
 
-/** Shift columns so a bowed top line becomes straight. A flat page is unchanged. */
+/** Column-shift a bowed top line. Not used by deskew: uneven shifts shred text rows. */
 export function flattenResidualBow(image: Raster): Raster {
   if (!bowNeedsFlatten(residualBow(image))) return image;
   const tops = columnTops(image);
@@ -421,6 +421,63 @@ export function warpConflict(image: Raster): number {
 
 export function warpTooSevere(conflict: number): boolean {
   return conflict > 0.12;
+}
+
+/** Share of large steps while following the longest horizontal ink run. A sliced row scores high. */
+export function horizontalDiscontinuity(image: Raster): number {
+  const seed = longestInkRun(image);
+  if (!seed || seed.length < 6) return 0;
+  let steps = 0;
+  let jumps = 0;
+  const walk = (from: number, to: number, dir: number) => {
+    let y = seed.y;
+    for (let x = from; dir > 0 ? x < to : x > to; x += dir) {
+      const near = closestInkY(image, x, y, 2);
+      const next = near >= 0 ? near : closestInkY(image, x, y, 24);
+      if (next < 0) continue;
+      steps++;
+      if (Math.abs(next - y) >= 3) jumps++;
+      y = next;
+    }
+  };
+  walk(seed.x + seed.length, image.width, 1);
+  walk(seed.x - 1, -1, -1);
+  if (steps < 8) return 0;
+  return jumps / steps;
+}
+
+function longestInkRun(image: Raster): { x: number; y: number; length: number } | null {
+  let best: { x: number; y: number; length: number } | null = null;
+  for (let y = 0; y < image.height; y++) {
+    let runStart = -1;
+    for (let x = 0; x <= image.width; x++) {
+      const on = x < image.width && pixelLum(image, x, y) < 160;
+      if (on && runStart < 0) runStart = x;
+      if (!on && runStart >= 0) {
+        const length = x - runStart;
+        if (!best || length > best.length) best = { x: runStart, y, length };
+        runStart = -1;
+      }
+    }
+  }
+  return best;
+}
+
+function closestInkY(image: Raster, x: number, y: number, radius: number): number {
+  if (x < 0 || x >= image.width) return -1;
+  let best = -1;
+  let bestDist = radius + 1;
+  const y0 = Math.max(0, y - radius);
+  const y1 = Math.min(image.height - 1, y + radius);
+  for (let yy = y0; yy <= y1; yy++) {
+    if (pixelLum(image, x, yy) >= 160) continue;
+    const dist = Math.abs(yy - y);
+    if (dist < bestDist) {
+      bestDist = dist;
+      best = yy;
+    }
+  }
+  return best;
 }
 
 function columnSpans(image: Raster): number[] {
