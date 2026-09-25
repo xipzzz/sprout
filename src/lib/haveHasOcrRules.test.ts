@@ -13,6 +13,7 @@
  */
 
 import {
+  correctHaveHasForSubject,
   draftHaveHasWordPick,
   isHaveHasWorksheet,
   normalizeHaveHasOcr,
@@ -67,6 +68,27 @@ if (!noisyDraft.choices.includes('have') || !noisyDraft.choices.includes('has'))
 }
 if (!['have', 'has'].includes(noisyDraft.correct)) {
   throw new Error('Noisy fixture failed: correct must be have or has');
+}
+
+const agreement: Array<[string, 'have' | 'has']> = [
+  ['he', 'has'],
+  ['she', 'has'],
+  ['it', 'has'],
+  ['I', 'have'],
+  ['you', 'have'],
+  ['we', 'have'],
+  ['they', 'have'],
+  ['Tom', 'has'],
+  ['The boy', 'has'],
+  ['The boys', 'have'],
+  ['Sam and Ben', 'have'],
+  ['The bus', 'has'],
+];
+for (const [subject, expected] of agreement) {
+  const got = correctHaveHasForSubject(subject);
+  if (got !== expected) {
+    throw new Error(`${subject} should take ${expected}, got ${got}`);
+  }
 }
 
 console.log('\n✓ All Have/Has OCR smoke tests passed');

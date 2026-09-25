@@ -270,4 +270,66 @@ const obviousGarbage = assessAcceptance({
 });
 assert(obviousGarbage.garbage && !obviousGarbage.canAccept, 'vowel-free garbage stays locked');
 
+const emdash = parseWorksheetOcr(`1. This is — book. (I)
+(1) my
+(2) mine`, undefined, 90);
+assert(emdash.length === 1 && /This is _____ book/i.test(emdash[0].stem), `em dash not normalized: ${emdash[0]?.stem}`);
+assert(emdash[0].correct === 'my', 'em dash blank still picks the determiner my');
+
+const spacedUnderscore = parseWorksheetOcr(`1. This is _ book. (I)
+(1) my
+(2) mine`, undefined, 90);
+assert(spacedUnderscore.length === 1 && /This is _____ book/i.test(spacedUnderscore[0].stem), `spaced underscore not normalized: ${spacedUnderscore[0]?.stem}`);
+
+const dotted = parseWorksheetOcr(`1. This is ... book. (I)
+(1) my
+(2) mine`, undefined, 90);
+assert(dotted.length === 1 && /This is _____ book/i.test(dotted[0].stem), `dot ellipsis not normalized: ${dotted[0]?.stem}`);
+assert(dotted[0].correct === 'my', 'dot ellipsis still picks my');
+
+const gluedBlank = parseWorksheetOcr(`1. She____a red bag.
+(1) have
+(2) has`, undefined, 90);
+assert(gluedBlank.length === 1 && /She _____ a red bag/i.test(gluedBlank[0].stem), `glued blank missing: ${gluedBlank[0]?.stem}`);
+assert(gluedBlank[0].correct === 'has', 'glued She____a still picks has');
+
+const heHas = parseWorksheetOcr(`1. He a hat.
+(1) have
+(2) has`, undefined, 90);
+assert(heHas.length === 1 && heHas[0].correct === 'has' && /He _____ a hat/i.test(heHas[0].stem), 'he takes has');
+
+const weHave = parseWorksheetOcr(`1. We two dogs.
+(1) have
+(2) has`, undefined, 90);
+assert(weHave.length === 1 && weHave[0].correct === 'have' && /We _____ two dogs/i.test(weHave[0].stem), 'we takes have');
+
+const theBoy = parseWorksheetOcr(`1. The boy a bike.
+(1) have
+(2) has`, undefined, 90);
+assert(theBoy.length === 1 && theBoy[0].correct === 'has', 'singular the boy takes has');
+
+const pronounEnd = parseWorksheetOcr(`1. The bag is _____. (she)
+(1) her
+(2) hers
+(3) she`, undefined, 90);
+assert(pronounEnd.length === 1 && pronounEnd[0].correct === 'hers', 'blank at the end picks the pronoun hers');
+
+const determinerFront = parseWorksheetOcr(`1. _____ sister is kind. (she)
+(1) Her
+(2) Hers
+(3) She`, undefined, 90);
+assert(determinerFront.length === 1 && determinerFront[0].correct === 'Her', 'blank before a noun picks the determiner Her');
+
+const ambiguousCue = parseWorksheetOcr(`Possessive Determiners
+1. _____ is on the desk.
+(1) my
+(2) mine
+(3) me`, undefined, 90);
+assert(ambiguousCue.length === 1 && ambiguousCue[0].correct === null, 'both my and mine with no subject cue stays unset');
+const ambiguousGate = assessAcceptance({ ...ambiguousCue[0], parentEdited: false });
+assert(!ambiguousGate.canAccept, 'an unset possessive cannot be accepted');
+
+assert(parseWorksheetOcr('', undefined, 90).length === 0, 'empty OCR text produces no drafts');
+assert(parseWorksheetOcr('   \n\n  ', undefined, 40).length === 0, 'blank OCR text produces no drafts');
+
 console.log('homework question tests passed');
