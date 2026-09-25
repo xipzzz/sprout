@@ -5,6 +5,7 @@
 import {
   assessAcceptance,
   canStartPractice,
+  mergeWorksheetReads,
   parseWorksheetOcr,
 } from './homeworkQuestions';
 
@@ -408,6 +409,21 @@ assert(aunt!.choices.join(',') === 'sweep,sweeps', `aunt choices: ${aunt?.choice
 assert(!/Educational Publishing|Pte Ltd|©|1 0\./i.test(aunt!.stem), `footer bled into aunt: ${aunt?.stem}`);
 const doctors = partialPage.find((item) => /doctors/i.test(item.stem));
 assert(Boolean(doctors) && doctors!.choices.join(',') === 'discuss,discusses', `Q10 choices: ${doctors?.choices}`);
+
+const scribble = parseWorksheetOcr(`6. He (writes, write) with a pen. 7d & po.`, undefined, 61);
+assert(scribble.length === 1 && scribble[0].id === 'q6', 'scribble item keeps printed number 6');
+assert(/He _____ with a pen/i.test(scribble[0].stem), `scribble stem: ${scribble[0]?.stem}`);
+assert(!/7d|&|\bpo\b/i.test(scribble[0].stem), `scribble leaked: ${scribble[0]?.stem}`);
+assert(scribble[0].choices.join(',') === 'writes,write', `scribble choices: ${scribble[0]?.choices}`);
+
+const merged = mergeWorksheetReads(
+  `6. He (writes, write) with a pen.`,
+  `1. We (paint, paints) the house.
+2. This blue shirt (belongs, belong) to my father.`,
+);
+assert(merged[0].id === 'q1' && /We _____ the house/i.test(merged[0].stem), `top read should lead: ${merged[0]?.stem}`);
+assert(merged.some((item) => item.id === 'q6'), 'mid-page item stays item 6');
+assert(merged[0].choices.join(',') === 'paint,paints', `top choices: ${merged[0]?.choices}`);
 
 assert(parseWorksheetOcr('', undefined, 90).length === 0, 'empty OCR text produces no drafts');
 assert(parseWorksheetOcr('   \n\n  ', undefined, 40).length === 0, 'blank OCR text produces no drafts');

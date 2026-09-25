@@ -185,7 +185,7 @@ export function parseWorksheetOcr(
     const picked = local.length >= 2 ? local : bare.length >= 2 ? bare : shared;
     if (picked.length < 2) return [];
     const choiceText = picked.map((choice) => choice.text);
-    const stem = restoreFillBlank(cleanStem(block.lines[0], block.lines.slice(1)), choiceText, preambleText);
+    const stem = restoreFillBlank(cleanStem(block.lines[0], block.lines.slice(1), choiceText), choiceText, preambleText);
     if (!stem) return [];
     const key = keyRefs.find((item) => item.n === block.n);
     const fromKey = key ? resolveKey(key.raw, picked) : null;
@@ -199,7 +199,30 @@ export function parseWorksheetOcr(
       correct,
       confidence,
     }];
-  });
+  }).sort((a, b) => questionNumber(a.id) - questionNumber(b.id));
+}
+
+export function mergeWorksheetReads(
+  fullText: string,
+  topText: string,
+  words?: OcrWord[],
+  pageConfidence = 50,
+): DraftQuestion[] {
+  const full = parseWorksheetOcr(fullText, words, pageConfidence);
+  const top = topText.trim() ? parseWorksheetOcr(topText, undefined, pageConfidence) : [];
+  if (top.length === 0) return full;
+  const firstFull = full.length ? Math.min(...full.map((item) => questionNumber(item.id))) : Infinity;
+  const byNumber = new Map<number, DraftQuestion>();
+  for (const item of full) byNumber.set(questionNumber(item.id), item);
+  for (const item of top) {
+    const n = questionNumber(item.id);
+    if (!byNumber.has(n) || n < firstFull) byNumber.set(n, item);
+  }
+  return [...byNumber.values()].sort((a, b) => questionNumber(a.id) - questionNumber(b.id));
+}
+
+function questionNumber(id: string): number {
+  return Number(id.replace(/\D/g, '')) || 0;
 }
 
 function explodeNumberedPieces(line: string): string[] {
@@ -352,7 +375,7 @@ function pushChoice(found: ParsedChoice[], label: string, raw: string) {
   found.push({ label, text, marked });
 }
 
-function cleanStem(first: string, rest: string[]): string {
+function cleanStem(first: string, rest: string[], choices: string[] = []): string {
   const body = [stripQuestionNumber(first), ...rest.filter((line) => extractChoices(line).length < 2)];
   let stem = stripPublisher(body.join(' '));
   stem = stem.split(/\s+(?=(?:1\s+0|\d{1,2})(?:[.)]\s*|\s+)[A-Za-z])/)[0] ?? stem;
@@ -367,7 +390,33 @@ function cleanStem(first: string, rest: string[]): string {
     if (verbPairParts(inner) || listedPair(inner)) return '_____';
     return ' ';
   });
-  return finishStem(stem);
+  return finishStem(stripScribble(stem, choices));
+}
+
+function stripScribble(stem: string, leaked: string[]): string {
+  const hadScribble = /\d+[A-Za-z]{1,3}\b|\b[A-Za-z]{1,2}\d+\b|&/.test(stem);
+  const cues: string[] = [];
+  let next = stem.replace(/\(\s*(i|you|he|she|it|we|they)\s*\)/gi, (_, word: string) => {
+    cues.push(word);
+    return `__CUE${cues.length - 1}__`;
+  });
+  next = next.replace(/[)\]}&]+/g, ' ');
+  next = next.replace(/\b\d+[A-Za-z]{1,3}\b/g, ' ').replace(/\b[A-Za-z]{1,2}\d+\b/g, ' ');
+  next = next.replace(/\s+[A-Za-z]{1,2}\s*\.?\s*$/g, (tail) => {
+    const word = tail.trim().replace('.', '').toLowerCase();
+    if (['a', 'i', 'am', 'is', 'we', 'he', 'my', 'to', 'of', 'in', 'on', 'at'].includes(word)) return tail;
+    return hadScribble ? '.' : tail;
+  });
+  next = next.replace(/__CUE(\d+)__/g, (_, index: string) => `(${cues[Number(index)]})`);
+  if (hadScribble && !/_{2,}/.test(next)) {
+    for (const word of leaked) {
+      const re = new RegExp(`\\b${word}\\b`, 'i');
+      if (!re.test(next)) continue;
+      next = next.replace(re, '_____');
+      break;
+    }
+  }
+  return next.replace(/\s+/g, ' ').trim();
 }
 
 const BLANK = '_____';

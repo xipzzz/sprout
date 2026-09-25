@@ -5,9 +5,12 @@
 import {
   applyHomography,
   applyMildContrast,
+  bowNeedsFlatten,
   convexHull,
   deskewRaster,
+  flattenResidualBow,
   orderCorners,
+  residualBow,
   solveHomography,
   type Point,
   type Raster,
@@ -124,5 +127,15 @@ assert(marks.data[0] < 160 && marks.data[0] > 70, 'option marks stay inked');
 const dark = raster(80, 80, [12, 12, 12]);
 const missed = deskewRaster(dark);
 assert(!missed.ok, 'a photo with no page should fail instead of OCR');
+
+const bowed = raster(80, 60, [250, 250, 250]);
+for (let x = 0; x < bowed.width; x++) {
+  const y = Math.round(8 + 12 * Math.sin((x / (bowed.width - 1)) * Math.PI));
+  setPixel(bowed, x, y, [20, 20, 20]);
+}
+const before = residualBow(bowed);
+assert(bowNeedsFlatten(before), 'a bowed top line should ask for a flatten');
+const flat = flattenResidualBow(bowed);
+assert(residualBow(flat) < before, 'flatten should pull the bowed top line straighter');
 
 console.log('deskew tests passed');

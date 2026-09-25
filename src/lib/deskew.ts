@@ -30,8 +30,9 @@ export function deskewRaster(src: Raster): DeskewOutcome {
   if (!detected) return { ok: false, message: PAPER_MISS };
 
   const warped = warpQuad(src, detected);
-  applyMildContrast(warped.data);
-  return { ok: true, image: warped, corners: detected };
+  const flat = flattenResidualBow(warped);
+  applyMildContrast(flat.data);
+  return { ok: true, image: flat, corners: detected };
 }
 
 /** Luminance stretch kept small so printed (1)(2)(3) marks stay visible. */
@@ -353,4 +354,70 @@ function countMask(mask: Uint8Array) {
 
 function clamp8(v: number) {
   return v < 0 ? 0 : v > 255 ? 255 : Math.round(v);
+}
+
+/** How far the top ink bows away from a straight edge, as a fraction of height. */
+export function residualBow(image: Raster): number {
+  const tops = columnTops(image);
+  if (tops.length < 8) return 0;
+  const left = tops[0];
+  const right = tops[tops.length - 1];
+  let maxDev = 0;
+  for (let i = 0; i < tops.length; i++) {
+    const line = left + ((right - left) * i) / (tops.length - 1);
+    maxDev = Math.max(maxDev, Math.abs(tops[i] - line));
+  }
+  return maxDev / image.height;
+}
+
+export function bowNeedsFlatten(bow: number): boolean {
+  return bow > 0.03;
+}
+
+/** Shift columns so a bowed top line becomes straight. A flat page is unchanged. */
+export function flattenResidualBow(image: Raster): Raster {
+  if (!bowNeedsFlatten(residualBow(image))) return image;
+  const tops = columnTops(image);
+  const target = Math.min(...tops);
+  const out = new Uint8ClampedArray(image.data.length);
+  out.fill(255);
+  const step = image.width / tops.length;
+  for (let x = 0; x < image.width; x++) {
+    const shift = Math.round(tops[Math.min(tops.length - 1, Math.floor(x / step))] - target);
+    for (let y = 0; y < image.height; y++) {
+      const srcY = y + shift;
+      if (srcY < 0 || srcY >= image.height) continue;
+      const from = (srcY * image.width + x) * 4;
+      const to = (y * image.width + x) * 4;
+      out[to] = image.data[from];
+      out[to + 1] = image.data[from + 1];
+      out[to + 2] = image.data[from + 2];
+      out[to + 3] = image.data[from + 3];
+    }
+  }
+  return { width: image.width, height: image.height, data: out };
+}
+
+function columnTops(image: Raster): number[] {
+  const bins = Math.min(24, image.width);
+  const tops: number[] = [];
+  for (let b = 0; b < bins; b++) {
+    const x0 = Math.floor((b * image.width) / bins);
+    const x1 = Math.max(x0 + 1, Math.floor(((b + 1) * image.width) / bins));
+    let top = -1;
+    for (let y = 0; y < image.height * 0.45; y++) {
+      let ink = false;
+      for (let x = x0; x < x1; x++) {
+        const i = (y * image.width + x) * 4;
+        const lum = 0.2126 * image.data[i] + 0.7152 * image.data[i + 1] + 0.0722 * image.data[i + 2];
+        if (lum < 170) ink = true;
+      }
+      if (ink) {
+        top = y;
+        break;
+      }
+    }
+    if (top >= 0) tops.push(top);
+  }
+  return tops;
 }

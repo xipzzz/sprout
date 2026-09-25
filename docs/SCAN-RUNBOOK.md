@@ -4,7 +4,7 @@ Photo or file → straighten the page → on-device OCR → draft questions → 
 
 ## Step order
 
-1. **Deskew.** `straightenHomeworkFile` (`src/lib/homeworkScan.ts`) turns the photo into a raster and calls `deskewRaster` (`src/lib/deskew.ts`). Four page corners are required. If they are missing, OCR does not run.
+1. **Deskew.** `straightenHomeworkFile` (`src/lib/homeworkScan.ts`) turns the photo into a raster and calls `deskewRaster` (`src/lib/deskew.ts`). Four page corners are required. After the perspective warp, `flattenResidualBow` straightens a bowed top line. If the corners are missing, OCR does not run. The top band of the straightened page is read again so a recoverable first question is not dropped when the full-page read starts mid-sheet.
 2. **OCR.** `readStraightenedSheet` runs Tesseract.js (`eng`) on the straightened image only.
 3. **Draft parse.** `parseWorksheetOcr` (`src/lib/homeworkQuestions.ts`) builds numbered questions from that text. `restoreFillBlank` puts `_____` back when an underline was dropped or read as a dash, ellipsis, or spaced underscore. A bracket pair on the same line, `(rise, rises)` or `(rise / rises)` or `(find finds)`, is that line’s choices and becomes the blank. A number on its own line still starts the next sentence. The stem stops at the next numbered item, and a publisher footer (`©`, Educational Publishing House, Pte Ltd) is dropped.
 

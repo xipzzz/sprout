@@ -3,7 +3,7 @@
 
 import { createWorker, PSM } from 'tesseract.js';
 import { deskewRaster, type Raster } from './deskew';
-import { parseWorksheetOcr, type DraftQuestion, type OcrWord } from './homeworkQuestions';
+import { mergeWorksheetReads, type DraftQuestion, type OcrWord } from './homeworkQuestions';
 
 export type StraightenOutcome =
   | { ok: true; previewBlob: Blob; width: number; height: number }
@@ -57,7 +57,13 @@ export async function readStraightenedSheet(previewBlob: Blob): Promise<ReadOutc
     });
     const { data } = await worker.recognize(previewBlob);
     const words = collectWords(data);
-    const questions = parseWorksheetOcr(data.text || '', words, data.confidence ?? 50);
+    let topText = '';
+    try {
+      const topBlob = await cropTopBlob(previewBlob);
+      const top = await worker.recognize(topBlob);
+      topText = top.data?.text || '';
+    } catch { /* the full-page read still stands */ }
+    const questions = mergeWorksheetReads(data.text || '', topText, words, data.confidence ?? 50);
     if (questions.length === 0) {
       return {
         ok: false,
@@ -75,6 +81,24 @@ export async function readStraightenedSheet(previewBlob: Blob): Promise<ReadOutc
       try { await worker.terminate(); } catch { /* ignore */ }
     }
   }
+}
+
+async function cropTopBlob(blob: Blob, fraction = 0.42): Promise<Blob> {
+  const bitmap = await createImageBitmap(blob);
+  const height = Math.max(1, Math.round(bitmap.height * fraction));
+  const canvas = document.createElement('canvas');
+  canvas.width = bitmap.width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    bitmap.close();
+    return blob;
+  }
+  ctx.drawImage(bitmap, 0, 0);
+  bitmap.close();
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((next) => (next ? resolve(next) : reject(new Error('crop'))), 'image/jpeg', 0.92);
+  });
 }
 
 async function fileToRaster(file: File, maxEdge: number): Promise<Raster> {

@@ -199,7 +199,7 @@ export default function ScanHomeworkScreen({ onCancel, onPlay }: ScanHomeworkScr
                 return (
                   <li key={card.id} className={`scan__card scan__card--${card.status}`}>
                     <div className="scan__card-head">
-                      <span className="scan__card-index">Question {index + 1}</span>
+                      <span className="scan__card-index">Question {Number(card.id.replace(/\D/g, '')) || index + 1}</span>
                       <span className={`scan__conf${gate.lowConfidence ? ' scan__conf--low' : ''}`}>
                         {gate.lowConfidence ? 'Low' : 'Clear'} · {card.confidence}%
                       </span>
