@@ -20,19 +20,25 @@ import SettingsScreen from './screens/SettingsScreen';
 import OnboardingSplash from './screens/OnboardingSplash';
 import ComebackScreen from './screens/ComebackScreen';
 import ScanHomeworkScreen from './screens/ScanHomeworkScreen';
+import UnitPathScreen from './screens/UnitPathScreen';
 import type { WordPickQuestion } from './lib/homeworkParse';
 import Modal from './components/Modal';
 import Pip from './components/Pip';
 import { loadCompleted, saveCompleted } from './state/progress';
+import { loadGameProgress, loadGameStats, saveGameProgress, saveGameStats, withGameDone, withGameStats } from './state/games';
+import type { GameProgress, GameStats } from './state/games';
 import { recordPractice } from './state/practice';
 import { markTodayDone } from './state/today';
-import { firstUnlockedUnit, getLesson, hud, sectionCompletedByUnit } from './data/course';
+import { firstUnlockedUnit, getLesson, hud, sectionCompletedByUnit, unitGamesComplete } from './data/course';
 import { playSproutFeedback } from './utils/feedback';
 
 export default function App() {
   const [tab, setTab] = useState<TabKey>('learn');
   const [completed, setCompleted] = useState<string[]>(loadCompleted);
-  const [lessonUnit, setLessonUnit] = useState<string | null>(null);
+  const [pathUnit, setPathUnit] = useState<string | null>(null);
+  const [playGameId, setPlayGameId] = useState<string | null>(null);
+  const [gameProgress, setGameProgress] = useState<GameProgress>(loadGameProgress);
+  const [gameStats, setGameStats] = useState<GameStats>(loadGameStats);
   const [pendingPathFocus, setPendingPathFocus] = useState<string | null>(null);
   const [showStreak, setShowStreak] = useState(false);
   const [showQuests, setShowQuests] = useState(false);
@@ -86,11 +92,16 @@ export default function App() {
   // Visiting the Garden tab auto-ticks the Today checklist's 'garden' task.
   useEffect(() => { if (tab === 'garden') markTodayDone('garden'); }, [tab]);
 
-  // Finishing a lesson marks its unit complete → the next unit unlocks.
-  function completeLesson() {
-    const unit = lessonUnit;
-    setLessonUnit(null);
-    if (unit && !completed.includes(unit)) {
+  function openUnit(unitId: string) {
+    setPathUnit(unitId);
+    setPlayGameId(null);
+  }
+
+  // Finishing every game in a unit marks that unit complete → the next unit unlocks.
+  function finishUnit(unit: string) {
+    setPlayGameId(null);
+    setPathUnit(null);
+    if (!completed.includes(unit)) {
       const next = [...completed, unit];
       setCompleted(next);
       saveCompleted(next);
@@ -111,6 +122,26 @@ export default function App() {
       setShowDailyGoal(true);
       setDailyGoalShown(true);
     }
+  }
+
+  function completeGame(summary: { correct: number; total: number }) {
+    if (!pathUnit || !playGameId) return;
+    const alreadyGame = (gameProgress[pathUnit] ?? []).includes(playGameId);
+    const next = withGameDone(gameProgress, pathUnit, playGameId);
+    if (next !== gameProgress) {
+      setGameProgress(next);
+      saveGameProgress(next);
+    }
+    if (!alreadyGame) {
+      const stats = withGameStats(gameStats, pathUnit, summary);
+      setGameStats(stats);
+      saveGameStats(stats);
+    }
+    const doneIds = next[pathUnit] ?? [];
+    const finished = unitGamesComplete(pathUnit, doneIds);
+    const already = completed.includes(pathUnit);
+    setPlayGameId(null);
+    if (finished && !already) finishUnit(pathUnit);
   }
 
   if (!onboarded) {
@@ -164,15 +195,37 @@ export default function App() {
     );
   }
 
-  if (lessonUnit) {
-    const useSoT = new URLSearchParams(window.location.search).get('sot') === '1';
+  if (pathUnit && playGameId) {
+    const doneIds = gameProgress[pathUnit] ?? [];
+    const prior = gameStats[pathUnit] ?? { correct: 0, total: 0 };
+    const willFinishUnit = !completed.includes(pathUnit)
+      && unitGamesComplete(pathUnit, doneIds.includes(playGameId) ? doneIds : [...doneIds, playGameId]);
     return (
       <div className="app">
-        {useSoT ? (
-          <LessonScreenSoT onExit={() => setLessonUnit(null)} onComplete={completeLesson} />
-        ) : (
-          <LessonScreen onExit={() => setLessonUnit(null)} onComplete={completeLesson} unitId={lessonUnit} firstLesson={completed.length === 0} />
-        )}
+        <LessonScreen
+          onExit={() => setPlayGameId(null)}
+          onComplete={completeGame}
+          unitId={pathUnit}
+          exerciseId={playGameId}
+          celebrate={willFinishUnit}
+          priorCorrect={prior.correct}
+          priorTotal={prior.total}
+          firstLesson={completed.length === 0}
+        />
+      </div>
+    );
+  }
+
+  if (pathUnit) {
+    return (
+      <div className="app">
+        <UnitPathScreen
+          unitId={pathUnit}
+          doneGameIds={gameProgress[pathUnit] ?? []}
+          unitDone={completed.includes(pathUnit)}
+          onBack={() => setPathUnit(null)}
+          onStartGame={setPlayGameId}
+        />
       </div>
     );
   }
@@ -260,7 +313,7 @@ export default function App() {
   return (
     <div className="app">
       {tab === 'learn' && (
-        <HomeScreen tab={tab} onTabChange={setTab} completed={completed} focusTarget={pendingPathFocus} onFocusSettled={() => setPendingPathFocus(null)} onStartUnit={setLessonUnit} onOpenShop={() => setShowShop(true)} onOpenWater={() => { playSproutFeedback('waterOpen'); setShowWater(true); }} onOpenScan={() => setShowScan(true)} />
+        <HomeScreen tab={tab} onTabChange={setTab} completed={completed} focusTarget={pendingPathFocus} onFocusSettled={() => setPendingPathFocus(null)} onStartUnit={openUnit} onOpenShop={() => setShowShop(true)} onOpenWater={() => { playSproutFeedback('waterOpen'); setShowWater(true); }} onOpenScan={() => setShowScan(true)} />
       )}
       {tab === 'garden' && <GardenScreen tab={tab} onTabChange={setTab} completed={completed} onOpenTales={() => setShowTales(true)} />}
       {tab === 'words' && <WordsScreen tab={tab} onTabChange={setTab} />}

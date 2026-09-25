@@ -122,13 +122,14 @@ export interface Teach {
   tip: string;
 }
 
-/** Tap the picture that matches the word. */
+/** Tap the picture that matches the word. Set `labels` to show the word on each card (text + image). */
 export interface ChoiceExercise {
   kind: 'choice';
   id: string;
   word: string; // the English word being taught
   choices: Choice[];
   answerId: string;
+  labels?: boolean; // true → each card shows its word as well as the picture
   teach: Teach;
 }
 
@@ -151,12 +152,47 @@ export interface MatchExercise {
   teach: Teach;
 }
 
-/** Type the missing word to complete the sentence. */
+/** Type the missing word, or tap a tile into the blank when `tiles` is set. */
 export interface FillExercise {
   kind: 'fill';
   id: string;
   before: string; // sentence text before the blank
   after: string;  // sentence text after the blank
+  answer: string;
+  tiles?: string[]; // if set → tap a tile into the blank (no keyboard)
+  teach: Teach;
+}
+
+/** Cloze: pick the missing word from a few choices. */
+export interface ClozeExercise {
+  kind: 'cloze';
+  id: string;
+  before: string;
+  after: string;
+  options: string[];
+  answer: string;
+  teach: Teach;
+}
+
+/** True/false, or pick which sentence is correct. */
+export interface JudgeExercise {
+  kind: 'judge';
+  id: string;
+  mode: 'tf' | 'which';
+  prompt: string;
+  options: { id: string; label: string }[];
+  answerId: string;
+  teach: Teach;
+}
+
+/** Pick the grammatical form that fits the sentence. */
+export interface GrammarExercise {
+  kind: 'grammar';
+  id: string;
+  prompt: string;
+  before: string;
+  after: string;
+  options: string[];
   answer: string;
   teach: Teach;
 }
@@ -170,7 +206,15 @@ export interface ListenExercise {
   teach: Teach;
 }
 
-export type Exercise = ChoiceExercise | ArrangeExercise | MatchExercise | FillExercise | ListenExercise;
+export type Exercise =
+  | ChoiceExercise
+  | ArrangeExercise
+  | MatchExercise
+  | FillExercise
+  | ListenExercise
+  | ClozeExercise
+  | JudgeExercise
+  | GrammarExercise;
 
 export interface Lesson {
   id: string;
@@ -179,25 +223,21 @@ export interface Lesson {
   exercises: Exercise[];
 }
 
-/* "Around the Home" — fully authored. */
+/* "Around the Home" — the current unit's game path.
+   One node for each v1 KEEP type, in play order:
+   picture+word MC, cloze MC, match, word bank, which-sentence,
+   grammar form, listen & tap (TTS, no mic), type blank, tile blank. */
 const aroundTheHome: Lesson = {
   id: 's1u2',
   title: 'Around the Home',
   reward: 12, // 🍃 leaves earned on completion
   exercises: [
     {
-      kind: 'listen', id: 'e0', word: 'door',
-      teach: {
-        meaning: 'Listen, then type the word you hear.',
-        inUse: 'Please close the door.',
-        tip: 'Tap the speaker to hear it again.',
-      },
-    },
-    {
       kind: 'choice',
       id: 'e1',
       word: 'door',
       answerId: 'door',
+      labels: true,
       choices: [
         { id: 'door', label: 'door', emoji: '🚪' },
         { id: 'window', label: 'window', emoji: '🪟' },
@@ -211,78 +251,16 @@ const aroundTheHome: Lesson = {
       },
     },
     {
-      kind: 'choice',
-      id: 'e2',
-      word: 'window',
-      answerId: 'window',
-      choices: [
-        { id: 'window', label: 'window', emoji: '🪟' },
-        { id: 'door', label: 'door', emoji: '🚪' },
-        { id: 'lamp', label: 'lamp', emoji: '💡' },
-        { id: 'bed', label: 'bed', emoji: '🛏️' },
-      ],
+      kind: 'cloze',
+      id: 'e-cloze',
+      before: 'Please close the',
+      after: '.',
+      options: ['door', 'window', 'bed', 'chair'],
+      answer: 'door',
       teach: {
-        meaning: 'A window lets light in so you can see outside.',
-        inUse: 'Look out the window at the rain.',
-        tip: 'Window is two parts joined: wind + ow.',
-      },
-    },
-    {
-      kind: 'choice',
-      id: 'e3',
-      word: 'chair',
-      answerId: 'chair',
-      choices: [
-        { id: 'chair', label: 'chair', emoji: '🪑' },
-        { id: 'bed', label: 'bed', emoji: '🛏️' },
-        { id: 'door', label: 'door', emoji: '🚪' },
-        { id: 'window', label: 'window', emoji: '🪟' },
-      ],
-      teach: {
-        meaning: 'A chair is a seat for one person.',
-        inUse: 'Please sit on the chair.',
-        tip: 'Chair starts with the “ch” sound, like cheese.',
-      },
-    },
-    {
-      kind: 'choice',
-      id: 'e4',
-      word: 'bed',
-      answerId: 'bed',
-      choices: [
-        { id: 'bed', label: 'bed', emoji: '🛏️' },
-        { id: 'chair', label: 'chair', emoji: '🪑' },
-        { id: 'lamp', label: 'lamp', emoji: '💡' },
-        { id: 'door', label: 'door', emoji: '🚪' },
-      ],
-      teach: {
-        meaning: 'A bed is where you sleep at night.',
-        inUse: 'It is time for bed.',
-        tip: 'Bed has three letters: b-e-d.',
-      },
-    },
-    {
-      kind: 'arrange',
-      id: 'e5',
-      prompt: 'Put the words in order — a polite request:',
-      tiles: ['door', 'the', 'Please', 'close'],
-      answer: ['Please', 'close', 'the', 'door'],
-      teach: {
-        meaning: 'A polite way to ask someone to shut the door.',
+        meaning: 'The missing word is the thing you open to leave a room.',
         inUse: 'Please close the door.',
-        tip: 'Start a polite request with “Please”.',
-      },
-    },
-    {
-      kind: 'arrange',
-      id: 'e6',
-      prompt: 'Put the words in order — it is bedtime:',
-      tiles: ['for', 'It', 'bed', 'is', 'time'],
-      answer: ['It', 'is', 'time', 'for', 'bed'],
-      teach: {
-        meaning: 'A way to say it is time to sleep.',
-        inUse: 'It is time for bed.',
-        tip: 'A sentence usually starts with a capital letter.',
+        tip: 'Read the whole sentence, then pick the word that fits.',
       },
     },
     {
@@ -301,15 +279,81 @@ const aroundTheHome: Lesson = {
       },
     },
     {
-      kind: 'fill',
-      id: 'e8',
-      before: 'Please close the',
-      after: '.',
-      answer: 'door',
+      kind: 'arrange',
+      id: 'e5',
+      prompt: 'Put the words in order — a polite request:',
+      tiles: ['door', 'the', 'Please', 'close'],
+      answer: ['Please', 'close', 'the', 'door'],
       teach: {
-        meaning: 'Finish the sentence with the missing word.',
+        meaning: 'A polite way to ask someone to shut the door.',
         inUse: 'Please close the door.',
-        tip: 'It is a word you learned earlier this lesson.',
+        tip: 'Start a polite request with “Please”.',
+      },
+    },
+    {
+      kind: 'judge',
+      id: 'e-judge',
+      mode: 'which',
+      prompt: 'Which sentence is right?',
+      options: [
+        { id: 'right', label: 'Please close the door.' },
+        { id: 'wrong', label: 'Please door the close.' },
+      ],
+      answerId: 'right',
+      teach: {
+        meaning: 'A sentence needs its words in an order we can understand.',
+        inUse: 'Please close the door.',
+        tip: '“Please” comes first in a polite request.',
+      },
+    },
+    {
+      kind: 'grammar',
+      id: 'e-grammar',
+      prompt: 'Pick the right word',
+      before: 'It',
+      after: 'time for bed.',
+      options: ['is', 'are', 'am'],
+      answer: 'is',
+      teach: {
+        meaning: 'We use “is” when we talk about one thing.',
+        inUse: 'It is time for bed.',
+        tip: 'It → is. You → are. I → am.',
+      },
+    },
+    {
+      kind: 'listen',
+      id: 'e-listen',
+      word: 'window',
+      options: ['window', 'door', 'bed', 'chair'],
+      teach: {
+        meaning: 'A window lets light in so you can see outside.',
+        inUse: 'Look out the window at the rain.',
+        tip: 'Tap the speaker to hear it again. No microphone — just listen and tap.',
+      },
+    },
+    {
+      kind: 'fill',
+      id: 'e-type',
+      before: 'I sleep in a',
+      after: '.',
+      answer: 'bed',
+      teach: {
+        meaning: 'A bed is where you sleep at night.',
+        inUse: 'I sleep in a bed.',
+        tip: 'Type the word with three letters: b-e-d.',
+      },
+    },
+    {
+      kind: 'fill',
+      id: 'e-tile',
+      before: 'Look out the',
+      after: '.',
+      answer: 'window',
+      tiles: ['window', 'door', 'chair'],
+      teach: {
+        meaning: 'Finish the sentence by tapping the right word.',
+        inUse: 'Look out the window.',
+        tip: 'Tap the tile. Tap the blank if you want a different word.',
       },
     },
   ] as Exercise[],
@@ -1677,6 +1721,42 @@ export function getLesson(unitId: string | null): Lesson {
   return fallbackLesson(unitId ?? 's1u2');
 }
 
+/** Short kid-facing name for one game node on a unit path. */
+export function gameTitle(ex: Exercise): string {
+  switch (ex.kind) {
+    case 'choice': return ex.labels ? 'Word & picture' : 'Picture pick';
+    case 'cloze': return 'Missing word';
+    case 'match': return 'Match pairs';
+    case 'arrange': return 'Word bank';
+    case 'judge': return ex.mode === 'tf' ? 'True or false' : 'Which sentence?';
+    case 'grammar': return 'Right form';
+    case 'listen': return ex.options?.length ? 'Listen & tap' : 'Listen & type';
+    case 'fill': return ex.tiles?.length ? 'Tile the word' : 'Type the word';
+    default: {
+      const _never: never = ex;
+      return _never;
+    }
+  }
+}
+
+/** Game nodes for one unit. Done games stay replayable; the next one glows; the rest wait. */
+export function unitGameNodes(unitId: string, doneGameIds: string[], unitDone: boolean): PathNode[] {
+  const lesson = getLesson(unitId);
+  const done = new Set(unitDone ? lesson.exercises.map((e) => e.id) : doneGameIds);
+  const currentId = lesson.exercises.find((e) => !done.has(e.id))?.id ?? null;
+  return lesson.exercises.map((ex) => ({
+    id: ex.id,
+    kind: 'lesson',
+    status: done.has(ex.id) ? 'done' : ex.id === currentId ? 'current' : 'locked',
+    title: gameTitle(ex),
+  }));
+}
+
+/** True when every game in the unit has been finished. */
+export function unitGamesComplete(unitId: string, doneGameIds: string[]): boolean {
+  return getLesson(unitId).exercises.every((e) => doneGameIds.includes(e.id));
+}
+
 /** Real leaf count: the leaves earned from every completed unit's lesson reward. */
 export function leavesFor(completed: string[]): number {
   return completed.reduce((sum, id) => sum + getLesson(id).reward, 0);
@@ -1820,8 +1900,11 @@ export function unitGuide(unitId: string): UnitGuide {
       }
     } else if (ex.kind === 'arrange') {
       addPhrase(ex.answer.join(' '));
-    } else if (ex.kind === 'fill') {
+    } else if (ex.kind === 'fill' || ex.kind === 'cloze' || ex.kind === 'grammar') {
       addPhrase(`${ex.before} ${ex.answer}${ex.after}`);
+    } else if (ex.kind === 'judge') {
+      const correct = ex.options.find((o) => o.id === ex.answerId);
+      if (correct && ex.mode === 'which') addPhrase(correct.label);
     }
   }
 

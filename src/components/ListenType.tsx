@@ -1,7 +1,7 @@
 /* ListenType — audio exercise. A word is read aloud via the browser's built-in
-   text-to-speech (no network, no key). Two modes:
+   text-to-speech (no network, no key, no microphone). Two modes:
    - default: TYPE what you hear (text input)
-   - tile mode (when `options` given): TAP what you hear — easier, kid-friendly.
+   - select mode (when `options` given): TAP what you hear — the v1 KEEP game.
    The big speaker button is the reliable replay. Calm: a wrong try still teaches. */
 
 import { useEffect, useMemo, useRef } from 'react';

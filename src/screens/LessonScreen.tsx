@@ -1,7 +1,8 @@
 /* LessonScreen — Lock B chrome lesson flow (SoT-approved design).
    Pip + bubble + continuous progress + mint/coral feedback sheets.
-   Supports all course exercise types: choice, arrange, match, fill, listen.
-   Calm: a wrong answer teaches kindly and you move on — no lives lost. */
+   Plays one game from a unit path, or a whole lesson when no game is chosen.
+   Calm: a wrong answer teaches kindly and you move on — no lives lost.
+   Listening uses speech synthesis only — there is no microphone. */
 
 import { useCallback, useEffect, useState } from 'react';
 import { getLesson } from '../data/course';
@@ -11,15 +12,25 @@ import ArrangeWords from '../components/ArrangeWords';
 import MatchPairs from '../components/MatchPairs';
 import FillBlank from '../components/FillBlank';
 import ListenType from '../components/ListenType';
+import ClozeChoice from '../components/ClozeChoice';
+import SentenceJudge from '../components/SentenceJudge';
+import GrammarSelect from '../components/GrammarSelect';
 import LessonComplete from '../components/LessonComplete';
 import PipPose from '../components/PipPose';
 import { playSproutFeedback } from '../utils/feedback';
 
 interface LessonScreenProps {
   onExit: () => void;
-  onComplete: () => void;
+  onComplete: (summary: { correct: number; total: number }) => void;
   unitId: string | null;
   firstLesson?: boolean;
+  /** Play just this game node. Omit to run the whole lesson. */
+  exerciseId?: string | null;
+  /** Show the full garden celebration when the game ends. Used for the last game of a unit. */
+  celebrate?: boolean;
+  /** Games already finished on this unit path, so the celebration can count the whole path. */
+  priorCorrect?: number;
+  priorTotal?: number;
 }
 
 type Phase = 'answering' | 'selected' | 'check' | 'feedback' | 'complete';
@@ -27,32 +38,89 @@ type Answer = string | string[] | null;
 type Result = 'correct' | 'almost';
 
 function isComplete(ex: Exercise, a: Answer): boolean {
-  if (ex.kind === 'choice') return typeof a === 'string';
-  if (ex.kind === 'arrange') return Array.isArray(a) && a.length === ex.answer.length;
-  if (ex.kind === 'fill' || ex.kind === 'listen') return typeof a === 'string' && a.trim().length > 0;
-  return Array.isArray(a) && a.length === ex.pairs.length; // match: all pairs found
+  switch (ex.kind) {
+    case 'choice':
+    case 'judge':
+      return typeof a === 'string';
+    case 'arrange':
+      return Array.isArray(a) && a.length === ex.answer.length;
+    case 'fill':
+      return typeof a === 'string' && (ex.tiles?.length ? a.length > 0 : a.trim().length > 0);
+    case 'listen':
+    case 'cloze':
+    case 'grammar':
+      return typeof a === 'string' && a.trim().length > 0;
+    case 'match':
+      return Array.isArray(a) && a.length === ex.pairs.length;
+    default: {
+      const _never: never = ex;
+      return _never;
+    }
+  }
 }
 
 function isCorrect(ex: Exercise, a: Answer): boolean {
-  if (ex.kind === 'choice') return a === ex.answerId;
-  if (ex.kind === 'arrange') return Array.isArray(a) && a.join(' ') === ex.answer.join(' ');
-  if (ex.kind === 'fill') return typeof a === 'string' && a.trim().toLowerCase() === ex.answer.toLowerCase();
-  if (ex.kind === 'listen') return typeof a === 'string' && a.trim().toLowerCase() === ex.word.toLowerCase();
-  return true; // match: completing it means every pair was matched correctly
+  switch (ex.kind) {
+    case 'choice':
+    case 'judge':
+      return a === ex.answerId;
+    case 'arrange':
+      return Array.isArray(a) && a.join(' ') === ex.answer.join(' ');
+    case 'fill':
+    case 'cloze':
+    case 'grammar':
+      return typeof a === 'string' && a.trim().toLowerCase() === ex.answer.toLowerCase();
+    case 'listen':
+      return typeof a === 'string' && a.trim().toLowerCase() === ex.word.toLowerCase();
+    case 'match':
+      return true; // completing it means every pair was matched correctly
+    default: {
+      const _never: never = ex;
+      return _never;
+    }
+  }
 }
 
 function getPromptForExercise(ex: Exercise): string {
-  if (ex.kind === 'choice') return `Which picture shows "${ex.word}"?`;
-  if (ex.kind === 'arrange') return ex.prompt;
-  if (ex.kind === 'fill') return 'Fill in the blank';
-  if (ex.kind === 'listen') return 'Listen and type what you hear';
-  if (ex.kind === 'match') return 'Match each word to its picture';
-  return '';
+  switch (ex.kind) {
+    case 'choice':
+      return ex.labels ? `Which one is "${ex.word}"?` : `Which picture shows "${ex.word}"?`;
+    case 'arrange':
+      return ex.prompt;
+    case 'fill':
+      return ex.tiles?.length ? 'Tap a tile into the blank' : 'Type the missing word';
+    case 'listen':
+      return ex.options?.length ? 'Listen, then tap the word' : 'Listen and type what you hear';
+    case 'match':
+      return 'Match each word to its picture';
+    case 'cloze':
+      return 'Pick the missing word';
+    case 'judge':
+      return ex.prompt;
+    case 'grammar':
+      return ex.prompt;
+    default: {
+      const _never: never = ex;
+      return _never;
+    }
+  }
 }
 
-export default function LessonScreen({ onExit, onComplete, unitId, firstLesson }: LessonScreenProps) {
+function learnedFrom(exercises: Exercise[]): string[] {
+  return Array.from(new Set(exercises.flatMap((e) => {
+    if (e.kind === 'choice' || e.kind === 'listen') return [e.word];
+    if (e.kind === 'fill' || e.kind === 'cloze' || e.kind === 'grammar') return [e.answer];
+    if (e.kind === 'match') return e.pairs.map((p) => p.word);
+    return [];
+  }))).slice(0, 8);
+}
+
+export default function LessonScreen({
+  onExit, onComplete, unitId, firstLesson, exerciseId, celebrate = true, priorCorrect = 0, priorTotal = 0,
+}: LessonScreenProps) {
   const lesson = getLesson(unitId);
-  const exercises = lesson.exercises;
+  const picked = exerciseId ? lesson.exercises.filter((e) => e.id === exerciseId) : lesson.exercises;
+  const exercises = picked.length ? picked : lesson.exercises;
   const total = exercises.length;
 
   const [index, setIndex] = useState(0);
@@ -100,13 +168,14 @@ export default function LessonScreen({ onExit, onComplete, unitId, firstLesson }
     if (phase !== 'feedback') return;
     if (index + 1 >= total) {
       playSproutFeedback('complete');
-      setPhase('complete');
+      if (celebrate) setPhase('complete');
+      else onComplete({ correct: correctCount, total });
     } else {
       setIndex((i) => i + 1);
       setAnswer(null);
       setPhase('answering');
     }
-  }, [phase, index, total]);
+  }, [phase, index, total, celebrate, onComplete, correctCount]);
 
   useEffect(() => {
     function handleKeyboard(event: KeyboardEvent) {
@@ -123,17 +192,15 @@ export default function LessonScreen({ onExit, onComplete, unitId, firstLesson }
   const showBubble = phase !== 'feedback';
 
   if (phase === 'complete') {
-    const accuracy = Math.round((correctCount / total) * 100);
-    const learnedWords = Array.from(new Set(
-      exercises.flatMap((e) => (e.kind === 'choice' ? [e.word] : []))
-    )).slice(0, 8);
+    const accuracy = Math.round(((priorCorrect + correctCount) / Math.max(1, priorTotal + total)) * 100);
+    const learnedWords = learnedFrom(celebrate && exerciseId ? lesson.exercises : exercises);
     return (
       <LessonComplete
         leaves={lesson.reward}
         accuracy={accuracy}
         words={learnedWords}
         firstLesson={firstLesson}
-        onContinue={onComplete}
+        onContinue={() => onComplete({ correct: correctCount, total })}
       />
     );
   }
@@ -197,6 +264,7 @@ export default function LessonScreen({ onExit, onComplete, unitId, firstLesson }
             selectedId={typeof answer === 'string' ? answer : null}
             answerId={ex.answerId}
             revealed={phase === 'feedback'}
+            showLabels={!!ex.labels}
             onSelect={(id) => onSelect(id)}
           />
         ) : ex.kind === 'arrange' ? (
@@ -213,6 +281,8 @@ export default function LessonScreen({ onExit, onComplete, unitId, firstLesson }
             before={ex.before}
             after={ex.after}
             value={typeof answer === 'string' ? answer : ''}
+            tiles={ex.tiles}
+            answer={ex.answer}
             revealed={phase === 'feedback'}
             onChange={onSelect}
           />
@@ -224,6 +294,39 @@ export default function LessonScreen({ onExit, onComplete, unitId, firstLesson }
             value={typeof answer === 'string' ? answer : ''}
             revealed={phase === 'feedback'}
             onChange={onSelect}
+          />
+        ) : ex.kind === 'cloze' ? (
+          <ClozeChoice
+            key={ex.id}
+            before={ex.before}
+            after={ex.after}
+            options={ex.options}
+            answer={ex.answer}
+            value={typeof answer === 'string' ? answer : ''}
+            revealed={phase === 'feedback'}
+            onChange={onSelect}
+          />
+        ) : ex.kind === 'grammar' ? (
+          <GrammarSelect
+            key={ex.id}
+            before={ex.before}
+            after={ex.after}
+            options={ex.options}
+            answer={ex.answer}
+            value={typeof answer === 'string' ? answer : ''}
+            revealed={phase === 'feedback'}
+            onChange={onSelect}
+          />
+        ) : ex.kind === 'judge' ? (
+          <SentenceJudge
+            key={ex.id}
+            mode={ex.mode}
+            prompt={ex.prompt}
+            options={ex.options}
+            selectedId={typeof answer === 'string' ? answer : null}
+            answerId={ex.answerId}
+            revealed={phase === 'feedback'}
+            onSelect={onSelect}
           />
         ) : (
           <MatchPairs

@@ -64,33 +64,37 @@ function ariaLabel(node: PathNode) {
 interface WindingPathProps {
   nodes: PathNode[];
   onSelect?: (node: PathNode) => void;
+  /** Unit game paths label each node. The home course path stays icon-only. */
+  showLabels?: boolean;
 }
 
-export default function WindingPath({ nodes, onSelect }: WindingPathProps) {
+export default function WindingPath({ nodes, onSelect, showLabels = false }: WindingPathProps) {
   return (
-    <nav className="path" aria-label="Lesson path">
+    <nav className={`path${showLabels ? ' path--labeled' : ''}`} aria-label="Lesson path">
       <div className="path__nodes">
         {nodes.map((node, i) => {
           const dx = OFFSETS[i % OFFSETS.length];
           const isLocked = node.status === 'locked';
           return (
             <div className="node-row" key={node.id}>
-              <button
-                type="button"
-                className={`node node--${node.kind === 'golden' ? 'golden' : node.status}`}
-                style={{ transform: `translateX(${dx}px)` }}
-                data-path-node-id={node.id}
-                disabled={isLocked}
-                aria-label={ariaLabel(node)}
-                onClick={() => !isLocked && onSelect?.(node)}
-              >
-                {node.status === 'current' && <span className="node__halo" aria-hidden="true" />}
-                {node.status === 'current' && <span className="start-bubble">START</span>}
-                <span className="node__disc">{nodeIcon(node)}</span>
-                {node.status === 'current' && (
-                  <span className="node__pip"><Pip /></span>
-                )}
-              </button>
+              <div className={`node-wrap${showLabels ? ' node-wrap--labeled' : ''}`} style={{ transform: `translateX(${dx}px)` }}>
+                <button
+                  type="button"
+                  className={`node node--${node.kind === 'golden' ? 'golden' : node.status}`}
+                  data-path-node-id={node.id}
+                  disabled={isLocked}
+                  aria-label={ariaLabel(node)}
+                  onClick={() => !isLocked && onSelect?.(node)}
+                >
+                  {node.status === 'current' && <span className="node__halo" aria-hidden="true" />}
+                  {node.status === 'current' && <span className="start-bubble">START</span>}
+                  <span className="node__disc">{nodeIcon(node)}</span>
+                  {node.status === 'current' && (
+                    <span className="node__pip"><Pip /></span>
+                  )}
+                </button>
+                {showLabels && <span className="node__label">{node.title}</span>}
+              </div>
             </div>
           );
         })}
