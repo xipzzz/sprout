@@ -376,6 +376,39 @@ assert(/James _____ a wallet/i.test(exercise39Noisy[0].stem), `noisy Q1 stem: ${
 assert(exercise39Noisy[0].choices.join(',') === 'find,finds', `noisy Q1 choices: ${exercise39Noisy[0]?.choices}`);
 assert(!exercise39Noisy[0].choices.some((choice) => /^(james|my|the|tim)$/i.test(choice)), 'noisy Q1 choices are the verbs');
 
+const marginNumbers = parseWorksheetOcr(`1.
+James (find finds) a wallet on the street.
+2.
+My parents (buy buys) fruit at the market.
+3.
+My father (watch watches) the news.
+4.
+Tim (meet meets) his class.
+5.
+My mother (mop mops) the floor.`, undefined, 66);
+assert(marginNumbers.length >= 4, `margin numbers yielded ${marginNumbers.length}`);
+assert(/James _____ a wallet/i.test(marginNumbers[0].stem), `margin Q1: ${marginNumbers[0]?.stem}`);
+assert(marginNumbers[0].choices.join(',') === 'find,finds', `margin choices: ${marginNumbers[0]?.choices}`);
+
+const partialPage = parseWorksheetOcr(`3. Uncle Tan (drive drives) to work every morning.
+4. Rabbits
+(eat, eats) carrots.
+5. The children (make makes) a lot of noise when they play.
+6. Many birds (build, builds) their nests in trees.
+9. My aunt (sweep sweeps) the floor. 1 0. The doctors (discuss, discusses) their findings.
+© Educational Publishing House Pte Ltd`, undefined, 71);
+assert(partialPage.length >= 4, `partial page yielded ${partialPage.length}`);
+assert(/Uncle Tan _____/i.test(partialPage[0].stem), `partial first stem: ${partialPage[0]?.stem}`);
+assert(partialPage[0].choices.join(',') === 'drive,drives', `partial first choices: ${partialPage[0]?.choices}`);
+const children = partialPage.find((item) => /children/i.test(item.stem));
+assert(Boolean(children) && children!.choices.join(',') === 'make,makes', `children choices: ${children?.choices} stem ${children?.stem}`);
+const aunt = partialPage.find((item) => /aunt/i.test(item.stem));
+assert(Boolean(aunt) && /My aunt _____ the floor/i.test(aunt!.stem), `aunt stem: ${aunt?.stem}`);
+assert(aunt!.choices.join(',') === 'sweep,sweeps', `aunt choices: ${aunt?.choices}`);
+assert(!/Educational Publishing|Pte Ltd|©|1 0\./i.test(aunt!.stem), `footer bled into aunt: ${aunt?.stem}`);
+const doctors = partialPage.find((item) => /doctors/i.test(item.stem));
+assert(Boolean(doctors) && doctors!.choices.join(',') === 'discuss,discusses', `Q10 choices: ${doctors?.choices}`);
+
 assert(parseWorksheetOcr('', undefined, 90).length === 0, 'empty OCR text produces no drafts');
 assert(parseWorksheetOcr('   \n\n  ', undefined, 40).length === 0, 'blank OCR text produces no drafts');
 

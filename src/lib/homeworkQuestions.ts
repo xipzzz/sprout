@@ -134,7 +134,7 @@ export function parseWorksheetOcr(
   const text = normalizeHaveHasOcr(ocrText || '');
   const lines = text
     .split(/\r?\n/)
-    .flatMap((line) => explodeNumberedPieces(line))
+    .flatMap((line) => explodeNumberedPieces(stripPublisher(line)))
     .map((line) => normalizeChoiceLabelLine(line.replace(/\s+/g, ' ').trim()))
     .filter(Boolean);
 
@@ -142,10 +142,12 @@ export function parseWorksheetOcr(
   const keyRefs: { n: number; raw: string }[] = [];
   const preamble: string[] = [];
   let mode: 'body' | 'key' = 'body';
+  let pendingNumber: number | null = null;
 
   for (const line of lines) {
     if (/^(answers?|answer\s*key|key)\b[:\s]*$/i.test(line)) {
       mode = 'key';
+      pendingNumber = null;
       continue;
     }
     if (mode === 'key') {
@@ -153,9 +155,20 @@ export function parseWorksheetOcr(
       if (key) keyRefs.push({ n: Number(key[1]), raw: key[2].trim() });
       continue;
     }
+    const onlyNumber = line.match(/^(1\s*0|\d{1,2})\s*[.)]?\s*$/);
+    if (onlyNumber) {
+      pendingNumber = /1\s*0/.test(onlyNumber[1]) ? 10 : Number(onlyNumber[1]);
+      continue;
+    }
     const start = questionStart(line);
     if (start) {
       blocks.push({ n: start.n, lines: [line] });
+      pendingNumber = null;
+      continue;
+    }
+    if (pendingNumber != null && /[A-Za-z]/.test(line)) {
+      blocks.push({ n: pendingNumber, lines: [`${pendingNumber}. ${line}`] });
+      pendingNumber = null;
       continue;
     }
     if (blocks.length === 0) preamble.push(line);
@@ -190,12 +203,20 @@ export function parseWorksheetOcr(
 }
 
 function explodeNumberedPieces(line: string): string[] {
-  const normalized = normalizeLeadingNumber(line);
+  const normalized = normalizeLeadingNumber(line).replace(/\b1\s+0(?=\s*[.)])/, '10');
   const parts = normalized
-    .split(/(?<=\S)\s*(?=\d{1,2}(?:[.)]\s*|\s+)[A-Za-z])/)
+    .split(/(?<=[.?!])\s+(?=(?:1\s+0|\d{1,2})\s*[.)]\s*[A-Za-z])|(?<=[a-z.])(?=\d{1,2}[.)][A-Za-z])/i)
     .map((part) => normalizeLeadingNumber(part.trim()))
     .filter(Boolean);
   return parts.length > 0 ? parts : [normalized];
+}
+
+function stripPublisher(line: string): string {
+  return line
+    .replace(/©.*$/i, '')
+    .replace(/\bEducational Publishing House\b.*/i, '')
+    .replace(/\bPte\s+Ltd\b.*/i, '')
+    .trim();
 }
 
 function normalizeLeadingNumber(line: string): string {
@@ -218,8 +239,11 @@ function questionStart(line: string): { n: number } | null {
   if (!match) return null;
   const rest = match[2].trim();
   const words = rest.split(/\s+/);
-  const singleChoice = words.length <= 2 && /^[A-Za-z'’*-]+$/.test(words[0] || '') && !/_/.test(rest);
-  if (singleChoice && !/[?]/.test(rest)) return null;
+  const answerKey = words.length <= 2
+    && words.every((word) => /^[a-z'’*-]+$/.test(word))
+    && !/_/.test(rest)
+    && !/[()]/.test(rest);
+  if (answerKey && !/[?]/.test(rest)) return null;
   return { n: Number(match[1]) };
 }
 
@@ -237,22 +261,42 @@ function extractChoices(chunk: string): ParsedChoice[] {
   }
   if (found.length >= 2) return found;
 
-  const pair = parenVerbPair(chunk) ?? (bareSlash(chunk)?.split(/\s*\/\s*/) ?? null);
+  const pair = findVerbPair(chunk) ?? (bareSlash(chunk)?.split(/\s*\/\s*/) ?? null);
   if (!pair) return found;
   for (const part of pair) pushChoice(found, String(found.length + 1), part);
   return found;
 }
 
-function parenVerbPair(chunk: string): string[] | null {
-  const paren = chunk.match(/\(([^)]{2,80})\)/);
-  if (!paren) return null;
-  const verbs = verbPairParts(paren[1]);
-  if (verbs) return verbs;
-  if (!/[/，,]/.test(paren[1])) return null;
-  const parts = paren[1].split(/\s*[/，,]\s*/).map((part) => part.trim()).filter(Boolean);
+function findVerbPair(chunk: string): string[] | null {
+  const paren = chunk.match(/\(([^)\n]{1,80})/);
+  if (paren) {
+    const inside = neighborVerbPair(paren[1]) ?? listedPair(paren[1]);
+    if (inside) return inside;
+  }
+  return neighborVerbPair(chunk);
+}
+
+function listedPair(inner: string): string[] | null {
+  if (!/[/，,]/.test(inner)) return null;
+  const parts = inner.split(/\s*[/，,]\s*/).map((part) => part.trim()).filter(Boolean);
   if (parts.length < 2 || parts.length > 4) return null;
   if (!parts.every((part) => /^\*?[A-Za-z][A-Za-z'’*-]{0,20}\*?$/.test(part))) return null;
   return parts;
+}
+
+function neighborVerbPair(text: string): string[] | null {
+  const words = text.match(/[A-Za-z]{2,15}/g) ?? [];
+  for (let i = 0; i < words.length - 1; i++) {
+    if (sameVerb(words[i], words[i + 1])) return [words[i], words[i + 1]];
+  }
+  return null;
+}
+
+function sameVerb(a: string, b: string): boolean {
+  if (a.toLowerCase() === b.toLowerCase()) return false;
+  const left = verbStem(a);
+  const right = verbStem(b);
+  return left.length >= 2 && left === right;
 }
 
 function verbPairParts(inner: string): string[] | null {
@@ -310,13 +354,17 @@ function pushChoice(found: ParsedChoice[], label: string, raw: string) {
 
 function cleanStem(first: string, rest: string[]): string {
   const body = [stripQuestionNumber(first), ...rest.filter((line) => extractChoices(line).length < 2)];
-  let stem = body.join(' ');
+  let stem = stripPublisher(body.join(' '));
+  stem = stem.split(/\s+(?=(?:1\s+0|\d{1,2})(?:[.)]\s*|\s+)[A-Za-z])/)[0] ?? stem;
   stem = stem.replace(/(?:^|\s)[([]?\s*[1-4A-Da-d]\s*[)\].:]\s*\*?[A-Za-z][A-Za-z'’*-]{0,20}\*?/g, ' ');
+  const pair = findVerbPair(stem);
+  if (pair) {
+    const blank = new RegExp(`\\(?\\s*${pair[0]}\\s*[,/|]?\\s*${pair[1]}\\s*\\)?`, 'i');
+    stem = stem.replace(blank, ' _____ ');
+  }
   stem = stem.replace(/\(([^)]+)\)/g, (full, inner: string) => {
     if (/^\s*(i|you|he|she|it|we|they)\s*$/i.test(inner)) return full;
-    if (verbPairParts(inner)) return '_____';
-    const parts = inner.split(/\s*[/，,]\s*/).map((part) => part.trim());
-    if (parts.length >= 2 && parts.every((part) => /^[A-Za-z'’-]+$/.test(part))) return '_____';
+    if (verbPairParts(inner) || listedPair(inner)) return '_____';
     return ' ';
   });
   return finishStem(stem);
