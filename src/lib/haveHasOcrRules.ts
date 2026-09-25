@@ -59,11 +59,14 @@ export function isHaveHasWorksheet(text: string): boolean {
  * Singular (he/she/it/name) → has; plural/I/you/we/they → have.
  */
 export function correctHaveHasForSubject(subject: string): 'have' | 'has' {
-  const s = subject.trim().toLowerCase();
+  const raw = subject.trim();
+  const s = raw.toLowerCase();
+  if (/\band\b/.test(s)) return 'have';
   if (/^(he|she|it)$/.test(s)) return 'has';
   if (/^(i|you|we|they)$/.test(s)) return 'have';
-  if (/^[A-Z][a-z]+$/.test(subject.trim())) return 'has';
-  if (/^(the|a|an)\s+\w+$/i.test(subject.trim())) return 'has';
+  if (/^(the|a|an)\s+\w+s$/.test(s) && !/^(the|a|an)\s+(bus|class|glass|dress|grass|news)$/.test(s)) return 'have';
+  if (/^[A-Z][a-z]+$/.test(raw)) return 'has';
+  if (/^(the|a|an)\s+\w+$/i.test(raw)) return 'has';
   return 'have';
 }
 

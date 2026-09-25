@@ -63,12 +63,16 @@ export function canStartPractice(acceptedCount: number): boolean {
 export function isGarbageStem(stem: string): boolean {
   const text = stem.trim();
   const letters = text.match(/[A-Za-z]/g)?.length ?? 0;
-  if (letters < 8) return true;
-  if (letters / Math.max(1, text.length) < 0.4) return true;
+  const hasBlank = /_{2,}/.test(text);
+  const words = text.toLowerCase().match(/[a-z']+/g) ?? [];
+  const readable = words.filter((word) => word.length >= 2 || word === 'i' || word === 'a').length;
+  const shortCloze = hasBlank && readable >= 2;
+  if (letters < 8 && !shortCloze) return true;
+  if (!shortCloze && letters / Math.max(1, text.length) < 0.4) return true;
   const marks = text.match(/\?/g)?.length ?? 0;
   if (marks >= 3 && letters < 12) return true;
   const tokens = text.toLowerCase().match(/[a-z']{2,}/g) ?? [];
-  if (tokens.length < 2) return true;
+  if (tokens.length < 2 && !shortCloze) return true;
   const weird = tokens.filter((word) => word.length >= 4 && !/[aeiouy]/.test(word));
   return tokens.length >= 3 && weird.length / tokens.length > 0.45;
 }
@@ -130,7 +134,7 @@ export function parseWorksheetOcr(
   const text = normalizeHaveHasOcr(ocrText || '');
   const lines = text
     .split(/\r?\n/)
-    .map((line) => line.replace(/\s+/g, ' ').trim())
+    .map((line) => normalizeChoiceLabelLine(line.replace(/\s+/g, ' ').trim()))
     .filter(Boolean);
 
   const blocks: { n: number; lines: string[] }[] = [];
@@ -144,7 +148,7 @@ export function parseWorksheetOcr(
       continue;
     }
     if (mode === 'key') {
-      const key = line.match(/^(\d{1,2})\s*[.)\-:]+\s*(.+)$/);
+      const key = line.match(/^(\d{1,2})\s*[.)\-:)]+\s*(.+)$/);
       if (key) keyRefs.push({ n: Number(key[1]), raw: key[2].trim() });
       continue;
     }
@@ -162,8 +166,9 @@ export function parseWorksheetOcr(
 
   return blocks.flatMap((block, index) => {
     const raw = block.lines.join(' ');
-    const local = extractChoices(raw.replace(/^\d{1,2}(?:\s*[.)]\s+|\s+)/, ''));
-    const picked = local.length >= 2 ? local : shared;
+    const local = extractChoices(stripQuestionNumber(raw));
+    const bare = local.length >= 2 ? [] : bareWordChoices(block.lines.slice(1));
+    const picked = local.length >= 2 ? local : bare.length >= 2 ? bare : shared;
     if (picked.length < 2) return [];
     const choiceText = picked.map((choice) => choice.text);
     const stem = restoreFillBlank(cleanStem(block.lines[0], block.lines.slice(1)), choiceText, preambleText);
@@ -183,9 +188,18 @@ export function parseWorksheetOcr(
   });
 }
 
+function stripQuestionNumber(line: string): string {
+  return line.replace(/^\d{1,2}(?:\s*[.)]\s*|\s*)(?=[A-Za-z_[(])/, '');
+}
+
+function normalizeChoiceLabelLine(line: string): string {
+  // Tesseract reads the label "(1)" as "(l)" or "(I)" at the start of a choice line.
+  return line.replace(/^\(([lI|])\)(?=\s+\S)/, '(1)').replace(/^([lI|])\)(?=\s+\S)/, '1)');
+}
+
 function questionStart(line: string): { n: number } | null {
-  // OCR often drops the period after the question number: "6 They _____ two cats."
-  const match = line.match(/^(\d{1,2})(?:\s*[.)]\s+|\s+)(\S.*)$/);
+  // OCR drops the separator: "6 They", "6.They", and "6They".
+  const match = line.match(/^(\d{1,2})(?:\s*[.)]\s*|\s*)(?=[A-Za-z_[(])(\S.*)$/);
   if (!match) return null;
   const rest = match[2].trim();
   const words = rest.split(/\s+/);
@@ -217,6 +231,25 @@ function extractChoices(chunk: string): ParsedChoice[] {
   return found;
 }
 
+function bareWordChoices(lines: string[]): ParsedChoice[] {
+  const found: ParsedChoice[] = [];
+  for (const line of lines) {
+    if (/[.?!]/.test(line)) continue;
+    const parts = line.trim().split(/\s+/).filter(Boolean);
+    if (!parts.every((part) => /^[A-Za-z][A-Za-z'’-]{1,22}$/.test(part))) continue;
+    const grammar = parts.every((part) => {
+      const word = part.toLowerCase().replace(/[^a-z']/g, '');
+      return word === 'have' || word === 'has' || POSSESSIVE_WORDS.has(word) || PRONOUN_WORDS.has(word);
+    });
+    const take = parts.length === 1 || (grammar && parts.length <= 4) || (parts.length >= 3 && parts.length <= 4);
+    if (!take) continue;
+    for (const part of parts) pushChoice(found, String(found.length + 1), part);
+  }
+  return found.length >= 2 ? found : [];
+}
+
+const PRONOUN_WORDS = new Set(['i', 'you', 'he', 'she', 'it', 'we', 'they', 'me', 'him', 'her', 'us', 'them']);
+
 function bareSlash(chunk: string): string | null {
   const line = chunk.trim();
   if (!line.includes('/')) return null;
@@ -235,7 +268,7 @@ function pushChoice(found: ParsedChoice[], label: string, raw: string) {
 }
 
 function cleanStem(first: string, rest: string[]): string {
-  const body = [first.replace(/^\d{1,2}(?:\s*[.)]\s+|\s+)/, ''), ...rest.filter((line) => extractChoices(line).length < 2)];
+  const body = [stripQuestionNumber(first), ...rest.filter((line) => extractChoices(line).length < 2)];
   let stem = body.join(' ');
   stem = stem.replace(/(?:^|\s)[([]?\s*[1-4A-Da-d]\s*[)\].:]\s*\*?[A-Za-z][A-Za-z'’*-]{0,20}\*?/g, ' ');
   stem = stem.replace(/\(([^)]+)\)/g, (full, inner: string) => {
@@ -303,6 +336,7 @@ function normalizeBlankMarks(stem: string): string {
   next = next.replace(/_{2,}/g, ` ${BLANK} `);
   next = next.replace(/(?:^|\s)[-—–_](?=\s|$)/g, ` ${BLANK} `);
   next = next.replace(/\.{3,}/g, ` ${BLANK} `);
+  next = next.replace(/…+/g, ` ${BLANK} `);
   next = next.replace(/-{2,}/g, ` ${BLANK} `);
   next = next.replace(/[—–]+/g, ` ${BLANK} `);
   next = next.replace(/\[\s*\]/g, ` ${BLANK} `);
@@ -403,14 +437,15 @@ function guessHaveHas(stem: string, choices: string[]): string | null {
 }
 
 function findHaveHasSubject(stem: string): string | null {
-  const pattern = /\b(I|You|He|She|It|We|They|[A-Z][a-z]+|[Tt]he\s+[A-Za-z]+)\b/;
-  if (/_{2,}/.test(stem)) {
-    const before = stem.split(/_{2,}/)[0] ?? '';
-    const trailing = before.match(new RegExp(`${pattern.source}\\s*$`, 'i'));
-    return trailing?.[1] ?? null;
-  }
-  const lead = stem.match(new RegExp(`^${pattern.source}`, 'i'));
-  return lead?.[1] ?? null;
+  const pattern = /\b(I|You|He|She|It|We|They|[A-Z][a-z]+(?:\s+and\s+[A-Z][a-z]+)+|[A-Z][a-z]+|[Tt]he\s+[A-Za-z]+)\b/;
+  const source = /_{2,}/.test(stem) ? (stem.split(/_{2,}/)[0] ?? '') : stem;
+  const matched = /_{2,}/.test(stem)
+    ? source.match(new RegExp(`${pattern.source}\\s*$`, 'i'))
+    : source.match(new RegExp(`^${pattern.source}`, 'i'));
+  const subject = matched?.[1];
+  if (!subject) return null;
+  if (INSTRUCTION.has(subject.split(/\s+/)[0]?.toLowerCase() ?? '')) return null;
+  return subject;
 }
 
 function guessPossessive(stem: string, choices: string[], preamble: string): string | null {
@@ -444,7 +479,9 @@ function possessiveCue(stem: string): string | null {
   if (pronouns.length > 0) return pronouns[pronouns.length - 1][1].toLowerCase();
   if (/\b(these|those)\b/i.test(before) || /\b(?:the|these|those)\s+[a-z]+s\b/i.test(before)) return 'they';
   if (/\b(?:the|this|that)\s+(?!is\b|are\b|am\b|was\b|were\b|has\b|have\b)[a-z]+\b/i.test(before)) return 'it';
-  return null;
+  const after = stem.split(/_{2,}/).slice(1).join(' ');
+  const trail = after.match(/\b(I|you|he|she|it|we|they)\b/i);
+  return trail ? trail[1].toLowerCase() : null;
 }
 
 function blankForm(stem: string): 'adj' | 'pro' | 'unknown' {

@@ -191,4 +191,83 @@ assert(keyWins.length === 1 && keyWins[0].correct === 'have', 'printed answer ke
 const readyDropped = assessAcceptance({ ...dropped[0], parentEdited: false });
 assert(readyDropped.canAccept && !readyDropped.garbage, 'a restored high-confidence draft can be accepted');
 
+const gluedNumber = parseWorksheetOcr(`6They _____ two cats.
+(1) have
+(2) has`, undefined, 90);
+assert(gluedNumber.length === 1 && gluedNumber[0].correct === 'have', 'glued question number 6They still parses');
+
+const tightPeriod = parseWorksheetOcr(`6.They _____ two cats.
+(1) have
+(2) has`, undefined, 90);
+assert(tightPeriod.length === 1 && tightPeriod[0].correct === 'have', 'missing space after the number period still parses');
+
+const ellipsis = parseWorksheetOcr(`1. This is … book. (I)
+(1) my
+(2) mine`, undefined, 90);
+assert(ellipsis.length === 1 && /This is _____ book/i.test(ellipsis[0].stem), `ellipsis blank missing: ${ellipsis[0]?.stem}`);
+assert(ellipsis[0].correct === 'my', 'ellipsis blank still picks my');
+
+const unlabeled = parseWorksheetOcr(`1. This is _____ book. (I)
+my
+mine
+me`, undefined, 90);
+assert(unlabeled.length === 1 && unlabeled[0].choices.join(',') === 'my,mine,me', 'unlabeled choice lines are still choices');
+assert(unlabeled[0].correct === 'my', 'unlabeled possessives still pick my');
+
+const inlineChoices = parseWorksheetOcr(`1. This is book. (I)
+my mine me`, undefined, 90);
+assert(inlineChoices.length === 1 && /_____/.test(inlineChoices[0].stem), `inline choices left the blank out: ${inlineChoices[0]?.stem}`);
+assert(inlineChoices[0].choices.join(',') === 'my,mine,me', 'inline unlabeled choices');
+
+const labelL = parseWorksheetOcr(`1. This is _____ book. (I)
+(l) my
+(2) mine
+(3) me`, undefined, 90);
+assert(labelL.length === 1 && labelL[0].choices[0] === 'my', `label (l) was not read as (1): ${labelL[0]?.choices}`);
+assert(labelL[0].correct === 'my', 'label (l) still picks my');
+assert(!labelL[0].stem.includes(' my'), `choice leaked into the stem: ${labelL[0].stem}`);
+
+const boys = parseWorksheetOcr(`1. The boys _____ two dogs.
+(1) have
+(2) has`, undefined, 90);
+assert(boys.length === 1 && boys[0].correct === 'have', 'plural the boys takes have');
+
+const compound = parseWorksheetOcr(`1. Sam and Ben _____ a dog.
+(1) have
+(2) has`, undefined, 90);
+assert(compound.length === 1 && compound[0].correct === 'have', 'a compound subject takes have');
+
+const instruction = parseWorksheetOcr(`1. Choose a word.
+(1) have
+(2) has`, undefined, 90);
+assert(instruction.length === 1 && instruction[0].correct === null, 'an instruction line is not a have/has answer');
+
+const shortStem = parseWorksheetOcr(`1. I _____ a dog.
+(1) have
+(2) has`, undefined, 92);
+assert(shortStem.length === 1 && shortStem[0].correct === 'have', 'I takes have');
+const shortGate = assessAcceptance({ ...shortStem[0], parentEdited: false });
+assert(!shortGate.garbage && shortGate.canAccept, 'a short real cloze is not garbage');
+
+const trailingCue = parseWorksheetOcr(`1. This is _____ book. I
+(1) my
+(2) mine`, undefined, 90);
+assert(trailingCue.length === 1 && trailingCue[0].correct === 'my', 'a bare subject after the blank still picks my');
+
+const keyParen = parseWorksheetOcr(`1. She _____ a red bag.
+(1) have
+(2) has
+Answers
+1) have`, undefined, 90);
+assert(keyParen.length === 1 && keyParen[0].correct === 'have', 'answer key 1) have beats the grammar rule');
+
+const obviousGarbage = assessAcceptance({
+  stem: 'xqz krtp zzwq',
+  choices: ['xqz', 'krtp'],
+  correct: 'xqz',
+  confidence: 95,
+  parentEdited: true,
+});
+assert(obviousGarbage.garbage && !obviousGarbage.canAccept, 'vowel-free garbage stays locked');
+
 console.log('homework question tests passed');
