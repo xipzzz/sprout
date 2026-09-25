@@ -343,7 +343,7 @@ function extractChoices(chunk: string): ParsedChoice[] {
   }
   if (found.length >= 2) return found;
 
-  const pair = findVerbPair(chunk) ?? (bareSlash(chunk)?.split(/\s*\/\s*/) ?? null);
+  const pair = findVerbPair(chunk) ?? inlineOptionList(chunk);
   if (!pair) return found;
   for (const part of pair) pushChoice(found, String(found.length + 1), part);
   return found;
@@ -406,31 +406,73 @@ function verbStem(word: string): string {
 
 function bareWordChoices(lines: string[]): ParsedChoice[] {
   const found: ParsedChoice[] = [];
+  const singles: string[] = [];
+  const takeSingles = () => {
+    if (singles.length < 2) {
+      singles.length = 0;
+      return;
+    }
+    for (const part of singles) pushChoice(found, String(found.length + 1), part);
+    singles.length = 0;
+  };
   for (const line of lines) {
-    if (/[.?!]/.test(line)) continue;
+    if (/[.?!]/.test(line)) {
+      takeSingles();
+      continue;
+    }
     const parts = line.trim().split(/\s+/).filter(Boolean);
-    if (!parts.every((part) => /^[A-Za-z][A-Za-z'’-]{1,22}$/.test(part))) continue;
+    if (parts.length === 1 && isOptionWord(parts[0])) {
+      singles.push(parts[0]);
+      if (singles.length === 4) takeSingles();
+      continue;
+    }
+    takeSingles();
+    if (!parts.every((part) => isOptionWord(part))) continue;
     const grammar = parts.every((part) => {
       const word = part.toLowerCase().replace(/[^a-z']/g, '');
       return word === 'have' || word === 'has' || POSSESSIVE_WORDS.has(word) || PRONOUN_WORDS.has(word);
     });
-    const take = grammar && parts.length >= 1 && parts.length <= 4;
-    if (!take) continue;
+    if (!(grammar && parts.length >= 2 && parts.length <= 4)) continue;
     for (const part of parts) pushChoice(found, String(found.length + 1), part);
   }
+  takeSingles();
   return found.length >= 2 ? found : [];
+}
+
+const FUNCTION_WORDS = new Set(['the', 'a', 'an', 'in', 'on', 'at', 'to', 'for', 'of', 'and', 'with', 'from', 'by']);
+
+function isOptionWord(part: string): boolean {
+  return /^\*?[A-Za-z][A-Za-z'’*-]{0,20}\*?$/.test(part);
+}
+
+/** Slash, comma, pipe, or "or" lists, plus a short word list inside parentheses. */
+function inlineOptionList(chunk: string): string[] | null {
+  const paren = chunk.match(/\(([^)\n]{1,60})/);
+  if (paren) {
+    const inside = splitOptionText(paren[1], true);
+    if (inside) return inside;
+  }
+  const whole = splitOptionText(chunk.trim(), false);
+  if (whole) return whole;
+  const embedded = chunk.match(/\b([A-Za-z][A-Za-z'’-]{0,20}(?:\s*(?:\/|\||\bor\b)\s*[A-Za-z][A-Za-z'’-]{0,20}){1,3})\b/i);
+  return embedded ? splitOptionText(embedded[1], false) : null;
+}
+
+function splitOptionText(inner: string, allowSpaces: boolean): string[] | null {
+  const separated = /(?:\/|，|,|\||\bor\b)/i.test(inner);
+  if (!separated && !allowSpaces) return null;
+  const parts = inner
+    .split(separated ? /\s*(?:\/|，|,|\||\bor\b)\s*/i : /\s+/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+  if (parts.length < 2 || parts.length > 4) return null;
+  if (!parts.every((part) => isOptionWord(part))) return null;
+  if (!separated && parts.some((part) => FUNCTION_WORDS.has(part.toLowerCase().replace(/\*/g, '')))) return null;
+  return parts;
 }
 
 const PRONOUN_WORDS = new Set(['i', 'you', 'he', 'she', 'it', 'we', 'they', 'me', 'him', 'her', 'us', 'them']);
 
-function bareSlash(chunk: string): string | null {
-  const line = chunk.trim();
-  if (!line.includes('/')) return null;
-  const parts = line.split(/\s*\/\s*/);
-  if (parts.length < 2 || parts.length > 4) return null;
-  if (!parts.every((part) => /^\*?[A-Za-z][A-Za-z'’*-]{0,20}\*?$/.test(part.trim()))) return null;
-  return line;
-}
 
 function pushChoice(found: ParsedChoice[], label: string, raw: string) {
   const marked = raw.includes('*');
@@ -441,18 +483,23 @@ function pushChoice(found: ParsedChoice[], label: string, raw: string) {
 }
 
 function cleanStem(first: string, rest: string[], choices: string[] = []): string {
-  const body = [stripQuestionNumber(first), ...rest.filter((line) => extractChoices(line).length < 2)];
+  const choiceSet = new Set(choices.map((choice) => choice.toLowerCase()));
+  const body = [stripQuestionNumber(first), ...rest.filter((line) => {
+    if (extractChoices(line).length >= 2) return false;
+    const token = line.trim();
+    return !(choiceSet.has(token.toLowerCase()) && isOptionWord(token));
+  })];
   let stem = stripPublisher(body.join(' '));
   stem = stem.split(/\s+(?=(?:1\s+0|\d{1,2})(?:[.)]\s*|\s+)[A-Za-z])/)[0] ?? stem;
   stem = stem.replace(/(?:^|\s)[([]?\s*[1-4A-Da-d]\s*[)\].:]\s*\*?[A-Za-z][A-Za-z'’*-]{0,20}\*?/g, ' ');
-  const pair = findVerbPair(stem);
-  if (pair) {
-    const blank = new RegExp(`\\(?\\s*${pair[0]}\\s*[,/|]?\\s*${pair[1]}\\s*\\)?`, 'i');
-    stem = stem.replace(blank, ' _____ ');
+  const pair = findVerbPair(stem) ?? inlineOptionList(stem);
+  if (pair && pair.length >= 2) {
+    const sep = pair.map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('\\s*(?:,|，|/|\\||\\bor\\b)?\\s*');
+    stem = stem.replace(new RegExp(`\\(?\\s*${sep}\\s*\\)?`, 'i'), ' _____ ');
   }
   stem = stem.replace(/\(([^)]+)\)/g, (full, inner: string) => {
     if (/^\s*(i|you|he|she|it|we|they)\s*$/i.test(inner)) return full;
-    if (verbPairParts(inner) || listedPair(inner)) return '_____';
+    if (verbPairParts(inner) || listedPair(inner) || splitOptionText(inner, true)) return '_____';
     return ' ';
   });
   return finishStem(stripScribble(stem, choices));

@@ -487,6 +487,22 @@ assert(!/7d|&|\bpo\b/i.test(warpedSix!.stem), `scribble still in item 6: ${warpe
 assert(warpedSix!.choices.join(',') === 'writes,write', `warped item 6 choices: ${warpedSix?.choices}`);
 assert(warpedPhone.some((item) => item.id === 'q5'), 'top-of-page item 5 is kept');
 
+const genericChoices = parseWorksheetOcr(`1. The box is (big small).
+2. The sun (rise or rises) in the east.
+3. The soup is hot / cold / warm.
+4. Pick a fruit
+apple
+orange`, undefined, 75);
+assert(genericChoices.length === 4, `generic choices yielded ${genericChoices.length}`);
+assert(/The box is _____/i.test(genericChoices[0].stem), `word-list stem: ${genericChoices[0]?.stem}`);
+assert(genericChoices[0].choices.join(',') === 'big,small', `word-list choices: ${genericChoices[0]?.choices}`);
+assert(/The sun _____ in the east/i.test(genericChoices[1].stem), `or-pair stem: ${genericChoices[1]?.stem}`);
+assert(genericChoices[1].choices.join(',') === 'rise,rises', `or-pair choices: ${genericChoices[1]?.choices}`);
+assert(/The soup is _____/i.test(genericChoices[2].stem), `slash stem: ${genericChoices[2]?.stem}`);
+assert(genericChoices[2].choices.join(',') === 'hot,cold,warm', `slash choices: ${genericChoices[2]?.choices}`);
+assert(/Pick a fruit/i.test(genericChoices[3].stem) && !/apple|orange/i.test(genericChoices[3].stem), `single-word lines stayed in the stem: ${genericChoices[3]?.stem}`);
+assert(genericChoices[3].choices.join(',') === 'apple,orange', `single-word choices: ${genericChoices[3]?.choices}`);
+
 assert(parseWorksheetOcr('', undefined, 90).length === 0, 'empty OCR text produces no drafts');
 assert(parseWorksheetOcr('   \n\n  ', undefined, 40).length === 0, 'blank OCR text produces no drafts');
 
