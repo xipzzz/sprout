@@ -5,7 +5,10 @@
 import {
   assessAcceptance,
   canStartPractice,
+  isHandwritingToken,
   mergeWorksheetReads,
+  textFromPrintedGlyphs,
+  textWithoutHandwriting,
   parseWorksheetOcr,
 } from './homeworkQuestions';
 
@@ -424,6 +427,33 @@ const merged = mergeWorksheetReads(
 assert(merged[0].id === 'q1' && /We _____ the house/i.test(merged[0].stem), `top read should lead: ${merged[0]?.stem}`);
 assert(merged.some((item) => item.id === 'q6'), 'mid-page item stays item 6');
 assert(merged[0].choices.join(',') === 'paint,paints', `top choices: ${merged[0]?.choices}`);
+
+const circledGlyphs = [
+  { text: '6.', confidence: 91, bbox: { x0: 4, y0: 12, x1: 22, y1: 30 } },
+  { text: 'He', confidence: 90, bbox: { x0: 28, y0: 12, x1: 52, y1: 30 } },
+  { text: '(writes,', confidence: 86, bbox: { x0: 58, y0: 12, x1: 130, y1: 30 } },
+  { text: 'write)', confidence: 84, bbox: { x0: 136, y0: 12, x1: 190, y1: 30 } },
+  { text: 'with', confidence: 90, bbox: { x0: 196, y0: 12, x1: 230, y1: 30 } },
+  { text: 'a', confidence: 88, bbox: { x0: 236, y0: 12, x1: 248, y1: 30 } },
+  { text: 'pen.', confidence: 90, bbox: { x0: 254, y0: 12, x1: 292, y1: 30 } },
+  { text: 'O', confidence: 41, bbox: { x0: 70, y0: 4, x1: 118, y1: 52 } },
+  { text: '7d', confidence: 44, bbox: { x0: 300, y0: 14, x1: 332, y1: 32 } },
+  { text: '&', confidence: 22, bbox: { x0: 336, y0: 16, x1: 352, y1: 34 } },
+  { text: 'po.', confidence: 28, bbox: { x0: 360, y0: 18, x1: 388, y1: 36 } },
+];
+assert(isHandwritingToken(circledGlyphs[7]), 'a squarish circle read is handwriting');
+assert(isHandwritingToken(circledGlyphs[8]), '7d is handwriting');
+assert(!isHandwritingToken(circledGlyphs[1]), 'printed He stays');
+const printedOnly = textFromPrintedGlyphs(circledGlyphs);
+assert(!/7d|&|\bpo\b|\bO\b/.test(printedOnly), `handwriting glyphs stayed: ${printedOnly}`);
+const fromInk = textWithoutHandwriting(
+  circledGlyphs,
+  '6. He (writes, write) with a pen. O 7d & po.',
+);
+const inkDraft = parseWorksheetOcr(fromInk, circledGlyphs, 70);
+assert(inkDraft.length === 1 && /He _____ with a pen/i.test(inkDraft[0].stem), `ink-filtered stem: ${inkDraft[0]?.stem}`);
+assert(!/7d|&|\bpo\b|\bO\b/.test(inkDraft[0].stem), `ink leaked into stem: ${inkDraft[0]?.stem}`);
+assert(inkDraft[0].choices.join(',') === 'writes,write', `ink choices: ${inkDraft[0]?.choices}`);
 
 assert(parseWorksheetOcr('', undefined, 90).length === 0, 'empty OCR text produces no drafts');
 assert(parseWorksheetOcr('   \n\n  ', undefined, 40).length === 0, 'blank OCR text produces no drafts');

@@ -21,6 +21,9 @@ export type DeskewOutcome =
 const PAPER_MISS =
   'Could not find the four corners of the page. Retake the photo with the whole sheet in frame.';
 
+const WARP_RETAKE =
+  'That page is still too warped to read the top lines. Retake it flatter, with the whole sheet in frame.';
+
 export function deskewRaster(src: Raster): DeskewOutcome {
   if (src.width < 20 || src.height < 20) {
     return { ok: false, message: PAPER_MISS };
@@ -31,8 +34,12 @@ export function deskewRaster(src: Raster): DeskewOutcome {
 
   const warped = warpQuad(src, detected);
   const flat = flattenResidualBow(warped);
-  applyMildContrast(flat.data);
-  return { ok: true, image: flat, corners: detected };
+  if (warpTooSevere(warpConflict(flat))) {
+    return { ok: false, message: WARP_RETAKE };
+  }
+  const cleaned = suppressLooseInk(flat);
+  applyMildContrast(cleaned.data);
+  return { ok: true, image: cleaned, corners: detected };
 }
 
 /** Luminance stretch kept small so printed (1)(2)(3) marks stay visible. */
@@ -398,6 +405,153 @@ export function flattenResidualBow(image: Raster): Raster {
   return { width: image.width, height: image.height, data: out };
 }
 
+/** How much column ink-span (bottom − top) varies, as a fraction of height.
+ *  A uniform bow shifts a whole column, so the span stays even and flatten can fix it.
+ *  Top and bottom curling apart stays large after that shift. */
+export function warpConflict(image: Raster): number {
+  const spans = columnSpans(image);
+  if (spans.length < 8) return 0;
+  const sorted = [...spans].sort((a, b) => a - b);
+  const mid = sorted[Math.floor(sorted.length / 2)];
+  const band = Math.max(8, mid * 0.35);
+  const kept = sorted.filter((span) => Math.abs(span - mid) <= band);
+  if (kept.length < 8) return 0;
+  return (kept[kept.length - 1] - kept[0]) / image.height;
+}
+
+export function warpTooSevere(conflict: number): boolean {
+  return conflict > 0.12;
+}
+
+function columnSpans(image: Raster): number[] {
+  const bins = Math.min(24, image.width);
+  const spans: number[] = [];
+  for (let b = 0; b < bins; b++) {
+    const x0 = Math.floor((b * image.width) / bins);
+    const x1 = Math.max(x0 + 1, Math.floor(((b + 1) * image.width) / bins));
+    let top = -1;
+    let bottom = -1;
+    for (let y = 0; y < image.height; y++) {
+      if (!rowHasInk(image, x0, x1, y)) continue;
+      if (top < 0) top = y;
+      bottom = y;
+    }
+    if (top <= 2 || bottom >= image.height - 3) continue;
+    if (bottom > top) spans.push(bottom - top);
+  }
+  return spans;
+}
+
+/** Drop circled and loose pen strokes. Dense printed letters stay. */
+export function suppressLooseInk(image: Raster): Raster {
+  const { width, height } = image;
+  const dark = darkMask(image);
+  const seen = new Uint8Array(width * height);
+  const out = new Uint8ClampedArray(image.data);
+  const stack: number[] = [];
+  const pixels: number[] = [];
+
+  for (let start = 0; start < dark.length; start++) {
+    if (!dark[start] || seen[start]) continue;
+    stack.length = 0;
+    pixels.length = 0;
+    stack.push(start);
+    seen[start] = 1;
+    let minX = width;
+    let minY = height;
+    let maxX = 0;
+    let maxY = 0;
+    while (stack.length > 0) {
+      const idx = stack.pop()!;
+      pixels.push(idx);
+      const x = idx % width;
+      const y = (idx - x) / width;
+      if (x < minX) minX = x;
+      if (y < minY) minY = y;
+      if (x > maxX) maxX = x;
+      if (y > maxY) maxY = y;
+      pushDarkNeighbors(dark, seen, stack, x, y, width, height);
+    }
+    const count = pixels.length;
+    const bw = maxX - minX + 1;
+    const bh = maxY - minY + 1;
+    const area = bw * bh;
+    const loose = area >= 280 && Math.min(bw, bh) >= 16 && count / area < 0.16;
+    if (!loose) continue;
+    for (const idx of pixels) {
+      const x = idx % width;
+      const y = (idx - x) / width;
+      if (locallyDense(dark, x, y, width, height)) continue;
+      const o = idx * 4;
+      out[o] = 255;
+      out[o + 1] = 255;
+      out[o + 2] = 255;
+      out[o + 3] = 255;
+    }
+  }
+  return { width, height, data: out };
+}
+
+function darkMask(image: Raster): Uint8Array {
+  const mask = new Uint8Array(image.width * image.height);
+  for (let y = 0; y < image.height; y++) {
+    for (let x = 0; x < image.width; x++) {
+      if (pixelLum(image, x, y) < 150) mask[y * image.width + x] = 1;
+    }
+  }
+  return mask;
+}
+
+function pushDarkNeighbors(
+  dark: Uint8Array,
+  seen: Uint8Array,
+  stack: number[],
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+) {
+  for (let dy = -1; dy <= 1; dy++) {
+    for (let dx = -1; dx <= 1; dx++) {
+      if (dx === 0 && dy === 0) continue;
+      const nx = x + dx;
+      const ny = y + dy;
+      if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
+      const next = ny * width + nx;
+      if (!dark[next] || seen[next]) continue;
+      seen[next] = 1;
+      stack.push(next);
+    }
+  }
+}
+
+function locallyDense(dark: Uint8Array, x: number, y: number, width: number, height: number): boolean {
+  let ink = 0;
+  let total = 0;
+  for (let dy = -2; dy <= 2; dy++) {
+    for (let dx = -2; dx <= 2; dx++) {
+      const nx = x + dx;
+      const ny = y + dy;
+      if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
+      total++;
+      ink += dark[ny * width + nx];
+    }
+  }
+  return total > 0 && ink / total >= 0.45;
+}
+
+function rowHasInk(image: Raster, x0: number, x1: number, y: number): boolean {
+  for (let x = x0; x < x1; x++) {
+    if (pixelLum(image, x, y) < 170) return true;
+  }
+  return false;
+}
+
+function pixelLum(image: Raster, x: number, y: number): number {
+  const i = (y * image.width + x) * 4;
+  return 0.2126 * image.data[i] + 0.7152 * image.data[i + 1] + 0.0722 * image.data[i + 2];
+}
+
 function columnTops(image: Raster): number[] {
   const bins = Math.min(24, image.width);
   const tops: number[] = [];
@@ -406,13 +560,7 @@ function columnTops(image: Raster): number[] {
     const x1 = Math.max(x0 + 1, Math.floor(((b + 1) * image.width) / bins));
     let top = -1;
     for (let y = 0; y < image.height * 0.45; y++) {
-      let ink = false;
-      for (let x = x0; x < x1; x++) {
-        const i = (y * image.width + x) * 4;
-        const lum = 0.2126 * image.data[i] + 0.7152 * image.data[i + 1] + 0.0722 * image.data[i + 2];
-        if (lum < 170) ink = true;
-      }
-      if (ink) {
+      if (rowHasInk(image, x0, x1, y)) {
         top = y;
         break;
       }

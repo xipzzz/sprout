@@ -12,6 +12,9 @@ import {
   orderCorners,
   residualBow,
   solveHomography,
+  suppressLooseInk,
+  warpConflict,
+  warpTooSevere,
   type Point,
   type Raster,
 } from './deskew';
@@ -137,5 +140,40 @@ const before = residualBow(bowed);
 assert(bowNeedsFlatten(before), 'a bowed top line should ask for a flatten');
 const flat = flattenResidualBow(bowed);
 assert(residualBow(flat) < before, 'flatten should pull the bowed top line straighter');
+assert(!warpTooSevere(warpConflict(bowed)), 'a uniform bow is flattened, not rejected');
+
+const conflicted = raster(80, 60, [250, 250, 250]);
+for (let x = 0; x < conflicted.width; x++) {
+  const wave = Math.sin((x / (conflicted.width - 1)) * Math.PI);
+  setPixel(conflicted, x, Math.round(8 + 14 * wave), [20, 20, 20]);
+  setPixel(conflicted, x, Math.round(50 - 14 * wave), [20, 20, 20]);
+}
+assert(warpTooSevere(warpConflict(conflicted)), 'opposite curl is too warped for the top lines');
+assert(warpTooSevere(warpConflict(flattenResidualBow(conflicted))), 'column shift cannot undo opposite curl');
+
+const curledPage = raster(120, 100, [18, 22, 28]);
+for (let y = 10; y < 90; y++) {
+  for (let x = 14; x < 106; x++) setPixel(curledPage, x, y, [248, 246, 240]);
+}
+for (let x = 20; x < 100; x++) {
+  const wave = Math.sin(((x - 20) / 79) * Math.PI);
+  setPixel(curledPage, x, Math.round(22 + 16 * wave), [20, 20, 20]);
+  setPixel(curledPage, x, Math.round(74 - 16 * wave), [20, 20, 20]);
+}
+const rejected = deskewRaster(curledPage);
+assert(!rejected.ok, 'a page that stays warped should ask for a retake');
+if (!rejected.ok) assert(/too warped/i.test(rejected.message), `retake message: ${rejected.message}`);
+
+const ink = raster(80, 80, [250, 250, 250]);
+for (let y = 30; y < 46; y++) {
+  for (let x = 8; x < 20; x++) setPixel(ink, x, y, [20, 20, 20]);
+}
+for (let deg = 0; deg < 360; deg++) {
+  const rad = (deg * Math.PI) / 180;
+  setPixel(ink, Math.round(48 + 18 * Math.cos(rad)), Math.round(40 + 18 * Math.sin(rad)), [20, 20, 20]);
+}
+const cleaned = suppressLooseInk(ink);
+assert(lum(cleaned, 12, 36) < 80, 'a dense printed block stays');
+assert(lum(cleaned, 48 + 18, 40) > 220, 'a hollow circle is removed');
 
 console.log('deskew tests passed');

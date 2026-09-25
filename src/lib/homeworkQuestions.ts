@@ -9,6 +9,7 @@ import { correctHaveHasForSubject, normalizeHaveHasOcr } from './haveHasOcrRules
 export interface OcrWord {
   text: string;
   confidence: number;
+  bbox?: { x0: number; y0: number; x1: number; y1: number };
 }
 
 export interface DraftQuestion {
@@ -200,6 +201,64 @@ export function parseWorksheetOcr(
       confidence,
     }];
   }).sort((a, b) => questionNumber(a.id) - questionNumber(b.id));
+}
+
+/** A circled mark or pen scribble, not a printed worksheet token. */
+export function isHandwritingToken(word: OcrWord): boolean {
+  const raw = word.text.trim();
+  if (!raw) return true;
+  if (/^\d{1,2}\s*[.)]?$/.test(raw)) return false;
+  if (/[&@#*]/.test(raw) && !/[A-Za-z]{3,}/.test(raw)) return true;
+  const letters = raw.replace(/[^A-Za-z]/g, '');
+  const digits = raw.replace(/[^\d]/g, '');
+  if (digits && letters && letters.length <= 3) return true;
+  const box = word.bbox;
+  if (box) {
+    const w = Math.max(1, box.x1 - box.x0);
+    const h = Math.max(1, box.y1 - box.y0);
+    const ratio = w / h;
+    const squarish = ratio > 0.72 && ratio < 1.4;
+    if (squarish && /^[O0oQq@().]+$/.test(raw)) return true;
+    if (squarish && letters.length <= 2 && word.confidence < 72) return true;
+  }
+  if (word.confidence < 35 && letters.length <= 2 && !/^\d/.test(raw)) return true;
+  return false;
+}
+
+/** Rebuild lines from glyphs that are not handwriting. Empty when every token is ink. */
+export function textFromPrintedGlyphs(words: OcrWord[]): string {
+  const printed = words.filter((word) => word.text.trim() && !isHandwritingToken(word));
+  if (printed.length === 0) return '';
+  if (!printed.some((word) => word.bbox)) return printed.map((word) => word.text.trim()).join(' ');
+  const sorted = [...printed].sort(
+    (a, b) => (a.bbox?.y0 ?? 0) - (b.bbox?.y0 ?? 0) || (a.bbox?.x0 ?? 0) - (b.bbox?.x0 ?? 0),
+  );
+  const lines: OcrWord[][] = [];
+  for (const word of sorted) {
+    const y = word.bbox?.y0 ?? 0;
+    const height = Math.max(8, (word.bbox?.y1 ?? y) - y);
+    const last = lines[lines.length - 1];
+    const lastY = last?.[0]?.bbox?.y0 ?? 0;
+    if (!last || Math.abs(y - lastY) > height * 0.6) lines.push([word]);
+    else last.push(word);
+  }
+  return lines
+    .map((line) => line
+      .sort((a, b) => (a.bbox?.x0 ?? 0) - (b.bbox?.x0 ?? 0))
+      .map((word) => word.text.trim())
+      .join(' '))
+    .join('\n');
+}
+
+/** Prefer the handwriting-filtered read when it still yields numbered questions. */
+export function textWithoutHandwriting(words: OcrWord[] | undefined, raw: string): string {
+  if (!words || words.length === 0) return raw;
+  const printed = textFromPrintedGlyphs(words);
+  if (!printed.trim()) return raw;
+  const fromPrinted = parseWorksheetOcr(printed);
+  if (fromPrinted.length === 0) return raw;
+  const fromRaw = parseWorksheetOcr(raw);
+  return fromPrinted.length >= fromRaw.length ? printed : raw;
 }
 
 export function mergeWorksheetReads(

@@ -3,7 +3,13 @@
 
 import { createWorker, PSM } from 'tesseract.js';
 import { deskewRaster, type Raster } from './deskew';
-import { mergeWorksheetReads, type DraftQuestion, type OcrWord } from './homeworkQuestions';
+import {
+  isHandwritingToken,
+  mergeWorksheetReads,
+  textWithoutHandwriting,
+  type DraftQuestion,
+  type OcrWord,
+} from './homeworkQuestions';
 
 export type StraightenOutcome =
   | { ok: true; previewBlob: Blob; width: number; height: number }
@@ -58,12 +64,19 @@ export async function readStraightenedSheet(previewBlob: Blob): Promise<ReadOutc
     const { data } = await worker.recognize(previewBlob);
     const words = collectWords(data);
     let topText = '';
+    let topWords: OcrWord[] = [];
     try {
       const topBlob = await cropTopBlob(previewBlob);
       const top = await worker.recognize(topBlob);
       topText = top.data?.text || '';
+      topWords = collectWords(top.data);
     } catch { /* the full-page read still stands */ }
-    const questions = mergeWorksheetReads(data.text || '', topText, words, data.confidence ?? 50);
+    const questions = mergeWorksheetReads(
+      textWithoutHandwriting(words, data.text || ''),
+      textWithoutHandwriting(topWords, topText),
+      words.filter((word) => !isHandwritingToken(word)),
+      data.confidence ?? 50,
+    );
     if (questions.length === 0) {
       return {
         ok: false,
@@ -117,9 +130,15 @@ async function fileToRaster(file: File, maxEdge: number): Promise<Raster> {
   return { width, height, data: image.data };
 }
 
+interface TessWord {
+  text: string;
+  confidence: number;
+  bbox?: { x0: number; y0: number; x1: number; y1: number };
+}
+
 function collectWords(data: {
-  words?: { text: string; confidence: number }[];
-  blocks: { paragraphs: { lines: { words: { text: string; confidence: number }[] }[] }[] }[] | null;
+  words?: TessWord[];
+  blocks: { paragraphs: { lines: { words: TessWord[] }[] }[] }[] | null;
 }): OcrWord[] {
   const direct = data.words || [];
   const source = direct.length > 0 ? direct : (data.blocks || []).flatMap((block) =>
@@ -129,7 +148,11 @@ function collectWords(data: {
   );
   return source
     .filter((word) => word.text && word.text.trim())
-    .map((word) => ({ text: word.text, confidence: word.confidence }));
+    .map((word) => ({
+      text: word.text,
+      confidence: word.confidence,
+      bbox: word.bbox,
+    }));
 }
 
 function rasterToJpeg(raster: Raster): Promise<Blob> {
