@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pip idle — new vs old</title>
+<style>
+  :root {
+    --bg: #FDF8EE;
+    --ink: #24301c;
+    --muted: #5c6b52;
+    --green: #6fbf5e;
+    --green-strong: #4d9e3f;
+    --green-deep: #3fa52e;
+    --line: #e4dccb;
+    --ease: cubic-bezier(0.45, 0.05, 0.55, 0.95);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: Nunito, ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
+    color: var(--ink);
+    background:
+      radial-gradient(90% 50% at 50% -10%, #fff 0%, var(--bg) 55%);
+    line-height: 1.45;
+  }
+  main { max-width: 980px; margin: 0 auto; padding: 28px 20px 64px; }
+  h1 { font-size: 1.7rem; margin: 0 0 6px; letter-spacing: -0.02em; }
+  h2 { font-size: 1.05rem; margin: 0 0 4px; }
+  p { margin: 0; }
+  .lede { color: var(--muted); max-width: 62ch; }
+  .bar {
+    display: flex; flex-wrap: wrap; gap: 12px 18px;
+    align-items: center; margin: 18px 0;
+  }
+  .switch {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: #fff; border: 1px solid var(--line); border-radius: 999px;
+    padding: 8px 14px 8px 8px; font-weight: 800; cursor: pointer;
+  }
+  .switch input { width: 22px; height: 22px; accent-color: var(--green-strong); }
+  .clock {
+    width: 120px; height: 10px; border-radius: 999px; background: #efe6d4;
+    overflow: hidden; flex: none;
+  }
+  .clock i {
+    display: block; width: 36%; height: 100%; border-radius: inherit;
+    background: var(--green-strong);
+    animation: clock 1.4s ease-in-out infinite;
+  }
+  @keyframes clock {
+    0%, 100% { transform: translateX(0); }
+    50% { transform: translateX(180%); }
+  }
+  .banner {
+    display: none; margin: 0 0 16px; padding: 12px 14px; border-radius: 14px;
+    background: #fff4d6; border: 1px solid #e6c56a; font-weight: 700;
+  }
+  body.os-reduce .banner { display: block; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+  .card {
+    background: #fff; border: 1px solid var(--line); border-radius: 22px;
+    padding: 16px; box-shadow: 0 10px 30px rgba(60, 40, 10, 0.05);
+  }
+  .card--new { outline: 3px solid var(--green); }
+  .tag {
+    display: inline-block; font-size: 0.75rem; font-weight: 800;
+    letter-spacing: 0.06em; text-transform: uppercase; color: var(--green-deep);
+    margin-bottom: 6px;
+  }
+  .stage {
+    display: grid; place-items: center; height: 280px; border-radius: 18px;
+    background:
+      radial-gradient(circle at 50% 78%, #e7f3df 0 18%, transparent 19%),
+      linear-gradient(#f7f1e4, #f3ecdf);
+  }
+  .stage svg { width: 220px; height: 220px; }
+  .sizes { display: flex; gap: 10px; margin-top: 12px; align-items: flex-end; }
+  .chip {
+    display: grid; place-items: center; border-radius: 16px; padding: 8px;
+  }
+  .chip span { font-size: 0.72rem; font-weight: 800; color: var(--muted); margin-top: 4px; }
+  .chip--today {
+    background: linear-gradient(180deg, var(--green), var(--green-strong));
+    color: #fff;
+  }
+  .chip--today span { color: rgba(255,255,255,.85); }
+  .chip--path { background: #fff; border: 1px solid var(--line); }
+  .chip--today svg { width: 58px; height: 58px; }
+  .chip--path svg { width: 62px; height: 62px; }
+  .note { color: var(--muted); font-size: 0.92rem; margin-top: 10px; }
+  .strip { margin-top: 22px; }
+  .poses { display: flex; gap: 12px; flex-wrap: wrap; }
+  .pose {
+    background: #fff; border: 1px solid var(--line); border-radius: 16px;
+    padding: 8px 10px 10px; text-align: center;
+  }
+  .pose svg { width: 120px; height: 120px; display: block; }
+  .pose figcaption { font-size: 0.8rem; font-weight: 800; color: var(--muted); }
+  #proof {
+    margin-top: 14px; font-weight: 800; padding: 10px 12px; border-radius: 12px;
+    background: #e9f6e3;
+  }
+  #proof.warn { background: #ffe6e2; }
+  .clip { margin: 16px 0 0; }
+  .clip img { width: min(100%, 720px); height: auto; border-radius: 16px; border: 1px solid var(--line); background: #f3ecdf; }
+  .clip figcaption { color: var(--muted); font-size: 0.92rem; margin-top: 8px; }
+  footer { margin-top: 22px; color: var(--muted); font-size: 0.92rem; }
+  footer code { font-size: 0.86em; background: #fff; padding: 1px 5px; border-radius: 6px; }
+  /* Demo motion is NOT gated on prefers-reduced-motion. The toggle opts out. */
+  body.is-still .live .pip,
+  body.is-still .live .pip *,
+  body.is-still .clock i { animation: none !important; }
+
+  .pip { display: block; overflow: visible; }
+  .pip__leaves, .pip__leaf, .pip__body, .pip__glance, .pip__eyes {
+    transform-box: view-box;
+    transform-origin: 0 0;
+  }
+  .pip--idle { transform-origin: 50% 88%; animation: pip-idle-sway 4.6s var(--ease) infinite; }
+  .pip--idle .pip__body { animation: pip-idle-breath 2.9s var(--ease) infinite; }
+  .pip--idle .pip__leaves { animation: pip-idle-stem 5.5s cubic-bezier(0.42, 0.02, 0.58, 0.98) infinite; }
+  .pip--idle .pip__leaf--l { animation: pip-idle-leaf-l 3.4s var(--ease) infinite; }
+  .pip--idle .pip__leaf--r {
+    animation: pip-idle-leaf-r 3.95s var(--ease) infinite;
+    animation-delay: -0.85s;
+  }
+  .pip--idle .pip__glance { animation: pip-idle-glance 7.3s var(--ease) infinite; }
+  .pip--idle .pip__eyes { animation: pip-idle-blink 9.2s linear infinite; }
+  .pip--idle .pip__sheen { animation: pip-idle-sheen 4.2s ease-in-out infinite; }
+
+  .pip--old { transform-origin: 50% 92%; animation: old-sway 4.7s var(--ease) infinite; }
+  .pip--old .pip__body { animation: old-breath 3.2s var(--ease) infinite; }
+  .pip--old .pip__leaves { animation: old-leaf 5.35s cubic-bezier(0.42, 0.02, 0.58, 0.98) infinite; }
+  .pip--old .pip__eyes { animation: old-blink 4.2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+
+  .pose .pip, .pose .pip * { animation-play-state: paused !important; }
+  .pose-rest .pip, .pose-rest .pip * { animation-delay: 0s !important; }
+  .pose-inhale .pip--idle { animation-delay: -1.56s; }
+  .pose-inhale .pip--idle .pip__body { animation-delay: -1.45s; }
+  .pose-inhale .pip--idle .pip__leaves { animation-delay: -1.98s; }
+  .pose-inhale .pip--idle .pip__leaf--l { animation-delay: -1.43s; }
+  .pose-inhale .pip--idle .pip__leaf--r { animation-delay: -2.15s; }
+  .pose-inhale .pip--idle .pip__sheen { animation-delay: -1.89s; }
+  .pose-blink .pip--idle .pip__eyes { animation-delay: -0.86s; }
+
+  @keyframes pip-idle-sway {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    32%      { transform: translateY(3.5%) rotate(-5deg); }
+    68%      { transform: translateY(-2.5%) rotate(4.2deg); }
+  }
+  @keyframes pip-idle-breath {
+    0%, 100% { transform: matrix(1, 0, 0, 1, 0, 0); }
+    50%      { transform: matrix(0.8772, 0, 0, 1.14, 4.912, -9.94); }
+  }
+  @keyframes pip-idle-stem {
+    0%, 100% { transform: matrix(1, 0, 0, 1, 0, 0); }
+    36%      { transform: matrix(0.99897, -0.04536, 0.04536, 0.99897, -2.04552, 1.86187); }
+    70%      { transform: matrix(0.99926, 0.03839, -0.03839, 0.99926, 1.79532, -1.50161); }
+  }
+  @keyframes pip-idle-leaf-l {
+    0%, 100% { transform: matrix(1, 0, 0, 1, 0, 0); }
+    42%      { transform: matrix(0.99027, -0.13917, 0.13917, 0.99027, -3.50757, 5.83942); }
+    74%      { transform: matrix(0.99357, 0.1132, -0.1132, 0.99357, 3.42682, -4.34814); }
+  }
+  @keyframes pip-idle-leaf-r {
+    0%, 100% { transform: matrix(1, 0, 0, 1, 0, 0); }
+    33%      { transform: matrix(0.99144, 0.13053, -0.13053, 0.99144, 3.99694, -4.9815); }
+    68%      { transform: matrix(0.99452, -0.10453, 0.10453, 0.99452, -2.70767, 4.33453); }
+  }
+  @keyframes pip-idle-glance {
+    0%, 82%, 100% { transform: matrix(1, 0, 0, 1, 0, 0); }
+    18%, 42%      { transform: matrix(1, 0, 0, 1, 1.7, 0.1); }
+    63%           { transform: matrix(1, 0, 0, 1, -1.45, 0); }
+  }
+  @keyframes pip-idle-blink {
+    0%, 7.8%, 10.6%, 55%, 57.8%, 60.4%, 100% { transform: matrix(1, 0, 0, 1, 0, 0); }
+    8.8%, 9.8%, 56%, 56.9%                   { transform: matrix(1, 0, 0, 0.08, 0, 46.46); }
+    58.6%, 59.4%                             { transform: matrix(1, 0, 0, 0.12, 0, 44.44); }
+  }
+  @keyframes pip-idle-sheen {
+    0%, 100% { opacity: 0.05; }
+    45%      { opacity: 0.22; }
+    70%      { opacity: 0.08; }
+  }
+  @keyframes old-sway {
+    0%, 100% { transform: rotate(0deg); }
+    28%      { transform: rotate(-2.2deg); }
+    62%      { transform: rotate(1.8deg); }
+  }
+  @keyframes old-breath {
+    0%, 100% { transform: matrix(1, 0, 0, 1, 0, 0); }
+    50%      { transform: matrix(0.957, 0, 0, 1.045, 1.72, -3.195); }
+  }
+  @keyframes old-leaf {
+    0%, 100% { transform: matrix(1, 0, 0, 1, 0, 0); }
+    38%      { transform: matrix(0.99844, -0.05582, 0.05582, 0.99844, -2.50542, 2.30459); }
+    72%      { transform: matrix(0.99881, 0.04885, -0.04885, 0.99881, 2.29484, -1.89907); }
+  }
+  @keyframes old-blink {
+    0%, 86%, 100% { transform: matrix(1, 0, 0, 1, 0, 0); }
+    87.4%, 89.8%  { transform: matrix(1, 0, 0, 0.08, 0, 46.46); }
+    91.1%         { transform: matrix(1, 0, 0, 1, 0, 0); }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>Pip idle</h1>
+  <p class="lede">New is the idle on Today and the current path node. Old is the previous loop, same art, played here on purpose. Both run even when the Mac has Reduce Motion turned on. The Sprout app does not — it still honors that setting and Calm motion.</p>
+
+  <div class="banner" id="banner">
+    Reduce Motion is on for this device. This page still plays the demo. In the app, Pip stays on the resting drawing.
+  </div>
+
+  <div class="bar">
+    <label class="switch">
+      <input id="play" type="checkbox" checked>
+      Demo motion
+    </label>
+    <div class="clock" aria-hidden="true"><i></i></div>
+    <span class="lede">The bar moves while the demo is playing.</span>
+  </div>
+
+  <div class="grid">
+    <section class="card">
+      <div class="tag">Old</div>
+      <h2>Previous loop</h2>
+      <p class="note">About ±2° of tilt and a 4% breath. Easy to read as a still image, especially at 58px.</p>
+      <div class="stage live" id="old-stage"></div>
+      <div class="sizes live" id="old-sizes"></div>
+    </section>
+    <section class="card card--new">
+      <div class="tag">New</div>
+      <h2>Layered idle</h2>
+      <p class="note">Feet sway, a taller breath, leaves on their own clocks, a blink, a glance, and a soft highlight.</p>
+      <div class="stage live" id="new-stage"></div>
+      <div class="sizes live" id="new-sizes"></div>
+    </section>
+  </div>
+
+  <section class="strip">
+    <h2>Still frames of the new idle</h2>
+    <p class="note">These are paused on purpose, so a screenshot still shows three different drawings.</p>
+    <div class="poses">
+      <figure class="pose pose-rest"><div id="pose-rest"></div><figcaption>Rest</figcaption></figure>
+      <figure class="pose pose-inhale"><div id="pose-inhale"></div><figcaption>Inhale</figcaption></figure>
+      <figure class="pose pose-blink"><div id="pose-blink"></div><figcaption>Blink</figcaption></figure>
+    </div>
+    <p id="proof">Checking that the live drawing is changing…</p>
+    <figure class="clip">
+      <img src="pip-idle-demo.gif" width="720" alt="Old Pip on the left and new Pip on the right, both idling.">
+      <figcaption>Recorded while Reduce Motion was on. Left is the old loop, right is the new one. This file still moves in a review tool that does not run CSS.</figcaption>
+    </figure>
+  </section>
+
+  <footer>
+    <p>From the Sprout repo, run <code>npm run dev</code> and open <code>/pip-idle-preview.html</code>. The dev server listens on port 5173. On a phone, use your computer’s LAN address and that same path. The file is also fine opened on its own — nothing is fetched.</p>
+    <p style="margin-top:8px">App behavior stays in <code>src/styles/app.css</code> inside <code>prefers-reduced-motion: no-preference</code>, plus <code>body.calm-motion</code>. Notes: <code>docs/PIP-IDLE.md</code>.</p>
+  </footer>
+</main>
+
+<template id="tpl-new">
+  <svg class="pip pip--idle" viewBox="0 0 80 80" role="img" aria-label="Pip, new idle">
+    <g class="pip__leaves">
+      <rect x="37.5" y="22" width="5" height="24" rx="2.5" fill="var(--green-deep)" />
+      <g class="pip__leaf pip__leaf--l">
+        <ellipse cx="31" cy="24" rx="15" ry="8.5" fill="var(--green)" transform="rotate(-32 40 28)" />
+      </g>
+      <g class="pip__leaf pip__leaf--r">
+        <ellipse cx="49" cy="24" rx="15" ry="8.5" fill="var(--green-strong)" transform="rotate(32 40 28)" />
+      </g>
+      <circle cx="40" cy="26" r="2.8" fill="var(--green-deep)" />
+    </g>
+    <g class="pip__body">
+      <circle cx="40" cy="53" r="18" fill="var(--green)" />
+      <circle class="pip__sheen" cx="40" cy="53" r="18" fill="#ffffff" opacity="0.06" />
+      <g class="pip__glance">
+        <g class="pip__eyes">
+          <circle cx="34" cy="50.5" r="2.9" fill="#2f3b24" />
+          <circle cx="46" cy="50.5" r="2.9" fill="#2f3b24" />
+        </g>
+      </g>
+      <path d="M31.5 56.5 q8.5 9 17 0" stroke="#2f3b24" stroke-width="2.6" fill="none" stroke-linecap="round" />
+      <circle cx="28.5" cy="56" r="2.6" fill="#ffffff" opacity="0.28" />
+      <circle cx="51.5" cy="56" r="2.6" fill="#ffffff" opacity="0.28" />
+    </g>
+  </svg>
+</template>
+<template id="tpl-old">
+  <svg class="pip pip--old" viewBox="0 0 80 80" role="img" aria-label="Pip, previous idle">
+    <g class="pip__leaves">
+      <rect x="37.5" y="22" width="5" height="24" rx="2.5" fill="var(--green-deep)" />
+      <ellipse cx="31" cy="24" rx="15" ry="8.5" fill="var(--green)" transform="rotate(-32 40 28)" />
+      <ellipse cx="49" cy="24" rx="15" ry="8.5" fill="var(--green-strong)" transform="rotate(32 40 28)" />
+      <circle cx="40" cy="26" r="2.8" fill="var(--green-deep)" />
+    </g>
+    <g class="pip__body">
+      <circle cx="40" cy="53" r="18" fill="var(--green)" />
+      <circle cx="40" cy="53" r="18" fill="#ffffff" opacity="0.06" />
+      <g class="pip__eyes">
+        <circle cx="34" cy="50.5" r="2.9" fill="#2f3b24" />
+        <circle cx="46" cy="50.5" r="2.9" fill="#2f3b24" />
+      </g>
+      <path d="M31.5 56.5 q8.5 9 17 0" stroke="#2f3b24" stroke-width="2.6" fill="none" stroke-linecap="round" />
+      <circle cx="28.5" cy="56" r="2.6" fill="#ffffff" opacity="0.28" />
+      <circle cx="51.5" cy="56" r="2.6" fill="#ffffff" opacity="0.28" />
+    </g>
+  </svg>
+</template>
+<script>
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce) document.body.classList.add('os-reduce');
+
+  function mount(templateId, host) {
+    const node = document.getElementById(templateId).content.cloneNode(true);
+    host.appendChild(node);
+  }
+  function chip(templateId, kind, label) {
+    const el = document.createElement('div');
+    el.className = 'chip chip--' + kind;
+    mount(templateId, el);
+    const cap = document.createElement('span');
+    cap.textContent = label;
+    el.appendChild(cap);
+    return el;
+  }
+
+  mount('tpl-old', document.getElementById('old-stage'));
+  mount('tpl-new', document.getElementById('new-stage'));
+  document.getElementById('old-sizes').append(
+    chip('tpl-old', 'today', '58px Today'),
+    chip('tpl-old', 'path', '62px path')
+  );
+  document.getElementById('new-sizes').append(
+    chip('tpl-new', 'today', '58px Today'),
+    chip('tpl-new', 'path', '62px path')
+  );
+  mount('tpl-new', document.getElementById('pose-rest'));
+  mount('tpl-new', document.getElementById('pose-inhale'));
+  mount('tpl-new', document.getElementById('pose-blink'));
+
+  document.getElementById('play').addEventListener('change', (event) => {
+    document.body.classList.toggle('is-still', !event.target.checked);
+  });
+
+  const proof = document.getElementById('proof');
+  const body = document.querySelector('#new-stage .pip__body');
+  const samples = [];
+  const started = performance.now();
+  function sample() {
+    const box = body.getBoundingClientRect();
+    samples.push(box.height);
+    if (performance.now() - started < 1600) {
+      requestAnimationFrame(sample);
+      return;
+    }
+    const min = Math.min(...samples);
+    const max = Math.max(...samples);
+    const delta = max - min;
+    if (delta < 1) {
+      proof.className = 'warn';
+      proof.textContent = 'Live motion check failed: the body box did not change. The still frames above should still differ.';
+      return;
+    }
+    proof.textContent = 'Live motion check: the body box height changed by ' + delta.toFixed(1) + 'px while you were looking.';
+  }
+  requestAnimationFrame(sample);
+</script>
+</body>
+</html>

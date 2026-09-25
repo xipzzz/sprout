@@ -98,7 +98,7 @@ export default function HomeScreen({ completed, focusTarget, onFocusSettled, onS
                 {current ? `${current.section} · a short, calm lesson` : 'Your garden is resting — come back soon 🌱'}
               </p>
             </div>
-            <Pip className="today__pip" />
+            <Pip className="today__pip" idle />
           </div>
           <button
             type="button"
