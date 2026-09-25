@@ -2352,3 +2352,138 @@ body.calm-motion *, body.calm-motion *::before, body.calm-motion *::after { anim
 .cta-bottom-safe {
   padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px) + 56px);
 }
+
+/* Unit game path — labels under each node, cream intro with Pip */
+.node-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.node-wrap--labeled { width: 148px; }
+.node__label {
+  margin-top: 8px;
+  max-width: 140px;
+  text-align: center;
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1.2;
+  color: var(--ink-soft);
+}
+.node-wrap:has(.node--locked) .node__label { color: var(--locked-ink); }
+.node-wrap:has(.node--done) .node__label { color: var(--green-strong); }
+.path--labeled { padding-top: 36px; }
+.path--labeled .path__nodes { gap: 36px; }
+
+.unit-path .screen__body { padding-bottom: calc(28px + env(safe-area-inset-bottom)); }
+.unit-path__intro {
+  display: flex;
+  align-items: center;
+  gap: var(--s4);
+  margin: var(--s2) var(--s5) 0;
+  padding: var(--s4);
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+}
+.unit-path__pip { width: 64px; height: 64px; flex: none; }
+.unit-path__meta { margin: 4px 0 0; font-weight: 800; color: var(--ink-soft); }
+
+/* Cloze, grammar form, which-sentence, and tile blank */
+.cloze, .judge, .grammar { padding: var(--s2) var(--s4) var(--s6); }
+.cloze__card, .judge__statement {
+  margin: var(--s4) 0 0;
+  padding: var(--s5);
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  border: 2px solid var(--line);
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1.7;
+  text-align: center;
+}
+.cloze__slot {
+  display: inline-block;
+  min-width: 4.6rem;
+  min-height: 1.5em;
+  margin: 0 4px;
+  padding: 0 10px;
+  vertical-align: baseline;
+  border-radius: 10px;
+  background: var(--green-tint);
+  border: 2px dashed var(--green);
+}
+.cloze__slot--filled {
+  border-style: solid;
+  background: #fff;
+  color: var(--green-strong);
+}
+.cloze__options, .fill__bank {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--s3);
+  margin-top: var(--s5);
+}
+.cloze__opt, .judge__opt, .grammar__opt {
+  min-height: 52px;
+  padding: 12px 18px;
+  border-radius: 16px;
+  background: var(--surface);
+  border: 2px solid var(--line);
+  border-bottom-width: 4px;
+  font-weight: 800;
+  font-size: 1.05rem;
+  color: var(--ink);
+  box-shadow: var(--shadow-sm);
+}
+.cloze__opt--selected, .judge__opt--selected, .grammar__opt--selected {
+  border-color: var(--water);
+  background: var(--water-tint);
+}
+.cloze__opt--correct, .judge__opt--correct, .grammar__opt--correct {
+  border-color: var(--green);
+  background: var(--green-tint);
+}
+.cloze__opt--wrong, .judge__opt--wrong, .grammar__opt--wrong {
+  border-color: var(--clay);
+  background: var(--clay-tint);
+}
+.judge__list, .grammar__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  margin-top: var(--s5);
+}
+.judge__tf {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s3);
+  margin-top: var(--s5);
+}
+.grammar__opt, .judge__opt { width: 100%; }
+.grammar__opt { font-size: 1.25rem; }
+.judge__opt { text-align: left; }
+.judge__tf .judge__opt { text-align: center; }
+.fill__slot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 5.5rem;
+  min-height: 44px;
+  margin: 0 4px;
+  padding: 0 12px;
+  border-radius: 12px;
+  background: var(--green-tint);
+  border: 2px dashed var(--green);
+  font: inherit;
+  font-weight: 800;
+  color: var(--ink-muted);
+  vertical-align: middle;
+}
+.fill__slot--filled {
+  border-style: solid;
+  background: #fff;
+  color: var(--green-strong);
+}
+.word-tile--ghost { opacity: 0.35; }

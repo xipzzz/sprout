@@ -12,6 +12,8 @@ interface MultipleChoiceProps {
   answerId: string;
   revealed: boolean;
   onSelect: (id: string) => void;
+  /** Show the word on each card while answering (text + image). */
+  showLabels?: boolean;
 }
 
 /* Deterministic shuffle: the correct answer must NOT always be first, but the
@@ -91,7 +93,7 @@ function ChoicePicture({ choice }: { choice: Choice }) {
 }
 
 export default function MultipleChoice({
-  word, choices, selectedId, answerId, revealed, onSelect,
+  word, choices, selectedId, answerId, revealed, onSelect, showLabels = false,
 }: MultipleChoiceProps) {
   const ordered = useMemo(() => shuffleChoices(choices, `${word}:${answerId}`), [choices, word, answerId]);
   return (
@@ -115,8 +117,8 @@ export default function MultipleChoice({
               onClick={() => onSelect(c.id)}
             >
               <ChoicePicture choice={c} />
-              {/* Word hidden while answering. Shown on reveal to reinforce it. */}
-              {revealed && <span className="choice__label">{c.label}</span>}
+              {/* Picture-only until reveal, unless this game is text + image. */}
+              {(revealed || showLabels) && <span className="choice__label">{c.label}</span>}
               {/* Color-blind-safe state badge on reveal (per the design: ✓/✗). */}
               {revealed && c.id === answerId && (
                 <span className="choice__badge choice__badge--ok" aria-hidden="true">✓</span>

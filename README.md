@@ -39,10 +39,15 @@ src/
 ## How content works (`src/data/course.ts`)
 
 - The course is **5 sections × 7–8 units** (38 units), all authored in English.
+- Home **Today** opens a unit's **game path**. Each node is one game. Finishing
+  a game returns to that path with the node grown; finishing the path marks the
+  unit done and returns to the course path.
 - Each lesson is a list of **exercises** — a discriminated union by `kind`:
-  `choice` (tap the picture) · `arrange` (build a sentence, drag to reorder) ·
-  `match` (word ↔ picture, optional audio) · `fill` (type the word) ·
-  `listen` (type/tap what you hear, via the browser's speech).
+  `choice` (MC text/image) · `cloze` (cloze MC) · `match` (pairs) ·
+  `arrange` (word bank) · `judge` (true/false or which sentence) ·
+  `grammar` (form select) · `listen` (listen & tap via speech synthesis, no mic) ·
+  `fill` (type the word, or tap a tile when `tiles` is set).
+  Speak / speech-recognition games are not part of v1.
 - Two builders keep it terse: **`vocabLesson()`** (picture units) and
   **`sentenceLesson()`** (grammar units). `getLesson(unitId)` returns a unit's lesson,
   falling back to a gentle review so every tap is always playable.

@@ -95,7 +95,7 @@ export default function HomeScreen({ completed, focusTarget, onFocusSettled, onS
               <p className="today__eyebrow">Today</p>
               <h2 className="today__title">{current ? current.title : 'All caught up!'}</h2>
               <p className="today__meta">
-                {current ? `${current.section} · a short, calm lesson` : 'Your garden is resting — come back soon 🌱'}
+                {current ? `${current.section} · a little path of games` : 'Your garden is resting — come back soon 🌱'}
               </p>
             </div>
             <Pip className="today__pip" />
@@ -105,7 +105,7 @@ export default function HomeScreen({ completed, focusTarget, onFocusSettled, onS
             className="btn-primary today__cta"
             onClick={() => onStartUnit(current ? current.id : allUnits[0].id)}
           >
-            {current ? "Start today's lesson" : 'Practice a lesson'}
+            {current ? "Play today's path" : 'Practice a lesson'}
           </button>
           {onOpenScan && (
             <button
