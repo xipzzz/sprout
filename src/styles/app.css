@@ -205,11 +205,63 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .scan__lead { margin: 0; font-weight: 700; color: var(--ink); line-height: 1.35; }
 .scan__preview {
   width: 100%;
-  max-height: 220px;
-  object-fit: cover;
+  max-height: 280px;
+  object-fit: contain;
   border-radius: var(--r-md);
   border: 2px solid var(--line);
+  background: #1c1917;
 }
+.scan__figure { margin: 0; }
+.scan__caption {
+  margin: 6px 0 0;
+  font-size: var(--fs-caption);
+  font-weight: 800;
+  color: var(--ink-soft);
+}
+.scan__verify { display: flex; flex-direction: column; gap: var(--s4); }
+.scan__cards { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--s4); }
+.scan__card {
+  padding: var(--s4);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  border: 2px solid var(--line);
+  box-shadow: var(--shadow-sm);
+}
+.scan__card--accepted { border-color: var(--green); }
+.scan__card--dropped { opacity: 0.72; }
+.scan__card-head { display: flex; justify-content: space-between; gap: var(--s3); align-items: center; }
+.scan__card-index { font-weight: 900; color: var(--ink); }
+.scan__conf {
+  font-size: var(--fs-caption);
+  font-weight: 800;
+  color: var(--green-deep);
+  background: var(--green-tint);
+  border-radius: var(--r-pill);
+  padding: 4px 10px;
+}
+.scan__conf--low { color: var(--clay-deep); background: var(--clay-tint); }
+.scan__stem { margin: var(--s3) 0 0; font-weight: 800; line-height: 1.35; }
+.scan__choice-list { margin: var(--s3) 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.scan__choice-list li {
+  padding: 8px 12px;
+  border-radius: var(--r-md);
+  background: var(--cream-bg);
+  font-weight: 800;
+}
+.scan__choice-list li.is-correct { background: var(--green-tint); color: var(--green-deep); }
+.scan__gate { margin: var(--s3) 0 0; font-size: var(--fs-caption); font-weight: 800; color: var(--ink-soft); }
+.scan__gate--block { color: var(--clay-deep); }
+.scan__dropped { margin: var(--s3) 0 0; font-weight: 800; color: var(--ink-muted); }
+.scan__card-actions { display: flex; gap: var(--s3); align-items: center; margin-top: var(--s3); }
+.scan__accept {
+  padding: 8px 14px;
+  border-radius: var(--r-pill);
+  background: var(--green);
+  color: white;
+  font-weight: 900;
+}
+.scan__accept:disabled { background: var(--cream-deep); color: var(--ink-muted); cursor: default; }
+.scan__text-btn { font-weight: 800; color: var(--ink-soft); text-decoration: underline; }
 .scan__key-note {
   margin: 0;
   padding: var(--s3) var(--s4);
@@ -2330,6 +2382,19 @@ body.calm-motion *, body.calm-motion *::before, body.calm-motion *::after { anim
   filter: brightness(0.96);
 }
 
+.lesson__stars {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--s3);
+  padding: var(--s8) var(--s5);
+}
+.lesson__stars-title { margin: 0; font-size: var(--fs-h1); }
+.lesson__stars-row { margin: 0; font-size: 2.4rem; letter-spacing: 0.12em; }
+.lesson__stars-row .is-on { color: var(--gold); }
+.lesson__stars-row .is-off { color: var(--line); }
+.lesson__stars-sub { margin: 0; font-weight: 800; color: var(--ink-soft); }
 .lesson--sot .lesson__foot--has-sheet {
   padding-bottom: 0;
   border-top: 0;

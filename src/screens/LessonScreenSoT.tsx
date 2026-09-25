@@ -10,6 +10,8 @@ import { useCallback, useEffect, useState } from 'react';
 import WordPick from '../components/WordPick';
 import PipPose from '../components/PipPose';
 import { playSproutFeedback } from '../utils/feedback';
+import type { PlayableQuestion } from '../lib/homeworkQuestions';
+import { starsForAccuracy } from '../lib/lessonStars';
 
 interface Question {
   prompt: string;
@@ -63,10 +65,11 @@ const QUESTIONS: Question[] = [
 interface LessonScreenSoTProps {
   onExit: () => void;
   onComplete?: () => void;
-  questions?: Question[];
+  /** Scanned lessons must pass the accepted sheet. The built-in list is only the ?sot=1 preview. */
+  questions?: Question[] | PlayableQuestion[];
 }
 
-type Phase = 'question' | 'selected' | 'check' | 'feedback';
+type Phase = 'question' | 'selected' | 'check' | 'feedback' | 'done';
 type Result = 'correct' | 'almost';
 
 export default function LessonScreenSoT({ onExit, onComplete, questions }: LessonScreenSoTProps) {
@@ -74,8 +77,9 @@ export default function LessonScreenSoT({ onExit, onComplete, questions }: Lesso
   const [selected, setSelected] = useState<string | null>(null);
   const [phase, setPhase] = useState<Phase>('question');
   const [result, setResult] = useState<Result>('correct');
+  const [correctCount, setCorrectCount] = useState(0);
 
-  const activeQuestions = questions || QUESTIONS;
+  const activeQuestions = questions ?? QUESTIONS;
   const q = activeQuestions[index];
   const total = activeQuestions.length;
 
@@ -98,7 +102,10 @@ export default function LessonScreenSoT({ onExit, onComplete, questions }: Lesso
     setTimeout(() => {
       const isCorrect = selected === q.correct;
       setResult(isCorrect ? 'correct' : 'almost');
-      if (isCorrect) playSproutFeedback('correct');
+      if (isCorrect) {
+        setCorrectCount((count) => count + 1);
+        playSproutFeedback('correct');
+      }
       setPhase('feedback');
     }, 180);
   }, [phase, selected, q.correct]);
@@ -106,13 +113,14 @@ export default function LessonScreenSoT({ onExit, onComplete, questions }: Lesso
   const onAdvance = useCallback(() => {
     if (phase !== 'feedback') return;
     if (index + 1 >= total) {
-      if (onComplete) onComplete();
+      playSproutFeedback('complete');
+      setPhase('done');
       return;
     }
     setIndex((i) => i + 1);
     setSelected(null);
     setPhase('question');
-  }, [phase, index, total, onComplete]);
+  }, [phase, index, total]);
 
   useEffect(() => {
     function handleKeyboard(event: KeyboardEvent) {
@@ -125,8 +133,51 @@ export default function LessonScreenSoT({ onExit, onComplete, questions }: Lesso
     return () => window.removeEventListener('keydown', handleKeyboard);
   }, [phase, onCheck, onAdvance]);
 
-  const pipPose = phase === 'feedback' && result === 'correct' ? 'correct' : phase === 'feedback' && result === 'almost' ? 'almost' : 'neutral';
-  const showBubble = phase !== 'feedback';
+  const pipPose = phase === 'feedback' && result === 'correct' ? 'correct' : phase === 'feedback' && result === 'almost' ? 'almost' : phase === 'done' ? 'correct' : 'neutral';
+  const showBubble = phase !== 'feedback' && phase !== 'done';
+  const stars = starsForAccuracy(correctCount, total);
+
+  if (phase === 'done') {
+    return (
+      <div className="screen lesson lesson--sot">
+        <header className="lesson__top">
+          <button
+            type="button"
+            className="lesson__close"
+            onClick={() => {
+              playSproutFeedback('modalOpen');
+              onExit();
+            }}
+            aria-label="Close lesson"
+          >
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M6 6l12 12M18 6L6 18" />
+            </svg>
+          </button>
+          <div className="lesson__progress-bar" role="progressbar" aria-valuenow={100} aria-valuemin={0} aria-valuemax={100}>
+            <i className="lesson__progress-fill" style={{ width: '100%' }} />
+          </div>
+        </header>
+        <main className="screen__body lesson__stars">
+          <div className="lesson__pip-wrap lesson__pip-wrap--proud" aria-hidden="true">
+            <PipPose pose="correct" />
+          </div>
+          <h2 className="lesson__stars-title">Lesson complete</h2>
+          <p className="lesson__stars-row" aria-label={`${stars} stars`}>
+            {[1, 2, 3, 4, 5].map((n) => (
+              <span key={n} className={n <= stars ? 'is-on' : 'is-off'} aria-hidden="true">★</span>
+            ))}
+          </p>
+          <p className="lesson__stars-sub">{stars} stars · {correctCount} of {total} correct</p>
+        </main>
+        <footer className="lesson__foot">
+          <button type="button" className="lesson__check" onClick={() => onComplete?.()}>
+            Continue
+          </button>
+        </footer>
+      </div>
+    );
+  }
 
   return (
     <div className="screen lesson lesson--sot">
