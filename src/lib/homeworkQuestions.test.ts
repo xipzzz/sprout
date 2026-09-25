@@ -62,6 +62,11 @@ for (const draft of drafts) {
   }
 }
 assert(drafts[0].choices.join(',') === 'my,mine,me', 'first choices');
+assert(/This is _____ book/i.test(drafts[0].stem), `Q1 stem: ${drafts[0].stem}`);
+assert(!/they _____ two cats|the cat licked|sister is kind/i.test(drafts[0].stem), `later stem leaked into Q1: ${drafts[0].stem}`);
+assert(!drafts[0].choices.some((choice) => /^(the|my mother|uncle|rabbits|cat)$/i.test(choice)), 'sentence starters are not Q1 choices');
+assert(/They _____ two cats/i.test(drafts[5].stem), `Q6 stem: ${drafts[5].stem}`);
+assert(drafts[5].choices.join(',') === 'have,has', `Q6 choices: ${drafts[5].choices}`);
 assert(drafts[0].correct === 'my', 'answer key my');
 assert(drafts[1].correct === 'its', 'answer key its');
 assert(drafts[2].correct === 'theirs', 'answer key theirs');
