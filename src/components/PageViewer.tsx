@@ -1,25 +1,17 @@
-/* Full straightened page, starting at fit-to-width.
-   A question band is a client-side guess (printed words, or order on the page).
-   Pinch and drag stay free. If nothing can be located, the page has no mark. */
+/* Whole straightened page at fit-to-width. Pinch and drag are free.
+   Nothing on the page is marked. */
 
-import { useEffect, useRef, useState } from 'react';
-import { bandFromOrder, findQuestionOnPage, type PageBand } from '../lib/scan/locate';
+import { useRef, useState } from 'react';
 
 interface PageViewerProps {
   pages: string[];
   onClose: () => void;
   mark?: boolean;
-  question?: { index: number; count: number; prompt: string } | null;
 }
 
-export default function PageViewer({ pages, onClose, mark = false, question = null }: PageViewerProps) {
-  const stageRef = useRef<HTMLDivElement>(null);
-  const sheetRef = useRef<HTMLDivElement>(null);
+export default function PageViewer({ pages, onClose, mark = false }: PageViewerProps) {
   const [scale, setScale] = useState(1);
   const [origin, setOrigin] = useState({ x: 0, y: 0 });
-  const [band, setBand] = useState<PageBand | null>(() => (
-    question ? bandFromOrder(question.index, question.count) : null
-  ));
   const pointers = useRef(new Map<number, { x: number; y: number }>());
   const gesture = useRef({ scale: 1, x: 0, y: 0, dist: 0, cx: 0, cy: 0 });
 
@@ -39,34 +31,6 @@ export default function PageViewer({ pages, onClose, mark = false, question = nu
       y: pts.reduce((sum, p) => sum + p.y, 0) / n,
     };
   }
-
-  useEffect(() => {
-    if (!question) return;
-    let cancel = false;
-    findQuestionOnPage(pages[0] || '', question.prompt, question.index, question.count).then((next) => {
-      if (!cancel && next) setBand(next);
-    });
-    return () => { cancel = true; };
-  }, [pages, question]);
-
-  useEffect(() => {
-    const stage = stageRef.current;
-    const img = sheetRef.current?.querySelector('img');
-    if (!stage || !img || !band) return;
-    const frame = () => {
-      const iw = img.clientWidth;
-      const ih = img.clientHeight;
-      if (!iw || !ih) return;
-      const bandH = Math.max(1, band.h * ih);
-      const next = Math.min(3, Math.max(1, (stage.clientHeight * 0.38) / bandH));
-      const tx = stage.clientWidth / 2 - (band.x + band.w / 2) * iw * next;
-      const ty = stage.clientHeight * 0.42 - (band.y + band.h / 2) * ih * next;
-      setScale(next);
-      setOrigin({ x: tx, y: ty });
-    };
-    if (img.complete) frame();
-    else img.addEventListener('load', frame, { once: true });
-  }, [band, pages]);
 
   function onPointerDown(event: React.PointerEvent<HTMLDivElement>) {
     event.currentTarget.setPointerCapture(event.pointerId);
@@ -112,7 +76,6 @@ export default function PageViewer({ pages, onClose, mark = false, question = nu
         </svg>
       </button>
       <div
-        ref={stageRef}
         className="page-viewer__stage"
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
@@ -120,24 +83,12 @@ export default function PageViewer({ pages, onClose, mark = false, question = nu
         onPointerCancel={onPointerUp}
       >
         <div
-          ref={sheetRef}
           className="page-viewer__sheet"
           style={{ transform: `translate(${origin.x}px, ${origin.y}px) scale(${scale})` }}
         >
           {pages.map((src) => (
             <img key={src} src={src} alt="Straightened homework page" draggable={false} />
           ))}
-          {band && (
-            <div
-              className="page-viewer__highlight"
-              style={{
-                left: `${band.x * 100}%`,
-                top: `${band.y * 100}%`,
-                width: `${band.w * 100}%`,
-                height: `${band.h * 100}%`,
-              }}
-            />
-          )}
         </div>
       </div>
     </div>

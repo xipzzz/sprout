@@ -2590,14 +2590,6 @@ body.calm-motion *, body.calm-motion *::before, body.calm-motion *::after { anim
   pointer-events: none;
   user-select: none;
 }
-.page-viewer__highlight {
-  position: absolute;
-  box-sizing: border-box;
-  border: 3px solid #5AA7C9;
-  background: rgba(90, 167, 201, 0.28);
-  border-radius: 8px;
-  pointer-events: none;
-}
 .see-page {
   font-weight: 800;
   font-size: 0.82rem;
