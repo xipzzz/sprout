@@ -88,10 +88,12 @@ export default function ScanReviewScreen({
                   <span>{index + 1} · {oneLine(q)}</span>
                   <span className="review-collapsed__answer">{summary(q)}</span>
                 </button>
-                <button type="button" className="see-page" onClick={openPage}>See on page</button>
-                <button type="button" className="review-collapsed__edit" onClick={() => setOpenIds((ids) => [...ids, q.id])}>
-                  Edit
-                </button>
+                <div className="review-collapsed__actions">
+                  <button type="button" className="see-page" onClick={openPage}>See on page</button>
+                  <button type="button" className="review-collapsed__edit" onClick={() => setOpenIds((ids) => [...ids, q.id])}>
+                    Edit
+                  </button>
+                </div>
               </div>
             );
           }

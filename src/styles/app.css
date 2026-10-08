@@ -2572,9 +2572,9 @@ body.calm-motion *, body.calm-motion *::before, body.calm-motion *::after { anim
   color: #5AA7C9;
   min-height: 32px;
 }
-.review-collapsed { align-items: center; }
+.review-collapsed { flex-direction: column; align-items: stretch; }
 .review-collapsed__open {
-  flex: 1;
+  width: 100%;
   display: flex;
   justify-content: space-between;
   gap: 8px;
@@ -2582,6 +2582,7 @@ body.calm-motion *, body.calm-motion *::before, body.calm-motion *::after { anim
   font-weight: 800;
   min-height: 44px;
 }
+.review-collapsed__actions { display: flex; justify-content: flex-end; gap: 12px; }
 .review-collapsed__edit { font-weight: 800; color: rgba(42, 35, 32, 0.6); min-height: 44px; }
 .review-card__open { font-weight: 900; min-height: 32px; }
 .review-collapsed {
