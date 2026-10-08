@@ -37,15 +37,21 @@ export function ScanQuizFinish({
   mark?: boolean;
 }) {
   return (
-    <div className="screen scan-finish" data-scan-shot-ready="">
-      <div className={`scan-finish__card${mark ? ' scan-shot-mark' : ''}`}>
-        <PipPose pose="correct" className="scan-finish__pip" />
-        <h1 className="scan-finish__title">Nice work!</h1>
-        <p className="scan-finish__count">{firstTryLine(count)}</p>
-        <button type="button" className="scan-finish__continue" onClick={onContinue}>
+    <div className="screen lesson lesson--sot lesson--scan scan-finish" data-scan-shot-ready="">
+      <div className="scan-finish__stage">
+        <div className={`scan-finish__copy${mark ? ' scan-shot-mark' : ''}`}>
+          <div className="scan-finish__pip">
+            <PipPose pose="correct" />
+          </div>
+          <h1 className="scan-finish__title">Nice work!</h1>
+          <p className="scan-finish__count">{firstTryLine(count)}</p>
+        </div>
+      </div>
+      <footer className="lesson__foot">
+        <button type="button" className={`lesson__check${mark ? ' scan-shot-mark' : ''}`} onClick={onContinue}>
           Continue
         </button>
-      </div>
+      </footer>
     </div>
   );
 }
