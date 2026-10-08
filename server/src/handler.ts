@@ -5,7 +5,7 @@ import { extractJsonObject, validateModelPayload } from '../../src/lib/scan/sche
 import { suggestionsFromModel } from '../../src/lib/scan/suggestions';
 import type { ScannedQuestion } from '../../src/lib/scan/types';
 import { authenticate, type AuthResult } from './auth';
-import { createAdapter, type VisionAdapter } from './adapters';
+import { createAdapter, ModelRequiredError, TruncatedReply, type VisionAdapter } from './adapters';
 import { verifyGoogleIdToken } from './googleJwt';
 import { limitConfigFromEnv, reserveScan, scanningPaused, type LimitStore } from './limits';
 import { VISION_PROMPT } from './visionPrompt';
@@ -13,14 +13,14 @@ import { VISION_PROMPT } from './visionPrompt';
 export interface ScanEnv {
   PROVIDER?: string;
   VISION_API_KEY?: string;
-  VISION_MODEL?: string;
+  MODEL?: string;
   ALLOWED_ORIGIN?: string;
   GOOGLE_CLIENT_ID?: string;
   ALLOWED_EMAILS?: string;
   DAILY_SCAN_LIMIT?: string;
   BURST_PER_MINUTE?: string;
   MONTHLY_SPEND_CAP_USD?: string;
-  ESTIMATED_COST_PER_SCAN_USD?: string;
+  COST_PER_SCAN_USD?: string;
   SCAN_LIMITS?: LimitStore;
 }
 
@@ -149,7 +149,8 @@ export async function handleScan(request: Request, env: ScanEnv, deps: HandlerDe
     return json(200, {
       ok: true,
       authConfigured: Boolean(env.GOOGLE_CLIENT_ID?.trim() && env.ALLOWED_EMAILS?.trim()),
-      providerConfigured: Boolean(env.VISION_API_KEY?.trim()) && Boolean(env.PROVIDER?.trim()) && env.PROVIDER !== 'mock',
+      providerConfigured: providerReady(env),
+      costConfigured: cfg.costCents != null,
       paused,
       dailyLimit: cfg.dailyLimit,
     }, origin);
@@ -172,14 +173,19 @@ export async function handleScan(request: Request, env: ScanEnv, deps: HandlerDe
     return fail(401, 'unauthorized', 'Sign in as a parent before scanning.', origin);
   }
 
-  if (!limits) return fail(503, 'not_configured', 'Scanning is not set up yet.', origin);
+  if (!limits) {
+    return fail(503, 'kv_required', 'SCAN_LIMITS is not set. Create a KV namespace and put its id in wrangler.toml.', origin);
+  }
   if (!env.VISION_API_KEY?.trim()) return fail(503, 'not_configured', 'Scanning is not set up yet.', origin);
+  const cfg = limitConfigFromEnv(env);
+  if (cfg.costCents == null) {
+    return fail(503, 'cost_not_configured', 'Set COST_PER_SCAN_USD to the price of both model calls for one page. There is no default.', origin);
+  }
 
   const bytes = await readLimited(request);
   if (!bytes) return fail(413, 'too_large', 'That photo is too big.', origin);
   if (!looksLikeImage(bytes)) return fail(400, 'bad_image', 'That file does not look like a photo of a page.', origin);
 
-  const cfg = limitConfigFromEnv(env);
   let reserved: Awaited<ReturnType<typeof reserveScan>>;
   try {
     reserved = await reserveScan(limits, auth.accountId, now, cfg);
@@ -198,9 +204,10 @@ export async function handleScan(request: Request, env: ScanEnv, deps: HandlerDe
   let adapter = deps.adapter;
   if (!adapter) {
     try {
-      adapter = createAdapter(env.PROVIDER, env.VISION_MODEL);
-    } catch {
-      return fail(500, 'provider_disabled', 'Scanning is not set up yet.', origin);
+      adapter = createAdapter(env.PROVIDER, env.MODEL);
+    } catch (err) {
+      const message = err instanceof ModelRequiredError ? err.message : 'Scanning is not set up yet.';
+      return fail(500, 'provider_disabled', message, origin);
     }
   }
 
@@ -212,7 +219,10 @@ export async function handleScan(request: Request, env: ScanEnv, deps: HandlerDe
       mediaType: mediaType(bytes),
       apiKey: env.VISION_API_KEY,
     });
-  } catch {
+  } catch (err) {
+    if (err instanceof TruncatedReply) {
+      return fail(422, 'truncated', 'The reader stopped before the page was finished. Nothing was kept.', origin);
+    }
     return fail(502, 'provider_error', 'Pip could not read that page. Try another photo.', origin);
   }
 
@@ -233,7 +243,10 @@ export async function handleScan(request: Request, env: ScanEnv, deps: HandlerDe
       apiKey: env.VISION_API_KEY,
     });
     suggestions = suggestionsFromModel(validated.questions, extractJsonObject(solved));
-  } catch {
+  } catch (err) {
+    if (err instanceof TruncatedReply) {
+      return fail(422, 'truncated', 'The reader stopped before the page was finished. Nothing was kept.', origin);
+    }
     suggestions = {};
   }
 
@@ -243,6 +256,16 @@ export async function handleScan(request: Request, env: ScanEnv, deps: HandlerDe
       suggestion: suggestions[question.id] || '',
     })),
   }, origin);
+}
+
+function providerReady(env: ScanEnv): boolean {
+  if (!env.VISION_API_KEY?.trim() || !env.PROVIDER?.trim() || env.PROVIDER === 'mock') return false;
+  try {
+    createAdapter(env.PROVIDER, env.MODEL);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export { verifyGoogleIdToken };

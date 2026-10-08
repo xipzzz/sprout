@@ -88,11 +88,19 @@ taps at the same moment can slightly overshoot a limit.
 
 The **vision API key and the per-scan cost are billed to the owner's own provider
 account** (OpenAI, Anthropic, or xAI), not to Cloudflare. Each accepted page is
-one scan: a read of the image, then a short text call for a suggested answer.
-The default estimate is **$0.03 per scan** (`ESTIMATED_COST_PER_SCAN_USD`). The
-default monthly cap is **$5** (`MONTHLY_SPEND_CAP_USD`). At the estimate, that is
-about 160 scans a month. The default daily limit is **20 scans per signed-in
-parent** (`DAILY_SCAN_LIMIT`). Set these in `server/wrangler.toml` before deploy.
+one scan and **two billed calls** (read the page, then suggest answers). The
+Worker reserves that full amount once, before either call. Set
+`COST_PER_SCAN_USD` to the sum from the provider's **current price page**.
+There is no default. If it is unset, scans are refused. The monthly cap defaults
+to **$5** (`MONTHLY_SPEND_CAP_USD`). The daily limit defaults to **20** per
+signed-in parent (`DAILY_SCAN_LIMIT`).
+
+Only **`gpt-6-astra`** on OpenAI was measured (98.3% on the holdout). It is the
+OpenAI default. Any other provider or `MODEL` needs the holdout rerun with the
+real paid key before approval.
+
+The first scan downloads the on-phone page cleaner and shows that it is loading.
+If that cleaner fails, the photo is sent as taken.
 
 **Also set a hard budget or usage limit in the AI provider's dashboard.** That is
 the backstop if KV is briefly stale or the estimate is low. When the cap is hit,
@@ -102,22 +110,26 @@ the app shows **Scanning is paused** and does not call the model.
 
 1. Create a free Cloudflare account.
 2. `cd server && npm install && npx wrangler login`
-3. `npx wrangler kv namespace create SCAN_LIMITS` and paste the id into
-   `server/wrangler.toml` (`[[kv_namespaces]]`).
-4. Set the provider with one variable in `wrangler.toml`: `PROVIDER` =
+3. Set the provider with one variable in `wrangler.toml`: `PROVIDER` =
    `openai`, `anthropic`, or `xai`. `mock` is rejected.
-5. Optionally set `VISION_MODEL` (defaults: `gpt-4o-mini`,
-   `claude-3-5-haiku-20241022`, `grok-2-vision-1212`).
+4. `MODEL` overrides any adapter. OpenAI defaults to **`gpt-6-astra`**, the only
+   model measured on the holdout (98.3%). Anthropic and xAI have **no default**
+   and will not start until `MODEL` is set. Any other provider or model needs
+   the holdout rerun with the real paid key before it is approved.
 6. Secrets, not files:
    ```bash
    npx wrangler secret put VISION_API_KEY
    npx wrangler secret put GOOGLE_CLIENT_ID
    npx wrangler secret put ALLOWED_EMAILS   # comma-separated parent emails
+   npx wrangler secret put COST_PER_SCAN_USD # both calls, from the price page
    ```
-7. `npx wrangler deploy`
-8. Put the Worker URL in `VITE_SCAN_WORKER_URL` and the same Google client id in
+7. `npx wrangler kv namespace create SCAN_LIMITS` and paste the id into
+   `server/wrangler.toml`. Deploy and `wrangler dev` stop if that id is still
+   the placeholder.
+8. `npx wrangler deploy`
+9. Put the Worker URL in `VITE_SCAN_WORKER_URL` and the same Google client id in
    `VITE_SCAN_GOOGLE_CLIENT_ID`, then redeploy GitHub Pages.
-9. Set the provider dashboard budget.
+10. Set the provider dashboard budget.
 
 Switching provider later is the same `PROVIDER` variable plus a `VISION_API_KEY`
 for that provider, then `npx wrangler deploy`. One variable selects the adapter.

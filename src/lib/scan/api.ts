@@ -7,6 +7,7 @@ export interface ScanHealth {
   ok: boolean;
   authConfigured: boolean;
   providerConfigured: boolean;
+  costConfigured: boolean;
   paused: boolean;
   dailyLimit: number;
 }
@@ -14,7 +15,7 @@ export interface ScanHealth {
 export async function fetchScanHealth(): Promise<ScanHealth> {
   const base = scanWorkerUrl();
   if (!base) {
-    return { ok: false, authConfigured: false, providerConfigured: false, paused: false, dailyLimit: 20 };
+    return { ok: false, authConfigured: false, providerConfigured: false, costConfigured: false, paused: false, dailyLimit: 20 };
   }
   const res = await fetch(healthEndpoint(base));
   if (!res.ok) throw new Error('health');
@@ -23,6 +24,7 @@ export async function fetchScanHealth(): Promise<ScanHealth> {
     ok: true,
     authConfigured: Boolean(body.authConfigured),
     providerConfigured: Boolean(body.providerConfigured),
+    costConfigured: body.costConfigured !== false,
     paused: Boolean(body.paused),
     dailyLimit: typeof body.dailyLimit === 'number' ? body.dailyLimit : 20,
   };

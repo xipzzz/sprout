@@ -8,7 +8,7 @@ import type { Pair } from './suggestions';
 
 export type Grade = 'correct' | 'almost' | 'wrong';
 
-export type PlayableQuestion =
+export type PlayableQuestion = (
   | {
       kind: 'fill_cards';
       id: string;
@@ -48,7 +48,8 @@ export type PlayableQuestion =
       instruction: string;
       tiles: string[];
       answerTokens: string[];
-    };
+    }
+) & { emphasis?: string[] };
 
 export type PlayResponse =
   | { kind: 'choice'; value: string }
@@ -104,6 +105,7 @@ function toPlayable(q: ReviewQuestion): PlayableQuestion[] {
       instruction: q.instruction,
       options: [...q.options],
       answer: q.answer,
+      emphasis: q.emphasis,
     }];
   }
   if (q.type === 'fill_blank') {
@@ -118,6 +120,7 @@ function toPlayable(q: ReviewQuestion): PlayableQuestion[] {
       instruction: q.instruction,
       bank,
       answer,
+      emphasis: q.emphasis,
     }];
   }
   if (q.type === 'multiple_choice') {
@@ -129,6 +132,7 @@ function toPlayable(q: ReviewQuestion): PlayableQuestion[] {
       instruction: q.instruction,
       options: [...q.options],
       answer: q.answer,
+      emphasis: q.emphasis,
     }];
   }
   if (q.type === 'matching') {
@@ -142,6 +146,7 @@ function toPlayable(q: ReviewQuestion): PlayableQuestion[] {
       instruction: q.instruction,
       pairs,
       rightOrder: shuffleWithSeed(pairs.map((p) => p.right), `${q.id}:right:${index}`),
+      emphasis: q.emphasis,
     }));
   }
   const answerTokens = sentenceTokens(q.answer);
@@ -154,6 +159,7 @@ function toPlayable(q: ReviewQuestion): PlayableQuestion[] {
     instruction: q.instruction,
     tiles: shuffleWithSeed([...answerTokens, ...extras], `${q.id}:tiles`),
     answerTokens,
+    emphasis: q.emphasis,
   }];
 }
 

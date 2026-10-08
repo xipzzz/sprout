@@ -4,6 +4,7 @@
 
 import { useState } from 'react';
 import ArrangeWords from '../components/ArrangeWords';
+import EmphasisText from '../components/EmphasisText';
 import PipPose from '../components/PipPose';
 import {
   advanceQueue,
@@ -14,6 +15,7 @@ import {
   type PlayableQuestion,
   type QuizQueue,
 } from '../lib/scan/quizMap';
+import { bankChip, placedChip } from '../lib/scan/rewriteChips';
 import type { Pair } from '../lib/scan/suggestions';
 import { playSproutFeedback } from '../utils/feedback';
 
@@ -30,14 +32,14 @@ function progressPct(index: number, total: number, phase: 'ask' | 'feedback') {
   return Math.min(100, Math.round(base + bump * 0.55 + 28));
 }
 
-function BubbleText({ prompt, filled }: { prompt: string; filled: string | null }) {
+function BubbleText({ prompt, filled, emphasis }: { prompt: string; filled: string | null; emphasis?: string[] }) {
   const parts = prompt.split('___');
-  if (parts.length < 2) return <>{prompt}</>;
+  if (parts.length < 2) return <EmphasisText text={prompt} emphasis={emphasis} />;
   return (
     <>
-      {parts[0]}
-      <span className={`scanq__blank${filled ? ' scanq__blank--filled' : ''}`}>{filled || ' '}</span>
-      {parts.slice(1).join('___')}
+      <EmphasisText text={parts[0]} emphasis={emphasis} />
+      <span className={`scanq__blank${filled ? ' scanq__blank--filled' : ''}`}>{filled || ''}</span>
+      <EmphasisText text={parts.slice(1).join('___')} emphasis={emphasis} />
     </>
   );
 }
@@ -51,6 +53,7 @@ export default function ScanQuizScreen({ parts, onExit, onComplete, markAnswers 
   const [typed, setTyped] = useState('');
   const [pickedLeft, setPickedLeft] = useState<string | null>(null);
   const [pairs, setPairs] = useState<Pair[]>([]);
+  const [pairFlash, setPairFlash] = useState<Pair | null>(null);
   const [tiles, setTiles] = useState<string[]>([]);
 
   const q = queue.items[queue.index];
@@ -68,6 +71,7 @@ export default function ScanQuizScreen({ parts, onExit, onComplete, markAnswers 
     setTyped('');
     setPickedLeft(null);
     setPairs([]);
+    setPairFlash(null);
     setTiles([]);
   }
 
@@ -99,8 +103,8 @@ export default function ScanQuizScreen({ parts, onExit, onComplete, markAnswers 
     resetInputs();
   }
 
-  function onAdvance() {
-    const next = advanceQueue(queue, grade);
+  function onAdvance(override?: Grade) {
+    const next = advanceQueue(queue, override ?? grade);
     if (!queueFinished(next)) {
       go(next, partIndex);
       return;
@@ -120,7 +124,14 @@ export default function ScanQuizScreen({ parts, onExit, onComplete, markAnswers 
       return;
     }
     if (!pickedLeft || pairs.some((pair) => pair.right === value)) return;
-    setPairs([...pairs, { left: pickedLeft, right: value }]);
+    const correct = q.pairs.some((pair) => pair.left === pickedLeft && pair.right === value);
+    if (correct) {
+      setPairs([...pairs, { left: pickedLeft, right: value }]);
+      setPairFlash(null);
+    } else {
+      setPairFlash({ left: pickedLeft, right: value });
+      window.setTimeout(() => setPairFlash(null), 450);
+    }
     setPickedLeft(null);
   }
 
@@ -137,9 +148,11 @@ export default function ScanQuizScreen({ parts, onExit, onComplete, markAnswers 
       ? q.bank
       : [];
   const bubbleText = q.kind === 'matching'
-    ? (q.prompt || q.instruction || 'Match.')
-    : (q.prompt || 'Read the card.');
-  const showInstruction = Boolean(q.instruction) && q.instruction !== bubbleText;
+    ? 'Tap the matching pairs'
+    : q.kind === 'rewrite'
+      ? (q.instruction || q.prompt)
+      : (q.prompt || 'Read the card.');
+  const matchingDone = q.kind === 'matching' && pairs.length === q.pairs.length;
 
   return (
     <div className="screen lesson lesson--sot lesson--scan" data-scan-shot-ready="">
@@ -163,7 +176,6 @@ export default function ScanQuizScreen({ parts, onExit, onComplete, markAnswers 
       </header>
 
       {parts.length > 1 && <p className="scanq__part">Part {partIndex + 1} of {parts.length}</p>}
-      {showBubble && showInstruction && <p className="scanq__instruction">{q.instruction}</p>}
 
       <section className="lesson__q-row">
         <div className={`lesson__pip-wrap${pipPose === 'correct' ? ' lesson__pip-wrap--proud' : pipPose === 'almost' ? ' lesson__pip-wrap--soft' : ''}`} aria-hidden="true">
@@ -173,8 +185,8 @@ export default function ScanQuizScreen({ parts, onExit, onComplete, markAnswers 
           <div className="lesson__bubble">
             <p className="lesson__bubble-text">
               {q.kind === 'fill_cards' || q.kind === 'fill_bank'
-                ? <BubbleText prompt={bubbleText} filled={filled} />
-                : bubbleText}
+                ? <BubbleText prompt={q.prompt} filled={filled} emphasis={q.emphasis} />
+                : <EmphasisText text={bubbleText} emphasis={q.emphasis} />}
             </p>
           </div>
         )}
@@ -226,17 +238,22 @@ export default function ScanQuizScreen({ parts, onExit, onComplete, markAnswers 
           </div>
         )}
 
+        {showBubble && q.kind === 'rewrite' && q.prompt && (
+          <blockquote className="scanq__quote">{q.prompt}</blockquote>
+        )}
+
         {q.kind === 'matching' && (
           <div className="scanq__pairs">
             <div className="scanq__pair-col">
               {q.pairs.map((pair) => {
                 const done = pairs.some((item) => item.left === pair.left);
                 const selected = pickedLeft === pair.left;
+                const wrong = pairFlash?.left === pair.left;
                 return (
                   <button
                     key={pair.left}
                     type="button"
-                    className={`word-pick__answer${selected ? ' word-pick__answer--selected' : ''}${done ? ' scanq__paired' : ''}`}
+                    className={`word-pick__answer${selected ? ' word-pick__answer--selected' : ''}${done ? ' word-pick__answer--correct' : ''}${wrong ? ' word-pick__answer--wrong' : ''}`}
                     disabled={phase === 'feedback' || done}
                     onClick={() => tapPair('left', pair.left)}
                   >
@@ -248,11 +265,12 @@ export default function ScanQuizScreen({ parts, onExit, onComplete, markAnswers 
             <div className="scanq__pair-col">
               {q.rightOrder.map((right) => {
                 const done = pairs.some((item) => item.right === right);
+                const wrong = pairFlash?.right === right;
                 return (
                   <button
                     key={right}
                     type="button"
-                    className={`word-pick__answer${done ? ' scanq__paired' : ''}`}
+                    className={`word-pick__answer${done ? ' word-pick__answer--correct' : ''}${wrong ? ' word-pick__answer--wrong' : ''}`}
                     disabled={phase === 'feedback' || done || !pickedLeft}
                     onClick={() => tapPair('right', right)}
                   >
@@ -271,13 +289,20 @@ export default function ScanQuizScreen({ parts, onExit, onComplete, markAnswers 
             tiles={q.tiles}
             revealed={phase === 'feedback'}
             onChange={setTiles}
+            bankLabel={(word) => bankChip(word, q.answerTokens[0] || '')}
+            placedLabel={(word, index) => placedChip(word, index, q.answerTokens[0] || '')}
           />
         )}
         </div>
       </main>
 
       <footer className={`lesson__foot${phase === 'feedback' ? ' lesson__foot--has-sheet' : ''}`}>
-        {phase === 'ask' && (
+        {phase === 'ask' && q.kind === 'matching' && (
+          <button type="button" className="lesson__check" disabled={!matchingDone} onClick={() => { onAdvance('correct'); }}>
+            Continue
+          </button>
+        )}
+        {phase === 'ask' && q.kind !== 'matching' && (
           <button type="button" className="lesson__check" disabled={!canCheck()} onClick={onCheck}>
             Check
           </button>
@@ -292,7 +317,7 @@ export default function ScanQuizScreen({ parts, onExit, onComplete, markAnswers 
             <button
               type="button"
               className={`lesson__sheet-cta lesson__sheet-cta--${grade === 'correct' ? 'green' : 'red'}`}
-              onClick={onAdvance}
+              onClick={() => onAdvance()}
             >
               {grade === 'correct' ? 'Continue' : 'Got it'}
             </button>

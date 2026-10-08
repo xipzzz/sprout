@@ -7,6 +7,32 @@ export interface VisionAdapter {
   readText(args: { prompt: string; apiKey: string }): Promise<string>;
 }
 
+/** The model stopped because the output cap was hit. Do not parse a partial page. */
+export class TruncatedReply extends Error {
+  constructor() {
+    super('truncated');
+    this.name = 'TruncatedReply';
+  }
+}
+
+/** Anthropic and xAI have no measured default. MODEL must be set. */
+export class ModelRequiredError extends Error {
+  constructor(provider: string) {
+    super(`${provider} needs MODEL set. Only gpt-6-astra was measured. Any other model needs a holdout rerun before approval.`);
+    this.name = 'ModelRequiredError';
+  }
+}
+
+const OPENAI_MEASURED = 'gpt-6-astra';
+
+/** MODEL always wins. OpenAI falls back to the measured model. Others refuse. */
+export function resolveModel(provider: string, model: string | undefined): string {
+  const chosen = (model || '').trim();
+  if (chosen) return chosen;
+  if (provider === 'openai') return OPENAI_MEASURED;
+  throw new ModelRequiredError(provider);
+}
+
 export function bytesToBase64(bytes: Uint8Array): string {
   let binary = '';
   for (let i = 0; i < bytes.length; i += 0x8000) {
@@ -39,11 +65,13 @@ function openAi(model: string): VisionAdapter {
               { type: 'image_url', image_url: { url: `data:${mediaType};base64,${bytesToBase64(bytes)}` } },
             ],
           }],
+          max_tokens: 16000,
           response_format: { type: 'json_object' },
         }),
       });
       if (!res.ok) throw new Error(`openai ${res.status} ${await readError(res)}`);
-      const json = await res.json() as { choices?: { message?: { content?: string } }[] };
+      const json = await res.json() as { choices?: { message?: { content?: string }; finish_reason?: string }[] };
+      if (json.choices?.[0]?.finish_reason === 'length') throw new TruncatedReply();
       const content = json.choices?.[0]?.message?.content;
       if (!content) throw new Error('openai empty reply');
       return content;
@@ -57,12 +85,14 @@ function openAi(model: string): VisionAdapter {
         },
         body: JSON.stringify({
           model,
+          max_tokens: 16000,
           messages: [{ role: 'user', content: prompt }],
           response_format: { type: 'json_object' },
         }),
       });
       if (!res.ok) throw new Error(`openai ${res.status}`);
-      const json = await res.json() as { choices?: { message?: { content?: string } }[] };
+      const json = await res.json() as { choices?: { message?: { content?: string }; finish_reason?: string }[] };
+      if (json.choices?.[0]?.finish_reason === 'length') throw new TruncatedReply();
       return json.choices?.[0]?.message?.content || '';
     },
   };
@@ -77,10 +107,11 @@ function anthropic(model: string): VisionAdapter {
         'anthropic-version': '2023-06-01',
         'content-type': 'application/json',
       },
-      body: JSON.stringify({ model, max_tokens: 4096, messages: [{ role: 'user', content }] }),
+      body: JSON.stringify({ model, max_tokens: 16000, messages: [{ role: 'user', content }] }),
     });
     if (!res.ok) throw new Error(`anthropic ${res.status} ${await readError(res)}`);
-    const json = await res.json() as { content?: { type: string; text?: string }[] };
+    const json = await res.json() as { stop_reason?: string; content?: { type: string; text?: string }[] };
+    if (json.stop_reason === 'max_tokens') throw new TruncatedReply();
     const text = (json.content || []).filter((part) => part.type === 'text').map((part) => part.text || '').join('\n');
     if (!text) throw new Error('anthropic empty reply');
     return text;
@@ -105,11 +136,13 @@ function xai(model: string): VisionAdapter {
       },
       body: JSON.stringify({
         model,
+        max_tokens: 16000,
         messages: [{ role: 'user', content }],
       }),
     });
     if (!res.ok) throw new Error(`xai ${res.status} ${await readError(res)}`);
-    const json = await res.json() as { choices?: { message?: { content?: string } }[] };
+    const json = await res.json() as { choices?: { message?: { content?: string }; finish_reason?: string }[] };
+    if (json.choices?.[0]?.finish_reason === 'length') throw new TruncatedReply();
     const text = json.choices?.[0]?.message?.content;
     if (!text) throw new Error('xai empty reply');
     return text;
@@ -130,8 +163,8 @@ export function createAdapter(provider: string | undefined, model: string | unde
   if (name === 'mock' || name === 'test') {
     throw new Error('mock adapter cannot be enabled');
   }
-  if (name === 'openai') return openAi(model || 'gpt-4o-mini');
-  if (name === 'anthropic') return anthropic(model || 'claude-3-5-haiku-20241022');
-  if (name === 'xai') return xai(model || 'grok-2-vision-1212');
+  if (name === 'openai') return openAi(resolveModel('openai', model));
+  if (name === 'anthropic') return anthropic(resolveModel('anthropic', model));
+  if (name === 'xai') return xai(resolveModel('xai', model));
   throw new Error('PROVIDER must be openai, anthropic, or xai');
 }

@@ -85,6 +85,23 @@ describe('parent review', () => {
     }
   });
 
+  it('adds a choice, a missed question, and can undo a delete', () => {
+    let review = createReview([page[1]], { q2: 'table' });
+    review = reviewReducer(review, { type: 'add-option', id: 'q2' });
+    assert.equal(review[0].options.length, 4);
+    assert.equal(review[0].confirmed, false);
+    review = reviewReducer(review, { type: 'set-type', id: 'q2', value: 'rewrite' });
+    assert.equal(review[0].type, 'rewrite');
+    review = reviewReducer(review, { type: 'delete', id: 'q2' });
+    assert.equal(review[0].deleted, true);
+    review = reviewReducer(review, { type: 'restore', id: 'q2' });
+    assert.equal(review[0].deleted, false);
+    review = reviewReducer(review, { type: 'add-question' });
+    assert.equal(review.length, 2);
+    assert.equal(review[1].confirmed, false);
+    assert.equal(review[1].prompt, '');
+  });
+
   it('refuses to confirm an empty answer', () => {
     const review = createReview([page[1]]);
     assert.equal(canConfirm(review[0]), false);

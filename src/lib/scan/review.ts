@@ -35,7 +35,11 @@ export type ReviewAction =
   | { type: 'extra'; id: string; index: 0 | 1; value: string }
   | { type: 'pair'; id: string; left: string; right: string }
   | { type: 'delete'; id: string }
-  | { type: 'confirm'; id: string };
+  | { type: 'restore'; id: string }
+  | { type: 'confirm'; id: string }
+  | { type: 'add-option'; id: string }
+  | { type: 'set-type'; id: string; value: ReviewQuestion['type'] }
+  | { type: 'add-question' };
 
 function sheetWords(questions: ScannedQuestion[]): string[] {
   const out: string[] = [];
@@ -145,7 +149,31 @@ function touch(q: ReviewQuestion, patch: Partial<ReviewQuestion>): ReviewQuestio
   return next;
 }
 
+function blankQuestion(id: string): ReviewQuestion {
+  return {
+    id,
+    type: 'fill_blank',
+    instruction: '',
+    prompt: '',
+    options: [],
+    left: [],
+    right: [],
+    emphasis: [],
+    needsExactCopy: false,
+    suggestion: '',
+    answer: '',
+    pairs: [],
+    distractors: ['', ''],
+    extraTiles: ['', ''],
+    confirmed: false,
+    deleted: false,
+  };
+}
+
 export function reviewReducer(state: ReviewQuestion[], action: ReviewAction): ReviewQuestion[] {
+  if (action.type === 'add-question') {
+    return [...state, blankQuestion(`added-${state.length + 1}`)];
+  }
   return state.map((q) => {
     if (q.id !== action.id) return q;
     switch (action.type) {
@@ -178,6 +206,18 @@ export function reviewReducer(state: ReviewQuestion[], action: ReviewAction): Re
       }
       case 'delete':
         return { ...q, deleted: true, confirmed: false };
+      case 'restore':
+        return { ...q, deleted: false };
+      case 'add-option':
+        return touch(q, { options: [...q.options, ''] });
+      case 'set-type':
+        return touch(q, {
+          type: action.value,
+          answer: '',
+          pairs: action.value === 'matching'
+            ? (q.pairs.length ? q.pairs : q.left.map((left) => ({ left, right: '' })))
+            : q.pairs,
+        });
       case 'confirm':
         return canConfirm(q) ? { ...q, confirmed: true } : q;
       default:

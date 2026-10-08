@@ -9,7 +9,7 @@ import { fetchScanHealth, postScanPage } from '../lib/scan/api';
 import { scanGoogleClientId, scanWorkerUrl } from '../lib/scan/config';
 import { mergeScannedPages } from '../lib/scan/merge';
 import { renderGoogleButton } from '../lib/scan/parentAuth';
-import { cleanHomeworkPhoto } from '../lib/scan/preprocess';
+import { cleanHomeworkPhoto, loadCv, photoAsJpeg } from '../lib/scan/preprocess';
 import { buildQuiz } from '../lib/scan/quizMap';
 import { createReview, type ReviewQuestion } from '../lib/scan/review';
 import { formatQuizDay, type HomeworkQuiz } from '../lib/scan/storage';
@@ -37,11 +37,11 @@ export default function ScanHomeworkScreen({ onCancel, onReady }: ScanHomeworkSc
   const galleryRef = useRef<HTMLInputElement>(null);
   const googleRef = useRef<HTMLDivElement>(null);
   const [phase, setPhase] = useState<Phase>(() => (scanWorkerUrl() ? 'boot' : 'unconfigured'));
-  const [errorMsg, setErrorMsg] = useState('');
   const [status, setStatus] = useState('');
   const [pages, setPages] = useState<LocalPage[]>([]);
   const [token, setToken] = useState<string | null>(null);
   const [review, setReview] = useState<ReviewQuestion[]>([]);
+  const [photos, setPhotos] = useState<string[]>([]);
 
   useEffect(() => {
     if (phase !== 'boot') return;
@@ -49,7 +49,7 @@ export default function ScanHomeworkScreen({ onCancel, onReady }: ScanHomeworkSc
     fetchScanHealth()
       .then((health) => {
         if (cancelled) return;
-        if (!health.providerConfigured) {
+        if (!health.providerConfigured || !health.costConfigured) {
           setPhase('unconfigured');
           return;
         }
@@ -65,7 +65,6 @@ export default function ScanHomeworkScreen({ onCancel, onReady }: ScanHomeworkSc
       })
       .catch(() => {
         if (cancelled) return;
-        setErrorMsg('Pip cannot reach the homework reader. Check the connection and try again.');
         setPhase('error');
       });
     return () => {
@@ -83,7 +82,6 @@ export default function ScanHomeworkScreen({ onCancel, onReady }: ScanHomeworkSc
       setPhase('capture');
     }).catch(() => {
       if (cancelled) return;
-      setErrorMsg('Parent sign-in did not load. Try again in a moment.');
       setPhase('error');
     });
     return () => {
@@ -120,19 +118,31 @@ export default function ScanHomeworkScreen({ onCancel, onReady }: ScanHomeworkSc
   async function readPages() {
     if (!token || pages.length === 0) return;
     setPhase('working');
-    setErrorMsg('');
+    setStatus('Getting the page cleaner ready…');
+    let cleaner = false;
+    try {
+      await loadCv();
+      cleaner = true;
+    } catch {
+      setStatus('The page cleaner did not load. Sending the photo as taken.');
+    }
     const collected: { questions: ScannedQuestion[]; suggestions: Record<string, string> }[] = [];
+    const shots: string[] = [];
     try {
       for (let i = 0; i < pages.length; i++) {
-        setStatus(`Straightening page ${i + 1} of ${pages.length}…`);
         let jpeg: Blob;
-        try {
-          jpeg = await cleanHomeworkPhoto(pages[i].file);
-        } catch {
-          setErrorMsg('Pip could not clean up that photo. Try a brighter picture of the whole page.');
-          setPhase('error');
-          return;
+        if (cleaner) {
+          setStatus(`Straightening page ${i + 1} of ${pages.length}…`);
+          try {
+            jpeg = await cleanHomeworkPhoto(pages[i].file);
+          } catch {
+            setStatus('Could not clean that photo. Sending it as taken.');
+            jpeg = await photoAsJpeg(pages[i].file);
+          }
+        } else {
+          jpeg = await photoAsJpeg(pages[i].file);
         }
+        shots.push(URL.createObjectURL(jpeg));
         setStatus(`Reading page ${i + 1} of ${pages.length}…`);
         const result = await postScanPage(jpeg, token);
         if (!result.ok) {
@@ -140,23 +150,21 @@ export default function ScanHomeworkScreen({ onCancel, onReady }: ScanHomeworkSc
             setPhase('paused');
             return;
           }
-          setErrorMsg(result.message);
           setPhase('error');
           return;
         }
         collected.push({ questions: result.questions, suggestions: result.suggestions });
       }
     } catch {
-      setErrorMsg('Pip could not read that page. Try another photo.');
       setPhase('error');
       return;
     }
     const merged = mergeScannedPages(collected);
     if (merged.questions.length === 0) {
-      setErrorMsg('No printed questions were found. Try another photo.');
       setPhase('error');
       return;
     }
+    setPhotos(shots);
     setReview(createReview(merged.questions, merged.suggestions));
     setPhase('review');
     playSproutFeedback('gardenGrowth');
@@ -174,10 +182,20 @@ export default function ScanHomeworkScreen({ onCancel, onReady }: ScanHomeworkSc
     });
   }
 
+  if (phase === 'error') {
+    return (
+      <ScanErrorPreview
+        onRetry={() => setPhase(token ? 'capture' : 'boot')}
+        onBack={onCancel}
+      />
+    );
+  }
+
   if (phase === 'review') {
     return (
       <ScanReviewScreen
         questions={review}
+        photos={photos}
         onChange={setReview}
         onPractice={practice}
         onBack={() => setPhase('capture')}
@@ -197,7 +215,7 @@ export default function ScanHomeworkScreen({ onCancel, onReady }: ScanHomeworkSc
       </header>
       <main className="screen__body scan__body">
         <div className="scan__hero">
-          <PipPose className="scan__pip" pose={phase === 'error' || phase === 'paused' ? 'almost' : 'neutral'} />
+          <PipPose className="scan__pip" pose={phase === 'paused' ? 'almost' : 'neutral'} />
           <p className="scan__lead">{leadFor(phase)}</p>
         </div>
 
@@ -205,10 +223,10 @@ export default function ScanHomeworkScreen({ onCancel, onReady }: ScanHomeworkSc
           <p className="scan__loading" role="status">Checking the homework reader…</p>
         )}
 
-        {(phase === 'unconfigured' || phase === 'auth-needed' || phase === 'paused' || phase === 'error') && (
-          <div className={`scan-note${phase === 'error' ? ' scan-note--error' : ''}`} role={phase === 'error' ? 'alert' : 'status'}>
+        {(phase === 'unconfigured' || phase === 'auth-needed' || phase === 'paused') && (
+          <div className="scan-note" role="status">
             <p className="scan-note__title">{titleFor(phase)}</p>
-            <p className="scan-note__body">{phase === 'error' ? errorMsg : bodyFor(phase)}</p>
+            <p className="scan-note__body">{bodyFor(phase)}</p>
           </div>
         )}
 
@@ -274,15 +292,7 @@ export default function ScanHomeworkScreen({ onCancel, onReady }: ScanHomeworkSc
           </>
         )}
 
-        {phase === 'working' && (
-          <p className="scan__loading" role="status">{status}</p>
-        )}
-
-        {phase === 'error' && (
-          <button type="button" className="lesson__check" onClick={() => setPhase(token ? 'capture' : 'boot')}>
-            Try another photo
-          </button>
-        )}
+        {phase === 'working' && <ScanLoadingBody status={status} />}
       </main>
     </div>
   );
@@ -317,7 +327,36 @@ function bodyFor(phase: Phase): string {
   return '';
 }
 
-export function ScanErrorPreview({ message, mark = false }: { message: string; mark?: boolean }) {
+export function ScanErrorPreview({ onRetry, onBack, mark = false }: { onRetry?: () => void; onBack?: () => void; mark?: boolean }) {
+  return (
+    <div className="screen scan scan--error" data-scan-shot-ready="">
+      <header className="scan__top">
+        <button type="button" className="lesson__close" onClick={onBack} aria-label="Back to Today">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
+        <h1 className="scan__title">Scan homework</h1>
+      </header>
+      <main className="screen__body scan__body">
+        <div className={`scan-error${mark ? ' scan-shot-mark' : ''}`}>
+          <PipPose className="scan__pip" pose="thinking" />
+          <h2 className="scan-error__title">Pip couldn’t read that page</h2>
+          <ul className="scan-error__tips">
+            <li>Lay the page flat</li>
+            <li>Use good light</li>
+            <li>Keep the whole page in the frame</li>
+          </ul>
+        </div>
+      </main>
+      <footer className="review-bar">
+        <button type="button" className="lesson__check" onClick={onRetry}>Try another photo</button>
+      </footer>
+    </div>
+  );
+}
+
+export function ScanLoadingPreview({ mark = false }: { mark?: boolean }) {
   return (
     <div className="screen scan" data-scan-shot-ready="">
       <header className="scan__top">
@@ -329,16 +368,17 @@ export function ScanErrorPreview({ message, mark = false }: { message: string; m
         <h1 className="scan__title">Scan homework</h1>
       </header>
       <main className="screen__body scan__body">
-        <div className="scan__hero">
-          <PipPose className="scan__pip" pose="almost" />
-          <p className="scan__lead">That page was not read.</p>
-        </div>
-        <div className={`scan-note scan-note--error${mark ? ' scan-shot-mark' : ''}`} role="alert">
-          <p className="scan-note__title">Pip couldn’t read that page</p>
-          <p className="scan-note__body">{message}</p>
-        </div>
-        <button type="button" className="lesson__check">Try another photo</button>
+        <ScanLoadingBody status="Getting the page cleaner ready…" mark={mark} />
       </main>
+    </div>
+  );
+}
+
+function ScanLoadingBody({ status, mark = false }: { status: string; mark?: boolean }) {
+  return (
+    <div className={`scan-loading${mark ? ' scan-shot-mark' : ''}`} role="status">
+      <span className="scan__spinner" aria-hidden="true" />
+      <p>{status}</p>
     </div>
   );
 }

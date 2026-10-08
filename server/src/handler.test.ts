@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { describe, it } from 'node:test';
-import { createAdapter } from './adapters';
+import { createAdapter, resolveModel, TruncatedReply } from './adapters';
 import { authenticate } from './auth';
 import { handleScan, type ScanEnv } from './handler';
 import { reserveScan, type LimitStore } from './limits';
@@ -47,7 +47,7 @@ const baseEnv = {
   ALLOWED_EMAILS: 'parent@example.com',
   DAILY_SCAN_LIMIT: '20',
   MONTHLY_SPEND_CAP_USD: '5',
-  ESTIMATED_COST_PER_SCAN_USD: '0.03',
+  COST_PER_SCAN_USD: '0.08',
 } satisfies Partial<ScanEnv>;
 
 const validPage = JSON.stringify({
@@ -151,7 +151,7 @@ describe('handleScan abuse protection', () => {
       {
         ...baseEnv,
         MONTHLY_SPEND_CAP_USD: '1',
-        ESTIMATED_COST_PER_SCAN_USD: '0.03',
+        COST_PER_SCAN_USD: '0.08',
         SCAN_LIMITS: store,
       },
       {
@@ -230,9 +230,63 @@ describe('production provider switch', () => {
     assert.doesNotMatch(sources, /from '\.\/mock'/);
   });
 
-  it('builds each real adapter', () => {
+  it('defaults OpenAI to the measured model and refuses the others', () => {
+    assert.equal(resolveModel('openai', undefined), 'gpt-6-astra');
+    assert.equal(resolveModel('openai', 'other-model'), 'other-model');
     assert.equal(createAdapter('openai', undefined).id, 'openai');
-    assert.equal(createAdapter('anthropic', undefined).id, 'anthropic');
-    assert.equal(createAdapter('xai', undefined).id, 'xai');
+    assert.throws(() => createAdapter('anthropic', undefined), /MODEL/);
+    assert.throws(() => createAdapter('xai', '  '), /MODEL/);
+    assert.equal(createAdapter('anthropic', 'claude-measured').id, 'anthropic');
+    assert.equal(createAdapter('xai', 'grok-measured').id, 'xai');
+  });
+});
+
+describe('scan cost and truncation', () => {
+  it('refuses to scan when the per-scan price is not set', async () => {
+    let called = false;
+    const res = await handleScan(
+      scanRequest({ Authorization: 'Bearer good' }),
+      { ...baseEnv, COST_PER_SCAN_USD: '', SCAN_LIMITS: memoryStore() },
+      {
+        verifyToken: async () => 'parent@example.com',
+        adapter: mockAdapter({ onImage() { called = true; return validPage; } }),
+      },
+    );
+    assert.equal(res.status, 503);
+    const body = await bodyOf(res);
+    assert.equal(body.code, 'cost_not_configured');
+    assert.equal('questions' in body, false);
+    assert.equal(called, false);
+  });
+
+  it('refuses a truncated read and returns no questions', async () => {
+    const res = await handleScan(
+      scanRequest({ Authorization: 'Bearer good' }),
+      { ...baseEnv, SCAN_LIMITS: memoryStore() },
+      {
+        verifyToken: async () => 'parent@example.com',
+        adapter: {
+          id: 'openai',
+          async readImage() { throw new TruncatedReply(); },
+          async readText() { return '{"suggestions":[]}'; },
+        },
+      },
+    );
+    assert.equal(res.status, 422);
+    const body = await bodyOf(res);
+    assert.equal(body.code, 'truncated');
+    assert.equal('questions' in body, false);
+  });
+
+  it('refuses to start when KV is not bound', async () => {
+    const res = await handleScan(
+      scanRequest({ Authorization: 'Bearer good' }),
+      { ...baseEnv },
+      { verifyToken: async () => 'parent@example.com' },
+    );
+    assert.equal(res.status, 503);
+    const body = await bodyOf(res);
+    assert.equal(body.code, 'kv_required');
+    assert.equal('questions' in body, false);
   });
 });

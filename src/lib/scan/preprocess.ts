@@ -332,6 +332,21 @@ function grayToJpeg(gray: Uint8Array, w: number, h: number, maxEdge: number, qua
   });
 }
 
+/** JPEG of the photo itself, only shrunk to fit the upload limit. */
+export async function photoAsJpeg(file: Blob): Promise<Blob> {
+  const image = await imageDataFromFile(file, 1600);
+  const canvas = document.createElement('canvas');
+  canvas.width = image.width;
+  canvas.height = image.height;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('canvas');
+  ctx.putImageData(image, 0, 0);
+  const blob = await new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob((result) => (result ? resolve(result) : reject(new Error('jpeg'))), 'image/jpeg', 0.82);
+  });
+  return blob;
+}
+
 /** Clean one photo and return a JPEG small enough to upload. */
 export async function cleanHomeworkPhoto(file: Blob): Promise<Blob> {
   const image = await imageDataFromFile(file, 1800);
