@@ -3,7 +3,8 @@
 
 import { StrictMode, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import ScanQuizScreen from '../screens/ScanQuizScreen';
+import ScanQuizScreen, { ScanQuizFinish } from '../screens/ScanQuizScreen';
+import { answerCurrent, startQuiz, type PlayableQuestion } from '../lib/scan/quizMap';
 import ScanReviewScreen from '../screens/ScanReviewScreen';
 import { ScanErrorPreview, ScanLoadingPreview } from '../screens/ScanHomeworkScreen';
 import type { ReviewQuestion } from '../lib/scan/review';
@@ -56,10 +57,31 @@ function CheckShot() {
   );
 }
 
+function finishCount() {
+  const questions: PlayableQuestion[] = Array.from({ length: 12 }, (_, index) => ({
+    kind: 'multiple_choice',
+    id: `q${index + 1}`,
+    prompt: `Question ${index + 1}`,
+    instruction: '',
+    options: ['yes', 'no'],
+    answer: 'yes',
+  }));
+  const grades = [
+    ...Array.from({ length: 10 }, () => 'correct' as const),
+    'wrong' as const,
+    'wrong' as const,
+    'correct' as const,
+    'correct' as const,
+  ];
+  return grades.reduce((run, grade) => answerCurrent(run, grade), startQuiz([questions])).count;
+}
+
 export function mountScanShot(which: string) {
   const root = document.getElementById('root');
   if (!root) return;
-  const screen = which === 'check'
+  const screen = which === 'finish'
+    ? <ScanQuizFinish count={finishCount()} onContinue={() => {}} mark />
+    : which === 'check'
     ? <CheckShot />
     : which === 'check-tools'
       ? <ActionsShot />

@@ -7,10 +7,11 @@ import ArrangeWords from '../components/ArrangeWords';
 import EmphasisText from '../components/EmphasisText';
 import PipPose from '../components/PipPose';
 import {
-  advanceQueue,
+  answerCurrent,
   answerText,
+  firstTryLine,
   gradePlayable,
-  queueFinished,
+  type FirstTryCount,
   type Grade,
   type PlayableQuestion,
   type QuizQueue,
@@ -24,6 +25,29 @@ interface ScanQuizScreenProps {
   onExit: () => void;
   onComplete: () => void;
   markAnswers?: boolean;
+}
+
+export function ScanQuizFinish({
+  count,
+  onContinue,
+  mark = false,
+}: {
+  count: FirstTryCount;
+  onContinue: () => void;
+  mark?: boolean;
+}) {
+  return (
+    <div className="screen scan-finish" data-scan-shot-ready="">
+      <div className={`scan-finish__card${mark ? ' scan-shot-mark' : ''}`}>
+        <PipPose pose="correct" className="scan-finish__pip" />
+        <h1 className="scan-finish__title">Nice work!</h1>
+        <p className="scan-finish__count">{firstTryLine(count)}</p>
+        <button type="button" className="scan-finish__continue" onClick={onContinue}>
+          Continue
+        </button>
+      </div>
+    </div>
+  );
 }
 
 function progressPct(index: number, total: number, phase: 'ask' | 'feedback') {
@@ -55,8 +79,13 @@ export default function ScanQuizScreen({ parts, onExit, onComplete, markAnswers 
   const [pairs, setPairs] = useState<Pair[]>([]);
   const [pairFlash, setPairFlash] = useState<Pair | null>(null);
   const [tiles, setTiles] = useState<string[]>([]);
+  const [tally, setTally] = useState<FirstTryCount>({ right: 0, total: 0 });
+  const [finished, setFinished] = useState<FirstTryCount | null>(null);
 
   const q = queue.items[queue.index];
+  if (finished) {
+    return <ScanQuizFinish count={finished} onContinue={onComplete} />;
+  }
   if (!q) {
     return null;
   }
@@ -103,16 +132,19 @@ export default function ScanQuizScreen({ parts, onExit, onComplete, markAnswers 
   }
 
   function onAdvance(override?: Grade) {
-    const next = advanceQueue(queue, override ?? grade);
-    if (!queueFinished(next)) {
-      go(next, partIndex);
+    const next = answerCurrent({
+      parts,
+      partIndex,
+      queue,
+      count: tally,
+      screen: 'question',
+    }, override ?? grade);
+    setTally(next.count);
+    if (next.screen === 'finish') {
+      setFinished(next.count);
       return;
     }
-    if (partIndex + 1 < parts.length) {
-      go({ items: parts[partIndex + 1], index: 0, retried: [] }, partIndex + 1);
-      return;
-    }
-    onComplete();
+    go(next.queue, next.partIndex);
   }
 
   function tapPair(side: 'left' | 'right', value: string) {

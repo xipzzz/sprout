@@ -93,6 +93,9 @@ await page.evaluate(() => {
 });
 await save('check-actions.png');
 
+await go('finish');
+await save('quiz-finish.png');
+
 await go('check');
 await page.getByRole('button', { name: 'See on page' }).first().click();
 await page.waitForSelector('.page-viewer');

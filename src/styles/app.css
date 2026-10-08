@@ -2542,6 +2542,48 @@ body.calm-motion *, body.calm-motion *::before, body.calm-motion *::after { anim
   border: 3px solid #ff1f1f;
   border-radius: 16px;
 }
+.scan-finish {
+  background: #F5F0E7;
+  color: #2A2320;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px 22px;
+}
+.scan-finish__card {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+  padding: 28px 18px 22px;
+}
+.scan-finish__pip { width: 112px; height: 112px; }
+.scan-finish__title {
+  margin: 8px 0 0;
+  font-size: 1.85rem;
+  font-weight: 900;
+  color: #2A2320;
+}
+.scan-finish__count {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #2A2320;
+}
+.scan-finish__continue {
+  width: 100%;
+  margin-top: 18px;
+  min-height: 56px;
+  border-radius: 16px;
+  font-weight: 900;
+  font-size: 1.15rem;
+  color: #fff;
+  background: #6FBF5E;
+  box-shadow: 0 4px 0 #4D9E3F;
+}
 .review-card .scan__field-label,
 .scan--review .scan__field-label { color: rgba(42, 35, 32, 0.6); }
 .scan__input--prompt, textarea.scan__input { resize: none; }

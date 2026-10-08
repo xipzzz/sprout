@@ -261,6 +261,70 @@ export function queueFinished(state: QuizQueue): boolean {
   return state.index >= state.items.length;
 }
 
+export interface FirstTryCount {
+  right: number;
+  total: number;
+}
+
+/** A repeat after a wrong answer is not a new question and cannot count as right. */
+export function noteFirstTry(count: FirstTryCount, grade: Grade, retried: boolean): FirstTryCount {
+  if (retried) return count;
+  return {
+    right: count.right + (grade === 'correct' ? 1 : 0),
+    total: count.total + 1,
+  };
+}
+
+export function firstTryLine(count: FirstTryCount): string {
+  return `You got ${count.right} of ${count.total} right`;
+}
+
+export interface QuizRun {
+  parts: PlayableQuestion[][];
+  partIndex: number;
+  queue: QuizQueue;
+  count: FirstTryCount;
+  /** Finish stays up until Continue. The last answer does not open Today. */
+  screen: 'question' | 'finish' | 'today';
+}
+
+export function startQuiz(parts: PlayableQuestion[][]): QuizRun {
+  return {
+    parts,
+    partIndex: 0,
+    queue: { items: parts[0] ?? [], index: 0, retried: [] },
+    count: { right: 0, total: 0 },
+    screen: 'question',
+  };
+}
+
+/** Grade the question on screen. A finished part opens the next part, or the finish screen. */
+export function answerCurrent(run: QuizRun, grade: Grade): QuizRun {
+  if (run.screen !== 'question') return run;
+  const current = run.queue.items[run.queue.index];
+  if (!current) return run;
+  const count = noteFirstTry(run.count, grade, run.queue.retried.includes(current.id));
+  const queue = advanceQueue(run.queue, grade);
+  if (!queueFinished(queue)) return { ...run, queue, count, screen: 'question' };
+  const nextPart = run.partIndex + 1;
+  if (nextPart < run.parts.length) {
+    return {
+      ...run,
+      count,
+      partIndex: nextPart,
+      queue: { items: run.parts[nextPart] ?? [], index: 0, retried: [] },
+      screen: 'question',
+    };
+  }
+  return { ...run, queue, count, screen: 'finish' };
+}
+
+/** Continue on the finish screen is what returns to Today. */
+export function continueFinish(run: QuizRun): QuizRun {
+  if (run.screen !== 'finish') return run;
+  return { ...run, screen: 'today' };
+}
+
 export function answerText(q: PlayableQuestion): string {
   if (q.kind === 'matching') return q.pairs.map((p) => `${p.left} → ${p.right}`).join(', ');
   if (q.kind === 'rewrite') return q.answerTokens.join(' ');
