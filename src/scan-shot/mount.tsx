@@ -22,10 +22,11 @@ function syntheticPage(): string {
   ctx.strokeRect(18, 18, 444, 604);
   ctx.fillStyle = '#2A2320';
   ctx.font = 'bold 28px sans-serif';
-  ctx.fillText('Synthetic page', 40, 78);
+  ctx.fillText('Synthetic page', 40, 70);
   ctx.font = '22px sans-serif';
-  ctx.fillText('1. Which shape is a box?', 40, 150);
-  ctx.fillText('circle     box     line', 40, 196);
+  ctx.fillText('1. The synthetic fox ___ the box.', 36, 150);
+  ctx.fillText('2. Which shape is a box?', 36, 400);
+  ctx.fillText('circle     box     line', 36, 446);
   return canvas.toDataURL('image/jpeg', 0.85);
 }
 

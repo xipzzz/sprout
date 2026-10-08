@@ -118,13 +118,13 @@ export default function ScanHomeworkScreen({ onCancel, onReady }: ScanHomeworkSc
   async function readPages() {
     if (!token || pages.length === 0) return;
     setPhase('working');
-    setStatus('Getting the page cleaner ready…');
+    setStatus('Straightening your page...');
     let cleaner = false;
     try {
       await loadCv();
       cleaner = true;
     } catch {
-      setStatus('The page cleaner did not load. Sending the photo as taken.');
+      setStatus('Straightening your page...');
     }
     const collected: { questions: ScannedQuestion[]; suggestions: Record<string, string> }[] = [];
     const shots: string[] = [];
@@ -132,11 +132,11 @@ export default function ScanHomeworkScreen({ onCancel, onReady }: ScanHomeworkSc
       for (let i = 0; i < pages.length; i++) {
         let jpeg: Blob;
         if (cleaner) {
-          setStatus(`Straightening page ${i + 1} of ${pages.length}…`);
+          setStatus(pages.length > 1 ? `Straightening your page... ${i + 1} of ${pages.length}` : 'Straightening your page...');
           try {
             jpeg = await cleanHomeworkPhoto(pages[i].file);
           } catch {
-            setStatus('Could not clean that photo. Sending it as taken.');
+            setStatus('Straightening your page...');
             jpeg = await photoAsJpeg(pages[i].file);
           }
         } else {
@@ -368,7 +368,7 @@ export function ScanLoadingPreview({ mark = false }: { mark?: boolean }) {
         <h1 className="scan__title">Scan homework</h1>
       </header>
       <main className="screen__body scan__body">
-        <ScanLoadingBody status="Getting the page cleaner ready…" mark={mark} />
+        <ScanLoadingBody status="Straightening your page..." mark={mark} />
       </main>
     </div>
   );
@@ -377,7 +377,7 @@ export function ScanLoadingPreview({ mark = false }: { mark?: boolean }) {
 function ScanLoadingBody({ status, mark = false }: { status: string; mark?: boolean }) {
   return (
     <div className={`scan-loading${mark ? ' scan-shot-mark' : ''}`} role="status">
-      <span className="scan__spinner" aria-hidden="true" />
+      <PipPose className="scan__pip" pose="neutral" />
       <p>{status}</p>
     </div>
   );

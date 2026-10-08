@@ -138,7 +138,7 @@ export default function ScanQuizScreen({ parts, onExit, onComplete, markAnswers 
   const sheetBody = grade === 'correct'
     ? 'Pip is proud of you.'
     : grade === 'almost'
-      ? 'No hearts lost — try the next one.'
+      ? 'So close. Try the next one.'
       : answerText(q);
 
   const choices = q.kind === 'fill_cards' || q.kind === 'multiple_choice'
@@ -252,7 +252,7 @@ export default function ScanQuizScreen({ parts, onExit, onComplete, markAnswers 
                   <button
                     key={pair.left}
                     type="button"
-                    className={`word-pick__answer${selected ? ' word-pick__answer--selected' : ''}${done ? ' word-pick__answer--correct' : ''}${wrong ? ' word-pick__answer--wrong' : ''}`}
+                    className={`word-pick__answer${selected ? ' word-pick__answer--selected' : ''}${done ? ' scanq__matched' : ''}${wrong ? ' word-pick__answer--wrong' : ''}`}
                     disabled={phase === 'feedback' || done}
                     onClick={() => tapPair('left', pair.left)}
                   >
@@ -269,7 +269,7 @@ export default function ScanQuizScreen({ parts, onExit, onComplete, markAnswers 
                   <button
                     key={right}
                     type="button"
-                    className={`word-pick__answer${done ? ' word-pick__answer--correct' : ''}${wrong ? ' word-pick__answer--wrong' : ''}`}
+                    className={`word-pick__answer${done ? ' scanq__matched' : ''}${wrong ? ' word-pick__answer--wrong' : ''}`}
                     disabled={phase === 'feedback' || done || !pickedLeft}
                     onClick={() => tapPair('right', right)}
                   >

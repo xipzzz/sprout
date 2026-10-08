@@ -36,7 +36,7 @@ export default function ScanReviewScreen({
   const [openIds, setOpenIds] = useState<string[]>([]);
   const [typeMenu, setTypeMenu] = useState<string | null>(null);
   const [removedId, setRemovedId] = useState<string | null>(null);
-  const [pageOpen, setPageOpen] = useState(false);
+  const [pageFocus, setPageFocus] = useState<{ index: number; prompt: string } | null>(null);
   const visible = questions.filter((q) => !q.deleted);
   const ready = visible.filter((q) => q.confirmed).length;
 
@@ -44,9 +44,9 @@ export default function ScanReviewScreen({
     onChange(reviewReducer(questions, action));
   }
 
-  function openPage() {
+  function openPage(index: number, prompt: string) {
     if (photos.length === 0) return;
-    setPageOpen(true);
+    setPageFocus({ index, prompt });
   }
 
   function pickChoice(id: string, option: string) {
@@ -73,7 +73,7 @@ export default function ScanReviewScreen({
             key={src}
             type="button"
             className={`review-photo${mark ? ' scan-shot-mark' : ''}`}
-            onClick={openPage}
+            onClick={() => openPage(-1, '')}
             aria-label={`Straightened page ${index + 1}, see the full page`}
           >
             <img src={src} alt={`Straightened homework page ${index + 1}`} />
@@ -84,12 +84,12 @@ export default function ScanReviewScreen({
           if (collapsed) {
             return (
               <div key={q.id} className={`review-collapsed${mark ? ' scan-shot-mark' : ''}`}>
-                <button type="button" className="review-collapsed__open" onClick={openPage}>
+                <button type="button" className="review-collapsed__open" onClick={() => openPage(index, q.prompt)}>
                   <span>{index + 1} · {oneLine(q)}</span>
                   <span className="review-collapsed__answer">{summary(q)}</span>
                 </button>
                 <div className="review-collapsed__actions">
-                  <button type="button" className="see-page" onClick={openPage}>See on page</button>
+                  <button type="button" className="see-page" onClick={() => openPage(index, q.prompt)}>See on page</button>
                   <button type="button" className="review-collapsed__edit" onClick={() => setOpenIds((ids) => [...ids, q.id])}>
                     Edit
                   </button>
@@ -100,11 +100,11 @@ export default function ScanReviewScreen({
           return (
             <article className="review-card" key={q.id}>
               <header className="review-card__head">
-                <button type="button" className="review-card__open" onClick={openPage}>{index + 1}</button>
+                <button type="button" className="review-card__open" onClick={() => openPage(index, q.prompt || q.left.join(' '))}>{index + 1}</button>
                 <button type="button" className="type-chip" onClick={() => setTypeMenu(typeMenu === q.id ? null : q.id)}>
                   {TYPE_LABEL[q.type]}
                 </button>
-                <button type="button" className="see-page" onClick={openPage}>See on page</button>
+                <button type="button" className="see-page" onClick={() => openPage(index, q.prompt || q.left.join(' '))}>See on page</button>
               </header>
               {typeMenu === q.id && (
                 <div className="type-menu" role="listbox" aria-label="Question type">
@@ -158,7 +158,7 @@ export default function ScanReviewScreen({
                         className={`choice-row${picked ? ' choice-row--picked' : ''}`}
                         onClick={() => option && pickChoice(q.id, option)}
                       >
-                        <span className="choice-row__mark" aria-hidden="true">{picked ? '✓' : ''}</span>
+                        <span className={`choice-radio${picked ? ' choice-radio--on' : ''}`} aria-hidden="true">{picked ? '✓' : ''}</span>
                         <input
                           className="choice-row__input"
                           value={option}
@@ -255,8 +255,13 @@ export default function ScanReviewScreen({
           </button>
         </div>
       )}
-      {pageOpen && photos.length > 0 && (
-        <PageViewer pages={photos} onClose={() => setPageOpen(false)} mark={mark} />
+      {pageFocus && photos.length > 0 && (
+        <PageViewer
+          pages={photos}
+          question={{ index: pageFocus.index, count: visible.length, prompt: pageFocus.prompt }}
+          onClose={() => setPageFocus(null)}
+          mark={mark}
+        />
       )}
     </div>
   );
