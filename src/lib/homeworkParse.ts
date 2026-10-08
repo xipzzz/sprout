@@ -1,8 +1,5 @@
-/* homeworkParse — swappable homework photo → ONE Lock B word-pick.
- *
- * Default: Tesseract.js (open-source OCR in the browser). No cloud keys.
- * Sample path always works. Provider interface stays swappable for future
- * parsers — do NOT commit paid API keys.
+/* Retired Tesseract draft. The production scan path does not import this file.
+   Scan homework lives in src/lib/scan and ScanHomeworkScreen.
  */
 
 import { createWorker } from 'tesseract.js';
@@ -41,13 +38,7 @@ export interface HomeworkParseProvider {
   parseImage: (file: File) => Promise<ParseOutcome>;
 }
 
-/** Sample exercise tied to public/sample-homework.png — always available. */
-export const SAMPLE_WORD_PICK: WordPickQuestion = {
-  prompt: 'Which word means a baby plant?',
-  choices: ['bloom', 'seedling', 'root', 'fence'],
-  correct: 'seedling',
-  source: 'sample',
-};
+/** Instant sample path removed — production scans never invent a question. */
 
 /** Common English kids-worksheet distractors / fillers for thin OCR. */
 const FALLBACK_DISTRACTORS = [
@@ -238,12 +229,6 @@ export function createTesseractProvider(): HomeworkParseProvider {
   };
 }
 
-/** Instant sample path — no network OCR required, always works. */
-export async function parseSampleHomework(): Promise<ParseOutcome> {
-  await wait(420);
-  return { ok: true, question: { ...SAMPLE_WORD_PICK } };
-}
-
 /**
  * Parse a user-uploaded homework image via the registered provider.
  * With no provider: never invent a parse — clear no_provider error + sample offer.
@@ -277,9 +262,6 @@ export async function parseHomeworkImage(file: File): Promise<ParseOutcome> {
     };
   }
 }
-
-// Register open-source Tesseract as the default provider on module load.
-registerHomeworkParseProvider(createTesseractProvider());
 
 function cleanChoiceToken(s: string): string | null {
   const t = s
@@ -324,8 +306,4 @@ function loadImage(url: string): Promise<HTMLImageElement> {
     img.onerror = () => reject(new Error('image load failed'));
     img.src = url;
   });
-}
-
-function wait(ms: number) {
-  return new Promise((r) => setTimeout(r, ms));
 }

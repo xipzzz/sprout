@@ -20,6 +20,8 @@ interface HomeScreenProps {
   onOpenShop: () => void;
   onOpenWater: () => void;
   onOpenScan?: () => void;
+  homeworkQuizzes?: { id: string; title: string }[];
+  onPlayHomework?: (id: string) => void;
   tab: TabKey;
   onTabChange: (tab: TabKey) => void;
 }
@@ -52,7 +54,7 @@ function loadTodayDone(key: string): string[] {
   try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch { return []; }
 }
 
-export default function HomeScreen({ completed, focusTarget, onFocusSettled, onStartUnit, onOpenShop, onOpenWater, onOpenScan, tab, onTabChange }: HomeScreenProps) {
+export default function HomeScreen({ completed, focusTarget, onFocusSettled, onStartUnit, onOpenShop, onOpenWater, onOpenScan, homeworkQuizzes = [], onPlayHomework, tab, onTabChange }: HomeScreenProps) {
   const sections = courseWithProgress(completed);
 
   // The "Today Card": a calm pointer to the next lesson (or a rested state).
@@ -119,6 +121,17 @@ export default function HomeScreen({ completed, focusTarget, onFocusSettled, onS
               <span className="today__scan-icon" aria-hidden="true">📷</span>
               Scan homework
             </button>
+          )}
+          {homeworkQuizzes.length > 0 && (
+            <ul className="today__homework" aria-label="Scanned homework">
+              {homeworkQuizzes.map((quiz) => (
+                <li key={quiz.id}>
+                  <button type="button" className="today__homework-btn" onClick={() => onPlayHomework?.(quiz.id)}>
+                    {quiz.title}
+                  </button>
+                </li>
+              ))}
+            </ul>
           )}
           <ul className="today__checklist" aria-label="Today's plan">
             {TODAY_TASKS.map((t) => {

@@ -1,351 +1,343 @@
-/* ScanHomeworkScreen — kids pick a homework photo (camera/gallery) or tap
-   the bundled sample demo. OCR drafts a word-pick; parent edits, then Start. */
+/* Scan homework — photograph real pages, clean them on the device,
+   read them through the Worker, then a parent checks every question.
+   If the reader is not set up, or a page cannot be read, we stop.
+   No sample questions. */
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import PipPose from '../components/PipPose';
-import {
-  hasHomeworkParseProvider,
-  parseHomeworkImage,
-  parseSampleHomework,
-  type WordPickQuestion,
-} from '../lib/homeworkParse';
+import { fetchScanHealth, postScanPage } from '../lib/scan/api';
+import { scanGoogleClientId, scanWorkerUrl } from '../lib/scan/config';
+import { mergeScannedPages } from '../lib/scan/merge';
+import { renderGoogleButton } from '../lib/scan/parentAuth';
+import { cleanHomeworkPhoto } from '../lib/scan/preprocess';
+import { buildQuiz } from '../lib/scan/quizMap';
+import { createReview, type ReviewQuestion } from '../lib/scan/review';
+import { formatQuizDay, type HomeworkQuiz } from '../lib/scan/storage';
+import type { ScannedQuestion } from '../lib/scan/types';
 import { playSproutFeedback } from '../utils/feedback';
+import ScanReviewScreen from './ScanReviewScreen';
 
 interface ScanHomeworkScreenProps {
   onCancel: () => void;
-  onParsed: (question: WordPickQuestion) => void;
+  onReady: (quiz: HomeworkQuiz) => void;
 }
 
-type Phase = 'pick' | 'loading' | 'edit' | 'error';
+type Phase = 'boot' | 'unconfigured' | 'auth-needed' | 'signin' | 'capture' | 'working' | 'error' | 'paused' | 'review';
 
-interface DraftState {
-  prompt: string;
-  choices: string[];
-  correctIndex: number;
-  source: WordPickQuestion['source'];
+interface LocalPage {
+  id: string;
+  file: File;
+  previewUrl: string;
 }
 
-function questionToDraft(q: WordPickQuestion): DraftState {
-  const choices = [...q.choices].slice(0, 4);
-  const idx = Math.max(0, choices.findIndex((c) => c === q.correct));
-  return {
-    prompt: q.prompt,
-    choices,
-    correctIndex: idx === -1 ? 0 : idx,
-    source: q.source,
-  };
-}
+const MAX_PAGES = 6;
 
-export default function ScanHomeworkScreen({ onCancel, onParsed }: ScanHomeworkScreenProps) {
-  const galleryInputRef = useRef<HTMLInputElement>(null);
-  const cameraInputRef = useRef<HTMLInputElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [phase, setPhase] = useState<Phase>('pick');
+export default function ScanHomeworkScreen({ onCancel, onReady }: ScanHomeworkScreenProps) {
+  const cameraRef = useRef<HTMLInputElement>(null);
+  const galleryRef = useRef<HTMLInputElement>(null);
+  const googleRef = useRef<HTMLDivElement>(null);
+  const [phase, setPhase] = useState<Phase>(() => (scanWorkerUrl() ? 'boot' : 'unconfigured'));
   const [errorMsg, setErrorMsg] = useState('');
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [draft, setDraft] = useState<DraftState | null>(null);
-  const providerReady = hasHomeworkParseProvider();
+  const [status, setStatus] = useState('');
+  const [pages, setPages] = useState<LocalPage[]>([]);
+  const [token, setToken] = useState<string | null>(null);
+  const [review, setReview] = useState<ReviewQuestion[]>([]);
 
-  function enterEdit(q: WordPickQuestion) {
-    setErrorMsg('');
-    setDraft(questionToDraft(q));
-    setPhase('edit');
-    playSproutFeedback('gardenGrowth');
-  }
+  useEffect(() => {
+    if (phase !== 'boot') return;
+    let cancelled = false;
+    fetchScanHealth()
+      .then((health) => {
+        if (cancelled) return;
+        if (!health.providerConfigured) {
+          setPhase('unconfigured');
+          return;
+        }
+        if (health.paused) {
+          setPhase('paused');
+          return;
+        }
+        if (!health.authConfigured || !scanGoogleClientId()) {
+          setPhase('auth-needed');
+          return;
+        }
+        setPhase('signin');
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setErrorMsg('Pip cannot reach the homework reader. Check the connection and try again.');
+        setPhase('error');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [phase]);
 
-  async function runSample() {
-    setPhase('loading');
-    setErrorMsg('');
-    playSproutFeedback('gardenGrowth');
-    const result = await parseSampleHomework();
-    if (result.ok) {
-      enterEdit(result.question);
-    } else {
-      setErrorMsg(result.message);
+  useEffect(() => {
+    if (phase !== 'signin' || !googleRef.current) return;
+    const clientId = scanGoogleClientId();
+    let cancelled = false;
+    renderGoogleButton(googleRef.current, clientId, (next) => {
+      if (cancelled) return;
+      setToken(next);
+      setPhase('capture');
+    }).catch(() => {
+      if (cancelled) return;
+      setErrorMsg('Parent sign-in did not load. Try again in a moment.');
       setPhase('error');
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [phase]);
+
+  const pagesRef = useRef<LocalPage[]>([]);
+  useEffect(() => {
+    pagesRef.current = pages;
+  }, [pages]);
+  useEffect(() => () => {
+    pagesRef.current.forEach((page) => URL.revokeObjectURL(page.previewUrl));
+  }, []);
+
+  function addFiles(list: FileList | null) {
+    if (!list) return;
+    const next: LocalPage[] = [];
+    for (const file of list) {
+      if (!file.type.startsWith('image/')) continue;
+      next.push({ id: `${file.name}-${file.size}-${Math.random()}`, file, previewUrl: URL.createObjectURL(file) });
     }
+    setPages((current) => [...current, ...next].slice(0, MAX_PAGES));
   }
 
-  async function onFileChosen(file: File | undefined) {
-    if (!file) return;
+  function removePage(id: string) {
+    setPages((current) => {
+      const page = current.find((item) => item.id === id);
+      if (page) URL.revokeObjectURL(page.previewUrl);
+      return current.filter((item) => item.id !== id);
+    });
+  }
+
+  async function readPages() {
+    if (!token || pages.length === 0) return;
+    setPhase('working');
+    setErrorMsg('');
+    const collected: { questions: ScannedQuestion[]; suggestions: Record<string, string> }[] = [];
     try {
-      setPreviewUrl(URL.createObjectURL(file));
-    } catch { /* ignore */ }
-    setPhase('loading');
-    setErrorMsg('');
-    const result = await parseHomeworkImage(file);
-    if (result.ok) {
-      enterEdit(result.question);
+      for (let i = 0; i < pages.length; i++) {
+        setStatus(`Straightening page ${i + 1} of ${pages.length}…`);
+        let jpeg: Blob;
+        try {
+          jpeg = await cleanHomeworkPhoto(pages[i].file);
+        } catch {
+          setErrorMsg('Pip could not clean up that photo. Try a brighter picture of the whole page.');
+          setPhase('error');
+          return;
+        }
+        setStatus(`Reading page ${i + 1} of ${pages.length}…`);
+        const result = await postScanPage(jpeg, token);
+        if (!result.ok) {
+          if (result.code === 'spending_cap') {
+            setPhase('paused');
+            return;
+          }
+          setErrorMsg(result.message);
+          setPhase('error');
+          return;
+        }
+        collected.push({ questions: result.questions, suggestions: result.suggestions });
+      }
+    } catch {
+      setErrorMsg('Pip could not read that page. Try another photo.');
+      setPhase('error');
       return;
     }
-    setErrorMsg(result.message);
-    setPhase('error');
-  }
-
-  function updateChoice(index: number, value: string) {
-    setDraft((d) => {
-      if (!d) return d;
-      const choices = [...d.choices];
-      choices[index] = value;
-      return { ...d, choices };
-    });
-  }
-
-  function addChoice() {
-    setDraft((d) => {
-      if (!d || d.choices.length >= 4) return d;
-      return { ...d, choices: [...d.choices, ''] };
-    });
-  }
-
-  function removeChoice(index: number) {
-    setDraft((d) => {
-      if (!d || d.choices.length <= 2) return d;
-      const choices = d.choices.filter((_, i) => i !== index);
-      let correctIndex = d.correctIndex;
-      if (index === d.correctIndex) correctIndex = 0;
-      else if (index < d.correctIndex) correctIndex = d.correctIndex - 1;
-      return { ...d, choices, correctIndex };
-    });
-  }
-
-  function startPractice() {
-    if (!draft) return;
-    const prompt = draft.prompt.trim();
-    const choices = draft.choices.map((c) => c.trim()).filter(Boolean);
-    if (!prompt || choices.length < 2) {
-      setErrorMsg('Please fill the prompt and at least 2 choices.');
+    const merged = mergeScannedPages(collected);
+    if (merged.questions.length === 0) {
+      setErrorMsg('No printed questions were found. Try another photo.');
+      setPhase('error');
       return;
     }
-    // Map correctIndex onto trimmed non-empty choices
-    const rawCorrect = (draft.choices[draft.correctIndex] || '').trim();
-    const correct = choices.includes(rawCorrect) ? rawCorrect : choices[0];
-    setErrorMsg('');
+    setReview(createReview(merged.questions, merged.suggestions));
+    setPhase('review');
     playSproutFeedback('gardenGrowth');
-    onParsed({
-      prompt,
-      choices: choices.slice(0, 4),
-      correct,
-      source: draft.source,
+  }
+
+  function practice() {
+    const parts = buildQuiz(review);
+    if (parts.length === 0) return;
+    const now = Date.now();
+    onReady({
+      id: `hw-${now}`,
+      title: parts.length > 1 ? `Homework · ${formatQuizDay(now)} · ${parts.length} parts` : `Homework · ${formatQuizDay(now)}`,
+      createdAt: now,
+      parts,
     });
   }
 
-  function backToPick() {
-    setPhase('pick');
-    setErrorMsg('');
-    setDraft(null);
-    setPreviewUrl(null);
-    if (galleryInputRef.current) galleryInputRef.current.value = '';
-    if (cameraInputRef.current) cameraInputRef.current.value = '';
-    if (fileInputRef.current) fileInputRef.current.value = '';
+  if (phase === 'review') {
+    return (
+      <ScanReviewScreen
+        questions={review}
+        onChange={setReview}
+        onPractice={practice}
+        onBack={() => setPhase('capture')}
+      />
+    );
   }
 
   return (
-    <div className="screen scan">
+    <div className="screen scan" data-scan-shot-ready="">
       <header className="scan__top">
-        <button
-          type="button"
-          className="lesson__close"
-          onClick={() => {
-            playSproutFeedback('modalClose');
-            onCancel();
-          }}
-          aria-label="Back to Today"
-        >
+        <button type="button" className="lesson__close" onClick={onCancel} aria-label="Back to Today">
           <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path d="M6 6l12 12M18 6L6 18" />
           </svg>
         </button>
-        <h1 className="scan__title">
-          {phase === 'edit' ? 'Check the exercise' : 'Scan homework'}
-        </h1>
+        <h1 className="scan__title">Scan homework</h1>
       </header>
-
       <main className="screen__body scan__body">
-        {phase !== 'edit' && (
-          <div className="scan__hero">
-            <PipPose className="scan__pip" pose="neutral" />
-            <p className="scan__lead">
-              Take or pick a homework photo. Pip drafts one word-pick — a parent can fix it, then Start.
-            </p>
+        <div className="scan__hero">
+          <PipPose className="scan__pip" pose={phase === 'error' || phase === 'paused' ? 'almost' : 'neutral'} />
+          <p className="scan__lead">{leadFor(phase)}</p>
+        </div>
+
+        {phase === 'boot' && (
+          <p className="scan__loading" role="status">Checking the homework reader…</p>
+        )}
+
+        {(phase === 'unconfigured' || phase === 'auth-needed' || phase === 'paused' || phase === 'error') && (
+          <div className={`scan-note${phase === 'error' ? ' scan-note--error' : ''}`} role={phase === 'error' ? 'alert' : 'status'}>
+            <p className="scan-note__title">{titleFor(phase)}</p>
+            <p className="scan-note__body">{phase === 'error' ? errorMsg : bodyFor(phase)}</p>
           </div>
         )}
 
-        {previewUrl && phase !== 'edit' && (
-          <img className="scan__preview" src={previewUrl} alt="Selected homework" />
-        )}
-
-        {phase === 'loading' && (
-          <div className="scan__loading" role="status" aria-live="polite">
-            <span className="scan__spinner" aria-hidden="true" />
-            <p>Reading with free open-source text scan…</p>
+        {phase === 'signin' && (
+          <div className="scan-note">
+            <p className="scan-note__title">A parent signs in first</p>
+            <p className="scan-note__body">Only a signed-in parent can send a page to be read.</p>
+            <div ref={googleRef} className="scan-google" />
           </div>
         )}
 
-        {phase === 'error' && (
-          <div className="scan__error" role="alert">
-            <p className="scan__error-title">Could not scan that photo</p>
-            <p className="scan__error-body">{errorMsg}</p>
-          </div>
-        )}
-
-        {phase === 'edit' && draft && (
-          <div className="scan__edit" aria-label="Edit word-pick before practice">
-            <p className="scan__edit-note" role="note">
-              Works best on clear printed worksheets. Handwriting may need a parent edit below.
-            </p>
-
-            {previewUrl && (
-              <img className="scan__preview scan__preview--edit" src={previewUrl} alt="Selected homework" />
-            )}
-
-            <label className="scan__field">
-              <span className="scan__field-label">Prompt</span>
-              <textarea
-                className="scan__input scan__input--prompt"
-                rows={2}
-                value={draft.prompt}
-                onChange={(e) => setDraft({ ...draft, prompt: e.target.value })}
-              />
-            </label>
-
-            <fieldset className="scan__choices">
-              <legend className="scan__field-label">Choices (select the correct answer)</legend>
-              {draft.choices.map((choice, i) => (
-                <div className="scan__choice-row" key={i}>
-                  <input
-                    type="radio"
-                    name="scan-correct"
-                    className="scan__correct-radio"
-                    checked={draft.correctIndex === i}
-                    onChange={() => setDraft({ ...draft, correctIndex: i })}
-                    aria-label={`Mark choice ${i + 1} as correct`}
-                  />
-                  <input
-                    type="text"
-                    className="scan__input"
-                    value={choice}
-                    placeholder={`Choice ${i + 1}`}
-                    onChange={(e) => updateChoice(i, e.target.value)}
-                    aria-label={`Choice ${i + 1}`}
-                  />
-                  {draft.choices.length > 2 && (
-                    <button
-                      type="button"
-                      className="scan__choice-remove"
-                      onClick={() => removeChoice(i)}
-                      aria-label={`Remove choice ${i + 1}`}
-                    >
-                      ✕
-                    </button>
-                  )}
-                </div>
-              ))}
-              {draft.choices.length < 4 && (
-                <button type="button" className="scan__add-choice" onClick={addChoice}>
-                  + Add choice
-                </button>
-              )}
-            </fieldset>
-
-            {errorMsg && (
-              <p className="scan__edit-error" role="alert">{errorMsg}</p>
-            )}
-
-            <button type="button" className="btn-primary scan__cta" onClick={startPractice}>
-              Start practice
-            </button>
-            <button type="button" className="scan__retry" onClick={backToPick}>
-              Back
-            </button>
-          </div>
-        )}
-
-        {(phase === 'pick' || phase === 'error') && (
+        {phase === 'capture' && (
           <>
-            <p className="scan__key-note" role="note">
-              Free open-source text scan (Tesseract) runs in your browser — best on clear printed
-              sheets. Handwriting may need parent edits. Sample homework always works.
-              {!providerReady && ' Live scan is unavailable right now; use the sample below.'}
-            </p>
-
-            {/* Hidden file inputs for each action */}
             <input
-              ref={galleryInputRef}
-              className="scan__file"
-              type="file"
-              accept="image/*"
-              aria-label="Choose image from gallery"
-              onChange={(e) => onFileChosen(e.target.files?.[0])}
-            />
-            <input
-              ref={cameraInputRef}
+              ref={cameraRef}
               className="scan__file"
               type="file"
               accept="image/*"
               capture="environment"
               aria-label="Take photo with camera"
-              onChange={(e) => onFileChosen(e.target.files?.[0])}
+              onChange={(e) => {
+                addFiles(e.target.files);
+                e.target.value = '';
+              }}
             />
             <input
-              ref={fileInputRef}
+              ref={galleryRef}
               className="scan__file"
               type="file"
               accept="image/*"
-              aria-label="Choose file"
-              onChange={(e) => onFileChosen(e.target.files?.[0])}
+              multiple
+              aria-label="Choose photos from gallery"
+              onChange={(e) => {
+                addFiles(e.target.files);
+                e.target.value = '';
+              }}
             />
-
-            {/* Three visible action buttons */}
             <div className="scan__actions">
-              <button
-                type="button"
-                className="scan__action-btn scan__action-btn--gallery"
-                onClick={() => galleryInputRef.current?.click()}
-              >
-                <span className="scan__action-icon" aria-hidden="true">🖼️</span>
-                <span className="scan__action-label">Attach image</span>
-              </button>
-
-              <button
-                type="button"
-                className="scan__action-btn scan__action-btn--camera"
-                onClick={() => cameraInputRef.current?.click()}
-              >
+              <button type="button" className="scan__action-btn" onClick={() => cameraRef.current?.click()}>
                 <span className="scan__action-icon" aria-hidden="true">📷</span>
                 <span className="scan__action-label">Take photo</span>
               </button>
-
-              <button
-                type="button"
-                className="scan__action-btn scan__action-btn--file"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <span className="scan__action-icon" aria-hidden="true">📁</span>
-                <span className="scan__action-label">Choose file</span>
+              <button type="button" className="scan__action-btn" onClick={() => galleryRef.current?.click()}>
+                <span className="scan__action-icon" aria-hidden="true">🖼️</span>
+                <span className="scan__action-label">Photo library</span>
               </button>
             </div>
-
-            <button
-              type="button"
-              className="scan__sample"
-              onClick={runSample}
-            >
-              Use sample homework
-              <span className="scan__sample-badge">Demo · always works</span>
-            </button>
-
-            {phase === 'error' && (
-              <button
-                type="button"
-                className="scan__retry"
-                onClick={backToPick}
-              >
-                Try again
-              </button>
+            {pages.length > 0 && (
+              <ul className="scan-pages" aria-label="Pages to read">
+                {pages.map((page, index) => (
+                  <li key={page.id}>
+                    <img src={page.previewUrl} alt={`Page ${index + 1}`} />
+                    <button type="button" onClick={() => removePage(page.id)} aria-label={`Remove page ${index + 1}`}>
+                      Remove
+                    </button>
+                  </li>
+                ))}
+              </ul>
             )}
+            <button type="button" className="lesson__check" disabled={pages.length === 0} onClick={readPages}>
+              Read {pages.length === 1 ? 'this page' : `these ${pages.length} pages`}
+            </button>
           </>
         )}
+
+        {phase === 'working' && (
+          <p className="scan__loading" role="status">{status}</p>
+        )}
+
+        {phase === 'error' && (
+          <button type="button" className="lesson__check" onClick={() => setPhase(token ? 'capture' : 'boot')}>
+            Try another photo
+          </button>
+        )}
+      </main>
+    </div>
+  );
+}
+
+function leadFor(phase: Phase): string {
+  if (phase === 'unconfigured') return 'The homework reader is not connected yet.';
+  if (phase === 'auth-needed') return 'Scanning stays off until a parent can sign in.';
+  if (phase === 'paused') return 'Scanning is paused for now.';
+  if (phase === 'error') return 'That page was not read.';
+  if (phase === 'working') return 'Pip is reading the printed words.';
+  return 'Photograph a homework page. A grown-up checks it before practice.';
+}
+
+function titleFor(phase: Phase): string {
+  if (phase === 'unconfigured') return 'Scanning isn’t set up yet';
+  if (phase === 'auth-needed') return 'Scanning needs a parent sign-in';
+  if (phase === 'paused') return 'Scanning is paused';
+  return 'Pip couldn’t read that page';
+}
+
+function bodyFor(phase: Phase): string {
+  if (phase === 'unconfigured') {
+    return 'A grown-up still needs to connect the homework reader. Pip will not make up questions while we wait.';
+  }
+  if (phase === 'auth-needed') {
+    return 'Sprout does not have accounts yet, so Pip cannot tell who is scanning. Homework photos stay off until a grown-up connects sign-in.';
+  }
+  if (phase === 'paused') {
+    return 'Pip has used this month’s reading budget. A grown-up can turn it back on. Your other lessons are still here.';
+  }
+  return '';
+}
+
+export function ScanErrorPreview({ message, mark = false }: { message: string; mark?: boolean }) {
+  return (
+    <div className="screen scan" data-scan-shot-ready="">
+      <header className="scan__top">
+        <button type="button" className="lesson__close" aria-label="Back to Today">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
+        <h1 className="scan__title">Scan homework</h1>
+      </header>
+      <main className="screen__body scan__body">
+        <div className="scan__hero">
+          <PipPose className="scan__pip" pose="almost" />
+          <p className="scan__lead">That page was not read.</p>
+        </div>
+        <div className={`scan-note scan-note--error${mark ? ' scan-shot-mark' : ''}`} role="alert">
+          <p className="scan-note__title">Pip couldn’t read that page</p>
+          <p className="scan-note__body">{message}</p>
+        </div>
+        <button type="button" className="lesson__check">Try another photo</button>
       </main>
     </div>
   );

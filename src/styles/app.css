@@ -2352,3 +2352,159 @@ body.calm-motion *, body.calm-motion *::before, body.calm-motion *::after { anim
 .cta-bottom-safe {
   padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px) + 56px);
 }
+
+/* ============================================================
+   Scan homework — capture, parent check, Lock B quiz
+   ============================================================ */
+.scan { background: #F5F0E7; color: #2A2320; }
+.scan .lesson__close svg { width: 18px; height: 18px; stroke: #5C534C; stroke-width: 2.6; stroke-linecap: round; }
+.scan .lesson__check,
+.review-bar .lesson__check {
+  width: 100%;
+  min-height: 56px;
+  border-radius: 16px;
+  font-weight: 900;
+  font-size: 1.15rem;
+  color: #fff;
+  background: #6FBF5E;
+  box-shadow: 0 4px 0 #4D9E3F;
+}
+.scan .lesson__check:disabled,
+.review-bar .lesson__check:disabled {
+  background: #E8DFD0;
+  box-shadow: none;
+  color: #9A8F85;
+}
+.scan-note {
+  background: #fffdf7;
+  border: 2px solid #e3dccf;
+  border-radius: 18px;
+  padding: 16px;
+  margin: 8px 0 16px;
+}
+.scan-note--error { background: #fceeef; border-color: #EE4848; }
+.scan-note__title { margin: 0 0 6px; font-weight: 900; font-size: 1.15rem; }
+.scan-note__body { margin: 0; font-weight: 700; line-height: 1.4; color: #6e6259; }
+.scan-google { display: flex; justify-content: center; margin-top: 14px; }
+.scan-pages { list-style: none; margin: 8px 0 16px; padding: 0; display: flex; gap: 10px; overflow-x: auto; }
+.scan-pages li { width: 92px; flex: none; }
+.scan-pages img { width: 92px; height: 120px; object-fit: cover; border-radius: 12px; background: #fff; border: 2px solid #e3dccf; }
+.scan-pages button { width: 100%; margin-top: 4px; font-size: 0.75rem; font-weight: 800; color: #6e6259; }
+
+.scan--review { height: 100dvh; overflow: hidden; }
+.scan--review .screen__body { overflow: auto; padding-bottom: 12px; }
+.review-card {
+  background: #fffdf7;
+  border: 2px solid #e3dccf;
+  border-radius: 18px;
+  padding: 12px;
+  margin: 0 0 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.review-card .scan__input--prompt { min-height: 52px; }
+.review-card__head { display: flex; justify-content: space-between; font-weight: 900; font-size: 0.85rem; }
+.review-card__ready { color: #4D9E3F; }
+.review-card__flag {
+  margin: 0;
+  background: #fff6df;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-weight: 800;
+  font-size: 0.85rem;
+  line-height: 1.35;
+}
+.review-card__suggested {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: #E5F5FA;
+  color: #5AA7C9;
+  font-size: 0.75rem;
+}
+.review-card__pair { display: flex; align-items: center; gap: 8px; font-weight: 800; }
+.review-card__pair select, .review-card select.scan__input { min-height: 44px; }
+.review-card__extras { display: flex; flex-direction: column; gap: 8px; }
+.review-card__actions { display: flex; gap: 8px; align-items: center; }
+.review-card__confirm {
+  flex: 1;
+  min-height: 44px;
+  border-radius: 12px;
+  background: #6FBF5E;
+  color: #fff;
+  font-weight: 900;
+}
+.review-card__confirm:disabled { background: #E8DFD0; color: #9A8F85; }
+.review-card__remove { font-weight: 800; color: #6e6259; min-height: 44px; padding: 0 8px; }
+.scan--review .scan__pip { width: 56px; height: 56px; }
+.review-bar {
+  flex: none;
+  padding: 8px 18px calc(12px + env(safe-area-inset-bottom, 0px));
+  background: #F5F0E7;
+  border-top: 1px solid #e3dccf;
+}
+.review-bar__note { margin: 0 0 8px; font-weight: 800; color: #6e6259; font-size: 0.9rem; }
+
+.today__homework { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.today__homework-btn {
+  width: 100%;
+  text-align: left;
+  min-height: 48px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #fff;
+  border: 2px solid #e3dccf;
+  font-weight: 800;
+}
+
+.lesson--scan {
+  background: #F5F0E7;
+  color: #2A2320;
+  height: 100dvh;
+  min-height: 100dvh;
+  overflow: hidden;
+}
+.lesson--scan .screen__body { overflow: auto; padding-bottom: 8px; }
+.lesson--scan .lesson__check:not(:disabled) {
+  background: #6FBF5E;
+  box-shadow: 0 4px 0 #4D9E3F;
+}
+.lesson--scan .lesson__sheet-cta--green {
+  background: #6FBF5E;
+  box-shadow: 0 4px 0 #4D9E3F;
+}
+.lesson--scan .lesson__progress-fill { background: #6FBF5E; }
+.scanq__part, .scanq__instruction {
+  margin: 0;
+  padding: 0 18px;
+  font-weight: 800;
+  color: #6e6259;
+  font-size: 0.92rem;
+}
+.scanq__instruction { padding-top: 4px; }
+.scanq__blank {
+  display: inline-block;
+  min-width: 4.2rem;
+  border-bottom: 2.5px solid #2A2320;
+  margin: 0 4px;
+}
+.scanq__blank--filled { border-bottom-color: #5AA7C9; color: #5AA7C9; min-width: 0; padding: 0 2px; }
+.scanq__pairs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 8px 16px 12px; }
+.scanq__pair-col { display: flex; flex-direction: column; gap: 10px; }
+.scanq__paired { opacity: 0.55; }
+.scanq__type { display: flex; flex-direction: column; gap: 6px; margin: 14px 16px 0; font-weight: 800; color: #6e6259; }
+.scanq__type input {
+  min-height: 52px;
+  border-radius: 16px;
+  border: 2.5px solid #e3dccf;
+  padding: 0 14px;
+  font: inherit;
+  font-weight: 800;
+  background: #fffdf7;
+}
+.scan-shot-mark {
+  border: 3px solid #ff1f1f;
+  border-radius: 16px;
+}

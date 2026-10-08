@@ -1,0 +1,25 @@
+name = "sprout-scan"
+main = "src/index.ts"
+compatibility_date = "2026-10-01"
+
+# Switch the vision provider with this one variable: openai, anthropic, or xai.
+# mock is rejected by the Worker.
+[vars]
+PROVIDER = "openai"
+ALLOWED_ORIGIN = "https://xipzzz.github.io"
+DAILY_SCAN_LIMIT = "20"
+BURST_PER_MINUTE = "5"
+MONTHLY_SPEND_CAP_USD = "5"
+ESTIMATED_COST_PER_SCAN_USD = "0.03"
+
+# Create with: npx wrangler kv namespace create SCAN_LIMITS
+# Then replace the id below. Without a real namespace the Worker refuses scans.
+[[kv_namespaces]]
+binding = "SCAN_LIMITS"
+id = "00000000000000000000000000000000"
+
+# Secrets (not in this file):
+#   npx wrangler secret put VISION_API_KEY
+#   npx wrangler secret put GOOGLE_CLIENT_ID
+#   npx wrangler secret put ALLOWED_EMAILS
+# Optional var: VISION_MODEL
