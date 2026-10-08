@@ -2475,6 +2475,10 @@ body.calm-motion *, body.calm-motion *::before, body.calm-motion *::after { anim
   background: #6FBF5E;
   box-shadow: 0 4px 0 #4D9E3F;
 }
+.lesson--scan .lesson__sheet-cta--red {
+  background: #EE4848;
+  box-shadow: 0 4px 0 #C93A3A;
+}
 .lesson--scan .lesson__progress-fill { background: #6FBF5E; }
 .scanq__part, .scanq__instruction {
   margin: 0;
@@ -2524,16 +2528,62 @@ body.calm-motion *, body.calm-motion *::before, body.calm-motion *::after { anim
   border: 2px solid #e3dccf;
 }
 .review-photo img { display: block; width: 100%; max-height: 132px; object-fit: contain; background: #fff; }
-.review-zoom {
+.page-viewer {
   position: fixed;
   inset: 0;
-  z-index: 40;
-  background: rgba(42, 35, 32, 0.72);
+  z-index: 50;
+  background: #1c1917;
+  touch-action: none;
+}
+.page-viewer__close {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 2;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: #F5F0E7;
   display: grid;
   place-items: center;
-  padding: 16px;
 }
-.review-zoom img { max-width: 100%; max-height: 100%; object-fit: contain; background: #fff; }
+.page-viewer__close svg { width: 18px; height: 18px; stroke: #2A2320; stroke-width: 2.6; stroke-linecap: round; }
+.page-viewer__stage {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  touch-action: none;
+  cursor: grab;
+}
+.page-viewer__sheet {
+  width: 100%;
+  transform-origin: 0 0;
+}
+.page-viewer__sheet img {
+  display: block;
+  width: 100%;
+  height: auto;
+  pointer-events: none;
+  user-select: none;
+}
+.see-page {
+  font-weight: 800;
+  font-size: 0.82rem;
+  color: #5AA7C9;
+  min-height: 32px;
+}
+.review-collapsed { align-items: center; }
+.review-collapsed__open {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  text-align: left;
+  font-weight: 800;
+  min-height: 44px;
+}
+.review-collapsed__edit { font-weight: 800; color: rgba(42, 35, 32, 0.6); min-height: 44px; }
+.review-card__open { font-weight: 900; min-height: 32px; }
 .review-collapsed {
   width: 100%;
   display: flex;

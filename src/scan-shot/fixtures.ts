@@ -16,6 +16,24 @@ function q(partial: Partial<ScannedQuestion> & Pick<ScannedQuestion, 'id' | 'typ
   };
 }
 
+/** Compact check list so Add a choice, Add a missed question, and Undo fit together. */
+export function actionsFixture(): ReviewQuestion[] {
+  return createReview([
+    q({
+      id: 'q0',
+      type: 'rewrite',
+      prompt: 'Spare line.',
+      instruction: '',
+    }),
+    q({
+      id: 'q2',
+      type: 'multiple_choice',
+      prompt: 'Which shape is a box?',
+      options: ['circle', 'box'],
+    }),
+  ]);
+}
+
 export function checkFixture(): ReviewQuestion[] {
   let review = createReview([
     q({

@@ -3,6 +3,7 @@
 
 import { useState } from 'react';
 import EmphasisText from '../components/EmphasisText';
+import PageViewer from '../components/PageViewer';
 import { canConfirm, reviewReducer, type ReviewAction, type ReviewQuestion } from '../lib/scan/review';
 import type { QuestionType } from '../lib/scan/types';
 
@@ -35,12 +36,17 @@ export default function ScanReviewScreen({
   const [openIds, setOpenIds] = useState<string[]>([]);
   const [typeMenu, setTypeMenu] = useState<string | null>(null);
   const [removedId, setRemovedId] = useState<string | null>(null);
-  const [zoom, setZoom] = useState<string | null>(null);
+  const [pageOpen, setPageOpen] = useState(false);
   const visible = questions.filter((q) => !q.deleted);
   const ready = visible.filter((q) => q.confirmed).length;
 
   function send(action: ReviewAction) {
     onChange(reviewReducer(questions, action));
+  }
+
+  function openPage() {
+    if (photos.length === 0) return;
+    setPageOpen(true);
   }
 
   function pickChoice(id: string, option: string) {
@@ -67,8 +73,8 @@ export default function ScanReviewScreen({
             key={src}
             type="button"
             className={`review-photo${mark ? ' scan-shot-mark' : ''}`}
-            onClick={() => setZoom(src)}
-            aria-label={`Straightened page ${index + 1}, tap to zoom`}
+            onClick={openPage}
+            aria-label={`Straightened page ${index + 1}, see the full page`}
           >
             <img src={src} alt={`Straightened homework page ${index + 1}`} />
           </button>
@@ -77,24 +83,26 @@ export default function ScanReviewScreen({
           const collapsed = q.confirmed && !openIds.includes(q.id);
           if (collapsed) {
             return (
-              <button
-                key={q.id}
-                type="button"
-                className={`review-collapsed${mark ? ' scan-shot-mark' : ''}`}
-                onClick={() => setOpenIds((ids) => [...ids, q.id])}
-              >
-                <span>{index + 1} · {oneLine(q)}</span>
-                <span className="review-collapsed__answer">{summary(q)}</span>
-              </button>
+              <div key={q.id} className={`review-collapsed${mark ? ' scan-shot-mark' : ''}`}>
+                <button type="button" className="review-collapsed__open" onClick={openPage}>
+                  <span>{index + 1} · {oneLine(q)}</span>
+                  <span className="review-collapsed__answer">{summary(q)}</span>
+                </button>
+                <button type="button" className="see-page" onClick={openPage}>See on page</button>
+                <button type="button" className="review-collapsed__edit" onClick={() => setOpenIds((ids) => [...ids, q.id])}>
+                  Edit
+                </button>
+              </div>
             );
           }
           return (
             <article className="review-card" key={q.id}>
               <header className="review-card__head">
-                <span>{index + 1}</span>
+                <button type="button" className="review-card__open" onClick={openPage}>{index + 1}</button>
                 <button type="button" className="type-chip" onClick={() => setTypeMenu(typeMenu === q.id ? null : q.id)}>
                   {TYPE_LABEL[q.type]}
                 </button>
+                <button type="button" className="see-page" onClick={openPage}>See on page</button>
               </header>
               {typeMenu === q.id && (
                 <div className="type-menu" role="listbox" aria-label="Question type">
@@ -245,10 +253,8 @@ export default function ScanReviewScreen({
           </button>
         </div>
       )}
-      {zoom && (
-        <button type="button" className="review-zoom" onClick={() => setZoom(null)} aria-label="Close photo">
-          <img src={zoom} alt="Homework page, enlarged" />
-        </button>
+      {pageOpen && photos.length > 0 && (
+        <PageViewer pages={photos} onClose={() => setPageOpen(false)} mark={mark} />
       )}
     </div>
   );

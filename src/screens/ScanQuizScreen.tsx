@@ -63,7 +63,6 @@ export default function ScanQuizScreen({ parts, onExit, onComplete, markAnswers 
 
   const total = queue.items.length;
   const pipPose = phase === 'feedback' ? (grade === 'correct' ? 'correct' : 'almost') : 'neutral';
-  const showBubble = phase !== 'feedback';
   const filled = q.kind === 'fill_cards' || q.kind === 'fill_bank' ? (typed || choice) : null;
 
   function resetInputs() {
@@ -181,7 +180,7 @@ export default function ScanQuizScreen({ parts, onExit, onComplete, markAnswers 
         <div className={`lesson__pip-wrap${pipPose === 'correct' ? ' lesson__pip-wrap--proud' : pipPose === 'almost' ? ' lesson__pip-wrap--soft' : ''}`} aria-hidden="true">
           <PipPose pose={pipPose} />
         </div>
-        {showBubble && (
+        {(
           <div className="lesson__bubble">
             <p className="lesson__bubble-text">
               {q.kind === 'fill_cards' || q.kind === 'fill_bank'
@@ -238,7 +237,7 @@ export default function ScanQuizScreen({ parts, onExit, onComplete, markAnswers 
           </div>
         )}
 
-        {showBubble && q.kind === 'rewrite' && q.prompt && (
+        {q.kind === 'rewrite' && q.prompt && (
           <blockquote className="scanq__quote">{q.prompt}</blockquote>
         )}
 

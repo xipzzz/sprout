@@ -7,7 +7,7 @@ import ScanQuizScreen from '../screens/ScanQuizScreen';
 import ScanReviewScreen from '../screens/ScanReviewScreen';
 import { ScanErrorPreview, ScanLoadingPreview } from '../screens/ScanHomeworkScreen';
 import type { ReviewQuestion } from '../lib/scan/review';
-import { checkFixture, quizFixture } from './fixtures';
+import { actionsFixture, checkFixture, quizFixture } from './fixtures';
 
 function syntheticPage(): string {
   const canvas = document.createElement('canvas');
@@ -29,6 +29,18 @@ function syntheticPage(): string {
   return canvas.toDataURL('image/jpeg', 0.85);
 }
 
+function ActionsShot() {
+  const [questions, setQuestions] = useState<ReviewQuestion[]>(() => actionsFixture());
+  return (
+    <ScanReviewScreen
+      questions={questions}
+      onChange={setQuestions}
+      onPractice={() => {}}
+      onBack={() => {}}
+    />
+  );
+}
+
 function CheckShot() {
   const [questions, setQuestions] = useState<ReviewQuestion[]>(() => checkFixture());
   return (
@@ -48,7 +60,9 @@ export function mountScanShot(which: string) {
   if (!root) return;
   const screen = which === 'check'
     ? <CheckShot />
-    : which === 'error'
+    : which === 'check-tools'
+      ? <ActionsShot />
+      : which === 'error'
       ? <ScanErrorPreview mark />
       : which === 'loading'
         ? <ScanLoadingPreview mark />

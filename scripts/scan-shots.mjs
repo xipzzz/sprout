@@ -9,12 +9,22 @@ const browser = await chromium.launch({
 const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
 
 async function go(which) {
-  await page.goto(`http://127.0.0.1:5173/?scanShot=${which}`, { waitUntil: 'networkidle' });
-  await page.waitForSelector('[data-scan-shot-ready]');
+  await page.goto(`http://127.0.0.1:5173/?scanShot=${which}`, { waitUntil: 'domcontentloaded', timeout: 20000 });
+  await page.waitForSelector('[data-scan-shot-ready]', { timeout: 20000 });
   await page.evaluate(() => document.fonts?.ready);
 }
 
+async function settle() {
+  await page.evaluate(() => Promise.all(
+    document.getAnimations()
+      .filter((anim) => anim.effect?.getComputedTiming?.().iterations !== Infinity)
+      .map((anim) => anim.finished.catch(() => undefined)),
+  ));
+  await page.waitForTimeout(350);
+}
+
 async function save(name) {
+  await settle();
   await page.screenshot({ path: path.join(outDir, name) });
   console.log(name);
 }
@@ -25,7 +35,6 @@ async function mark(selector) {
 
 await go('check');
 await save('check.png');
-await page.locator('.review-photo').screenshot({ path: path.join(outDir, 'check-photo-only.png') });
 await go('error');
 await save('error.png');
 await go('loading');
@@ -75,5 +84,18 @@ for (const word of ['the', 'fox', 'is', 'quick', 'and', 'quiet']) {
 }
 await mark('.arrange__build');
 await save('quiz-rewrite-filled.png');
+
+await go('check-tools');
+await page.getByRole('button', { name: 'Remove' }).first().click();
+await page.waitForSelector('.undo-toast');
+await page.evaluate(() => {
+  document.querySelectorAll('.review-add, .undo-toast').forEach((el) => el.classList.add('scan-shot-mark'));
+});
+await save('check-actions.png');
+
+await go('check');
+await page.getByRole('button', { name: 'See on page' }).first().click();
+await page.waitForSelector('.page-viewer');
+await save('page-viewer.png');
 
 await browser.close();
