@@ -2479,6 +2479,13 @@ body.calm-motion *, body.calm-motion *::before, body.calm-motion *::after { anim
   background: #EE4848;
   box-shadow: 0 4px 0 #C93A3A;
 }
+.lesson--scan .lesson__sheet-answer {
+  margin: 0;
+  color: #2A2320;
+  font-weight: 900;
+  font-size: 1.25rem;
+  line-height: 1.3;
+}
 .lesson--scan .lesson__check:not(:disabled) {
   background: #6FBF5E;
   color: #fff;
@@ -2557,23 +2564,31 @@ body.calm-motion *, body.calm-motion *::before, body.calm-motion *::after { anim
   z-index: 50;
   background: #1c1917;
   touch-action: none;
+  display: flex;
+  flex-direction: column;
+}
+.page-viewer__bar {
+  flex: none;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  height: 56px;
+  padding: 0 8px;
+  background: #F5F0E7;
 }
 .page-viewer__close {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  z-index: 2;
   width: 44px;
   height: 44px;
   border-radius: 12px;
-  background: #F5F0E7;
+  background: transparent;
   display: grid;
   place-items: center;
 }
 .page-viewer__close svg { width: 18px; height: 18px; stroke: #2A2320; stroke-width: 2.6; stroke-linecap: round; }
 .page-viewer__stage {
+  flex: 1;
+  min-height: 0;
   width: 100%;
-  height: 100%;
   overflow: hidden;
   touch-action: none;
   cursor: grab;

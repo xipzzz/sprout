@@ -312,7 +312,11 @@ export default function ScanQuizScreen({ parts, onExit, onComplete, markAnswers 
               <span className="lesson__sheet-check" aria-hidden="true">{grade === 'correct' ? '✓' : '!'}</span>
               <h2 className="lesson__sheet-title">{sheetTitle}</h2>
             </div>
-            <p className="lesson__sheet-body">{sheetBody}</p>
+            {grade === 'wrong' ? (
+              <p className="lesson__sheet-answer">{sheetBody}</p>
+            ) : (
+              <p className="lesson__sheet-body">{sheetBody}</p>
+            )}
             <button
               type="button"
               className={`lesson__sheet-cta lesson__sheet-cta--${grade === 'correct' ? 'green' : 'red'}`}

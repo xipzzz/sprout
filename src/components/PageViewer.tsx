@@ -70,11 +70,13 @@ export default function PageViewer({ pages, onClose, mark = false }: PageViewerP
 
   return (
     <div className={`page-viewer${mark ? ' scan-shot-mark' : ''}`} role="dialog" aria-label="Straightened page">
-      <button type="button" className="page-viewer__close" onClick={onClose} aria-label="Close page">
-        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path d="M6 6l12 12M18 6L6 18" />
-        </svg>
-      </button>
+      <div className="page-viewer__bar">
+        <button type="button" className="page-viewer__close" onClick={onClose} aria-label="Close page">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
+      </div>
       <div
         className="page-viewer__stage"
         onPointerDown={onPointerDown}
