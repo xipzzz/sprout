@@ -5,7 +5,8 @@
 import { needsExactCopy } from './mistake';
 import { parsePairs, type Pair } from './suggestions';
 import type { ScannedQuestion } from './types';
-import { usesOnlyPrintedWords, wordOrderTiles } from './wordOrder';
+import type { RewriteSource } from './types';
+import { storedRewrite, usesOnlyPrintedWords } from './wordOrder';
 
 export interface ReviewQuestion {
   id: string;
@@ -23,6 +24,10 @@ export interface ReviewQuestion {
   pairs: Pair[];
   distractors: [string, string];
   extraTiles: [string, string];
+  /** Slash word-order, or a free rewrite whose tiles come from the sentence. */
+  rewriteSource: RewriteSource;
+  /** Printed slash tiles. Empty unless `rewriteSource` is `slash`. */
+  printedTiles: string[];
   confirmed: boolean;
   deleted: boolean;
 }
@@ -87,6 +92,7 @@ export function createReview(
     const avoid = [answer, ...q.options, ...q.left, ...q.right];
     const [d1, d2] = pickTwo(words, avoid);
     const [e1, e2] = q.type === 'rewrite' ? pickTwo(words, answer.split(/\s+/)) : ['', ''];
+    const stored = storedRewrite(q);
     return {
       id: q.id,
       type: q.type,
@@ -102,6 +108,8 @@ export function createReview(
       pairs,
       distractors: q.type === 'fill_blank' && q.options.length === 0 ? [d1, d2] : ['', ''],
       extraTiles: [e1, e2],
+      rewriteSource: stored.rewriteSource,
+      printedTiles: stored.printedTiles,
       confirmed: false,
       deleted: false,
     };
@@ -131,8 +139,10 @@ export function canConfirm(q: ReviewQuestion): boolean {
     const keys = [answer, a, b].map((w) => w.toLowerCase());
     return new Set(keys).size === 3;
   }
-  const printed = wordOrderTiles(q.prompt);
-  if (printed) return usesOnlyPrintedWords(printed, q.answer);
+  if (q.type === 'rewrite' && q.rewriteSource === 'slash') {
+    return usesOnlyPrintedWords(q.printedTiles, q.answer);
+  }
+  if (q.type === 'rewrite') return q.answer.trim() !== '';
   return sentenceTokens(q.answer).length >= 2;
 }
 
@@ -168,6 +178,8 @@ function blankQuestion(id: string): ReviewQuestion {
     pairs: [],
     distractors: ['', ''],
     extraTiles: ['', ''],
+    rewriteSource: 'free',
+    printedTiles: [],
     confirmed: false,
     deleted: false,
   };

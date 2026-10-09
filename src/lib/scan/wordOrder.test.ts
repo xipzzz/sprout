@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { buildQuiz } from './quizMap';
+import { buildQuiz, freeRewriteTiles } from './quizMap';
 import { canConfirm, createReview, reviewReducer } from './review';
 import { validateModelPayload } from './schema';
 import type { ScannedQuestion } from './types';
-import { isInstructionStem, showsPrintedChoices, usesOnlyPrintedWords, wordOrderTiles, wordOrderTypeLabel } from './wordOrder';
+import { isInstructionStem, normalizeScannedQuestion, showsPrintedChoices, usesOnlyPrintedWords, wordOrderTiles, wordOrderTypeLabel } from './wordOrder';
 
 const ORDER = "aren't / They / Spain. / from";
 const ANSWER = "They aren't from Spain.";
@@ -93,7 +93,36 @@ describe('section instructions and word order', () => {
     assert.equal(usesOnlyPrintedWords(tiles, 'They are from Spain.'), false);
     assert.equal(usesOnlyPrintedWords(tiles, "They aren't from"), false);
     assert.equal(usesOnlyPrintedWords(tiles, "They aren't from Spain"), false);
-    assert.equal(wordOrderTypeLabel(ORDER), 'Word order');
-    assert.equal(wordOrderTypeLabel('The fox is quick.'), null);
+    assert.equal(wordOrderTypeLabel({ rewriteSource: 'slash' }), 'Word order');
+    assert.equal(wordOrderTypeLabel({ rewriteSource: 'free' }), null);
+  });
+
+  it('confirms a past-tense rewrite that uses a word which was not printed', () => {
+    const scanned = normalizeScannedQuestion(item({
+      id: 'q1',
+      type: 'rewrite',
+      instruction: 'Change to past tense.',
+      prompt: 'She walks home.',
+    }));
+    assert.ok(scanned);
+    if (!scanned) return;
+    assert.equal(scanned.rewriteSource, 'free');
+    let review = createReview([scanned], { q1: 'She walked home.' });
+    review = review.map((q) => ({ ...q, extraTiles: ['', ''] as [string, string] }));
+    assert.equal(review[0].rewriteSource, 'free');
+    assert.equal(canConfirm(review[0]), true);
+    assert.equal(wordOrderTypeLabel(review[0]), null);
+    assert.deepEqual(freeRewriteTiles(review[0]), ['She', 'walked', 'home']);
+    review = reviewReducer(review, { type: 'prompt', id: 'q1', value: ORDER });
+    assert.equal(review[0].rewriteSource, 'free');
+    assert.equal(canConfirm(review[0]), true);
+    review = reviewReducer(review, { type: 'confirm', id: 'q1' });
+    assert.equal(review[0].confirmed, true);
+    const play = buildQuiz(review)[0][0];
+    assert.equal(play.kind, 'rewrite');
+    if (play.kind !== 'rewrite') return;
+    assert.equal(play.exactTiles, undefined);
+    assert.ok(play.tiles.includes('walked'));
+    assert.deepEqual(play.answerTokens, ['She', 'walked', 'home']);
   });
 });

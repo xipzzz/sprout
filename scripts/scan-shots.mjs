@@ -108,6 +108,10 @@ await go('word-order');
 await mark('.word-order');
 await save('parent-check-word-order.png');
 
+await go('rewrite-free');
+await mark('.rewrite-preview');
+await save('parent-check-rewrite-free.png');
+
 await go('word-order');
 await page.getByLabel('Correct sentence').fill('They are from Spain.');
 await page.waitForSelector('text=Use only the printed words');

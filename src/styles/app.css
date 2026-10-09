@@ -371,6 +371,11 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   border-color: var(--green);
   box-shadow: 0 0 0 3px var(--green-tint-2);
 }
+.scan__input.scan__input--warn,
+.scan__input.scan__input--warn:focus {
+  border-color: #EE4848;
+  box-shadow: none;
+}
 .scan__input--prompt {
   resize: vertical;
   min-height: 64px;
@@ -2606,6 +2611,9 @@ body.calm-motion *, body.calm-motion *::before, body.calm-motion *::after { anim
 }
 .word-order .scan__field { margin: 0; }
 .word-order__warn { margin: 0; font-weight: 800; font-size: 0.92rem; color: #9A4A32; }
+.rewrite-preview { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; padding: 4px; }
+.rewrite-preview__tiles { display: flex; flex-wrap: wrap; gap: 8px; }
+.rewrite-preview.scan-shot-mark { border: 3px solid #ff1f1f; border-radius: 16px; }
 .page-viewer {
   position: fixed;
   inset: 0;

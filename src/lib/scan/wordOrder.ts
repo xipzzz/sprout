@@ -1,7 +1,7 @@
 /* Section instructions stay instructions. A slash line is a word-order
    rewrite, kept exactly as printed. No worksheet images. */
 
-import type { ScannedQuestion } from './types';
+import type { RewriteSource, ScannedQuestion } from './types';
 
 const INSTRUCTION_LINES = [
   'put the words in the correct order',
@@ -54,9 +54,23 @@ function bare(token: string): string {
   return token.replace(/^[^A-Za-z0-9']+|[^A-Za-z0-9']+$/g, '').toLowerCase();
 }
 
-/** Parent-facing name. The stored type stays `rewrite`. */
-export function wordOrderTypeLabel(prompt: string): 'Word order' | null {
-  return wordOrderTiles(prompt) ? 'Word order' : null;
+/** Parent-facing name. Only a stored slash source. The type stays `rewrite`. */
+export function wordOrderTypeLabel(question: { rewriteSource?: RewriteSource }): 'Word order' | null {
+  return question.rewriteSource === 'slash' ? 'Word order' : null;
+}
+
+/** Classify once, from an explicit flag when we have one. */
+export function storedRewrite(question: {
+  prompt: string;
+  rewriteSource?: RewriteSource;
+}): { rewriteSource: RewriteSource; printedTiles: string[] } {
+  if (question.rewriteSource === 'free') return { rewriteSource: 'free', printedTiles: [] };
+  if (question.rewriteSource === 'slash') {
+    return { rewriteSource: 'slash', printedTiles: wordOrderTiles(question.prompt) ?? [] };
+  }
+  const tiles = wordOrderTiles(question.prompt);
+  if (tiles) return { rewriteSource: 'slash', printedTiles: tiles };
+  return { rewriteSource: 'free', printedTiles: [] };
 }
 
 /**
@@ -94,18 +108,24 @@ export function orderPrintedTiles(tiles: string[], answer: string): string[] | n
 /** Drop an instruction-only stem. A slash line becomes a rewrite and loses fake choices. */
 export function normalizeScannedQuestion(question: ScannedQuestion): ScannedQuestion | null {
   if (isInstructionStem(question.prompt)) return null;
-  if (!wordOrderTiles(question.prompt)) return question;
+  const stored = storedRewrite(question);
+  if (stored.rewriteSource === 'slash') {
+    return {
+      ...question,
+      type: 'rewrite',
+      options: [],
+      left: [],
+      right: [],
+      rewriteSource: 'slash',
+    };
+  }
   return {
     ...question,
-    type: 'rewrite',
-    options: [],
-    left: [],
-    right: [],
+    rewriteSource: question.type === 'rewrite' ? 'free' : question.rewriteSource,
   };
 }
 
-export function showsPrintedChoices(question: { type: string; options: string[]; prompt: string }): boolean {
-  if (question.type === 'rewrite' || question.type === 'matching') return false;
-  if (wordOrderTiles(question.prompt)) return false;
+export function showsPrintedChoices(question: { type: string; options: string[]; rewriteSource?: RewriteSource }): boolean {
+  if (question.type === 'rewrite' || question.type === 'matching' || question.rewriteSource === 'slash') return false;
   return question.options.length > 0 || question.type === 'multiple_choice' || question.type === 'fill_blank';
 }

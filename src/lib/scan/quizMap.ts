@@ -5,7 +5,7 @@
 import type { ReviewQuestion } from './review';
 import { sentenceTokens } from './review';
 import type { Pair } from './suggestions';
-import { orderPrintedTiles, wordOrderTiles } from './wordOrder';
+import { orderPrintedTiles } from './wordOrder';
 
 export type Grade = 'correct' | 'almost' | 'wrong';
 
@@ -152,16 +152,15 @@ function toPlayable(q: ReviewQuestion): PlayableQuestion[] {
       emphasis: q.emphasis,
     }));
   }
-  const printed = wordOrderTiles(q.prompt);
-  if (printed) {
-    const answerTokens = orderPrintedTiles(printed, q.answer);
+  if (q.rewriteSource === 'slash') {
+    const answerTokens = orderPrintedTiles(q.printedTiles, q.answer);
     if (!answerTokens) return [];
     return [{
       kind: 'rewrite',
       id: q.id,
       prompt: q.prompt,
       instruction: q.instruction,
-      tiles: shuffleWithSeed(printed, `${q.id}:tiles`),
+      tiles: shuffleWithSeed(q.printedTiles, `${q.id}:tiles`),
       answerTokens,
       emphasis: q.emphasis,
       exactTiles: true,
@@ -169,16 +168,21 @@ function toPlayable(q: ReviewQuestion): PlayableQuestion[] {
   }
   const answerTokens = sentenceTokens(q.answer);
   if (answerTokens.length < 2) return [];
-  const extras = q.extraTiles.map((t) => t.trim()).filter(Boolean).slice(0, 2);
   return [{
     kind: 'rewrite',
     id: q.id,
     prompt: q.prompt,
     instruction: q.instruction,
-    tiles: shuffleWithSeed([...answerTokens, ...extras], `${q.id}:tiles`),
+    tiles: shuffleWithSeed(freeRewriteTiles(q), `${q.id}:tiles`),
     answerTokens,
     emphasis: q.emphasis,
   }];
+}
+
+/** Sentence words plus the two extra tiles, before the quiz shuffles them. */
+export function freeRewriteTiles(q: { answer: string; extraTiles: [string, string] }): string[] {
+  const extras = q.extraTiles.map((tile) => tile.trim()).filter(Boolean).slice(0, 2);
+  return [...sentenceTokens(q.answer), ...extras];
 }
 
 /** Confirmed questions only, in sheet order, split into parts of 10. */

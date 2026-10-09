@@ -6,7 +6,8 @@ import EmphasisText from '../components/EmphasisText';
 import PageViewer from '../components/PageViewer';
 import { canConfirm, reviewReducer, type ReviewAction, type ReviewQuestion } from '../lib/scan/review';
 import type { QuestionType } from '../lib/scan/types';
-import { showsPrintedChoices, usesOnlyPrintedWords, wordOrderTiles, wordOrderTypeLabel } from '../lib/scan/wordOrder';
+import { freeRewriteTiles } from '../lib/scan/quizMap';
+import { showsPrintedChoices, usesOnlyPrintedWords, wordOrderTypeLabel } from '../lib/scan/wordOrder';
 
 interface ScanReviewScreenProps {
   questions: ReviewQuestion[];
@@ -81,7 +82,7 @@ export default function ScanReviewScreen({
           </button>
         ))}
         {visible.map((q, index) => {
-          const printed = wordOrderTiles(q.prompt);
+          const slash = q.type === 'rewrite' && q.rewriteSource === 'slash';
           const collapsed = q.confirmed && !openIds.includes(q.id);
           if (collapsed) {
             return (
@@ -104,7 +105,7 @@ export default function ScanReviewScreen({
               <header className="review-card__head">
                 <button type="button" className="review-card__open" onClick={openPage}>{index + 1}</button>
                 <button type="button" className="type-chip" onClick={() => setTypeMenu(typeMenu === q.id ? null : q.id)}>
-                  {wordOrderTypeLabel(q.prompt) ?? TYPE_LABEL[q.type]}
+                  {wordOrderTypeLabel(q) ?? TYPE_LABEL[q.type]}
                 </button>
                 <button type="button" className="see-page" onClick={openPage}>See on page</button>
               </header>
@@ -135,7 +136,7 @@ export default function ScanReviewScreen({
                   <input className="scan__input" value={q.instruction} onChange={(e) => send({ type: 'instruction', id: q.id, value: e.target.value })} />
                 </label>
               )}
-              {q.type !== 'matching' && !printed && (
+              {q.type !== 'matching' && !slash && (
                 <label className="scan__field">
                   <span className="scan__field-label">Question</span>
                   {q.emphasis.some((word) => q.prompt.toLowerCase().includes(word.toLowerCase())) && (
@@ -149,11 +150,11 @@ export default function ScanReviewScreen({
                   />
                 </label>
               )}
-              {printed && (
+              {slash && (
                 <div className={`word-order${mark ? ' scan-shot-mark' : ''}`}>
                   <span className="scan__field-label">Printed words</span>
                   <div className="word-order__tiles" aria-label="Printed words">
-                    {printed.map((tile, tileIndex) => (
+                    {q.printedTiles.map((tile, tileIndex) => (
                       <span className="word-order__tile" key={`${tileIndex}-${tile}`}>{tile}</span>
                     ))}
                   </div>
@@ -163,13 +164,13 @@ export default function ScanReviewScreen({
                       {q.suggestion && q.answer === q.suggestion && <span className="review-card__suggested"> Suggested</span>}
                     </span>
                     <input
-                      className="scan__input"
+                      className={`scan__input${usesOnlyPrintedWords(q.printedTiles, q.answer) ? '' : ' scan__input--warn'}`}
                       value={q.answer}
                       aria-label="Correct sentence"
                       onChange={(e) => send({ type: 'answer', id: q.id, value: e.target.value })}
                     />
                   </label>
-                  {printed && !usesOnlyPrintedWords(printed, q.answer) && (
+                  {!usesOnlyPrintedWords(q.printedTiles, q.answer) && (
                     <p className="word-order__warn" role="alert">Use only the printed words</p>
                   )}
                 </div>
@@ -215,14 +216,26 @@ export default function ScanReviewScreen({
                   ))}
                 </fieldset>
               )}
-              {q.options.length === 0 && q.type !== 'matching' && !printed && (
-                <label className="scan__field">
-                  <span className="scan__field-label">
-                    Answer
-                    {q.suggestion && q.answer === q.suggestion && <span className="review-card__suggested"> Suggested</span>}
-                  </span>
-                  <input className="scan__input" value={q.answer} onChange={(e) => send({ type: 'answer', id: q.id, value: e.target.value })} />
-                </label>
+              {q.options.length === 0 && q.type !== 'matching' && !slash && (
+                <>
+                  <label className="scan__field">
+                    <span className="scan__field-label">
+                      Answer
+                      {q.suggestion && q.answer === q.suggestion && <span className="review-card__suggested"> Suggested</span>}
+                    </span>
+                    <input className="scan__input" value={q.answer} onChange={(e) => send({ type: 'answer', id: q.id, value: e.target.value })} />
+                  </label>
+                  {q.type === 'rewrite' && (
+                    <div className="rewrite-preview">
+                      <span className="scan__field-label">Word tiles</span>
+                      <div className="rewrite-preview__tiles" aria-label="Word tiles">
+                        {freeRewriteTiles(q).map((tile, tileIndex) => (
+                          <span className="word-order__tile" key={`${tileIndex}-${tile}`}>{tile}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
               {q.type === 'fill_blank' && q.options.length === 0 && (
                 <div className="review-card__extras">
@@ -232,7 +245,7 @@ export default function ScanReviewScreen({
                   ))}
                 </div>
               )}
-              {q.type === 'rewrite' && !printed && (
+              {q.type === 'rewrite' && !slash && (
                 <div className="review-card__extras">
                   <span className="scan__field-label">Extra word tiles</span>
                   {([0, 1] as const).map((slot) => (

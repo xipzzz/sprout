@@ -63,6 +63,29 @@ function CheckShot({ mark = true }: { mark?: boolean }) {
   );
 }
 
+function FreeRewriteShot() {
+  const [questions, setQuestions] = useState<ReviewQuestion[]>(() => {
+    const review = createReview([
+      q({
+        id: 'q1',
+        type: 'rewrite',
+        instruction: 'Change to past tense.',
+        prompt: 'She walks home.',
+        rewriteSource: 'free',
+      }),
+    ], { q1: 'She walked home.' });
+    return review.map((item) => ({ ...item, extraTiles: ['', ''] as [string, string] }));
+  });
+  return (
+    <ScanReviewScreen
+      questions={questions}
+      onChange={setQuestions}
+      onPractice={() => {}}
+      onBack={() => {}}
+    />
+  );
+}
+
 function WordOrderShot() {
   const [questions, setQuestions] = useState<ReviewQuestion[]>(() => createReview([
     q({
@@ -104,7 +127,9 @@ function finishCount() {
 export function mountScanShot(which: string) {
   const root = document.getElementById('root');
   if (!root) return;
-  const screen = which === 'word-order'
+  const screen = which === 'rewrite-free'
+    ? <FreeRewriteShot />
+    : which === 'word-order'
     ? <WordOrderShot />
     : which === 'parent-check'
     ? <CheckShot mark={false} />
