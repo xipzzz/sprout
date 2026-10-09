@@ -54,6 +54,28 @@ function bare(token: string): string {
   return token.replace(/^[^A-Za-z0-9']+|[^A-Za-z0-9']+$/g, '').toLowerCase();
 }
 
+/** Parent-facing name. The stored type stays `rewrite`. */
+export function wordOrderTypeLabel(prompt: string): 'Word order' | null {
+  return wordOrderTiles(prompt) ? 'Word order' : null;
+}
+
+/**
+ * True when the sentence is exactly the printed tiles, once each.
+ * Comparison is case-insensitive. Punctuation stays on the tile, so "Spain."
+ * matches "spain." and does not match "Spain".
+ */
+export function usesOnlyPrintedWords(tiles: string[], sentence: string): boolean {
+  const words = sentence.trim() ? sentence.trim().split(/\s+/) : [];
+  if (words.length !== tiles.length) return false;
+  const pool = tiles.map((tile) => tile.toLowerCase());
+  for (const word of words) {
+    const index = pool.indexOf(word.toLowerCase());
+    if (index < 0) return false;
+    pool.splice(index, 1);
+  }
+  return true;
+}
+
 /** Printed tiles in the order of the answer sentence. The tile text stays as printed. */
 export function orderPrintedTiles(tiles: string[], answer: string): string[] | null {
   const words = answer.trim().split(/\s+/).filter(Boolean);

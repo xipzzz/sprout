@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { buildQuiz } from './quizMap';
-import { createReview, reviewReducer } from './review';
+import { canConfirm, createReview, reviewReducer } from './review';
 import { validateModelPayload } from './schema';
 import type { ScannedQuestion } from './types';
-import { isInstructionStem, showsPrintedChoices, wordOrderTiles } from './wordOrder';
+import { isInstructionStem, showsPrintedChoices, usesOnlyPrintedWords, wordOrderTiles, wordOrderTypeLabel } from './wordOrder';
 
 const ORDER = "aren't / They / Spain. / from";
 const ANSWER = "They aren't from Spain.";
@@ -80,5 +80,20 @@ describe('section instructions and word order', () => {
     const edited = reviewReducer(review, { type: 'answer', id: 'q1', value: 'They are from Spain.' });
     assert.equal(edited[0].answer, 'They are from Spain.');
     assert.equal(edited[0].confirmed, false);
+    assert.equal(canConfirm(edited[0]), false);
+    assert.equal(reviewReducer(edited, { type: 'confirm', id: 'q1' })[0].confirmed, false);
+  });
+
+  it('warns unless the sentence is the printed tiles, and labels the type Word order', () => {
+    const tiles = wordOrderTiles(ORDER);
+    assert.ok(tiles);
+    if (!tiles) return;
+    assert.equal(usesOnlyPrintedWords(tiles, ANSWER), true);
+    assert.equal(usesOnlyPrintedWords(tiles, "they aren't from spain."), true);
+    assert.equal(usesOnlyPrintedWords(tiles, 'They are from Spain.'), false);
+    assert.equal(usesOnlyPrintedWords(tiles, "They aren't from"), false);
+    assert.equal(usesOnlyPrintedWords(tiles, "They aren't from Spain"), false);
+    assert.equal(wordOrderTypeLabel(ORDER), 'Word order');
+    assert.equal(wordOrderTypeLabel('The fox is quick.'), null);
   });
 });

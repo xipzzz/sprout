@@ -6,7 +6,7 @@ import EmphasisText from '../components/EmphasisText';
 import PageViewer from '../components/PageViewer';
 import { canConfirm, reviewReducer, type ReviewAction, type ReviewQuestion } from '../lib/scan/review';
 import type { QuestionType } from '../lib/scan/types';
-import { showsPrintedChoices, wordOrderTiles } from '../lib/scan/wordOrder';
+import { showsPrintedChoices, usesOnlyPrintedWords, wordOrderTiles, wordOrderTypeLabel } from '../lib/scan/wordOrder';
 
 interface ScanReviewScreenProps {
   questions: ReviewQuestion[];
@@ -104,7 +104,7 @@ export default function ScanReviewScreen({
               <header className="review-card__head">
                 <button type="button" className="review-card__open" onClick={openPage}>{index + 1}</button>
                 <button type="button" className="type-chip" onClick={() => setTypeMenu(typeMenu === q.id ? null : q.id)}>
-                  {TYPE_LABEL[q.type]}
+                  {wordOrderTypeLabel(q.prompt) ?? TYPE_LABEL[q.type]}
                 </button>
                 <button type="button" className="see-page" onClick={openPage}>See on page</button>
               </header>
@@ -169,6 +169,9 @@ export default function ScanReviewScreen({
                       onChange={(e) => send({ type: 'answer', id: q.id, value: e.target.value })}
                     />
                   </label>
+                  {printed && !usesOnlyPrintedWords(printed, q.answer) && (
+                    <p className="word-order__warn" role="alert">Use only the printed words</p>
+                  )}
                 </div>
               )}
               {showsPrintedChoices(q) && (

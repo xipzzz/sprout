@@ -108,6 +108,12 @@ await go('word-order');
 await mark('.word-order');
 await save('parent-check-word-order.png');
 
+await go('word-order');
+await page.getByLabel('Correct sentence').fill('They are from Spain.');
+await page.waitForSelector('text=Use only the printed words');
+await mark('.word-order__warn');
+await save('parent-check-word-order-warning.png');
+
 await go('check');
 await page.getByRole('button', { name: 'See on page' }).first().click();
 await page.waitForSelector('.page-viewer');

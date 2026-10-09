@@ -2605,6 +2605,7 @@ body.calm-motion *, body.calm-motion *::before, body.calm-motion *::after { anim
   color: #2A2320;
 }
 .word-order .scan__field { margin: 0; }
+.word-order__warn { margin: 0; font-weight: 800; font-size: 0.92rem; color: #9A4A32; }
 .page-viewer {
   position: fixed;
   inset: 0;

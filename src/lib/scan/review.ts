@@ -5,6 +5,7 @@
 import { needsExactCopy } from './mistake';
 import { parsePairs, type Pair } from './suggestions';
 import type { ScannedQuestion } from './types';
+import { usesOnlyPrintedWords, wordOrderTiles } from './wordOrder';
 
 export interface ReviewQuestion {
   id: string;
@@ -130,6 +131,8 @@ export function canConfirm(q: ReviewQuestion): boolean {
     const keys = [answer, a, b].map((w) => w.toLowerCase());
     return new Set(keys).size === 3;
   }
+  const printed = wordOrderTiles(q.prompt);
+  if (printed) return usesOnlyPrintedWords(printed, q.answer);
   return sentenceTokens(q.answer).length >= 2;
 }
 
