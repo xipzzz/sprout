@@ -20,7 +20,8 @@ import SettingsScreen from './screens/SettingsScreen';
 import OnboardingSplash from './screens/OnboardingSplash';
 import ComebackScreen from './screens/ComebackScreen';
 import ScanHomeworkScreen from './screens/ScanHomeworkScreen';
-import type { WordPickQuestion } from './lib/homeworkParse';
+import ScanQuizScreen from './screens/ScanQuizScreen';
+import { getHomeworkQuiz, loadHomeworkQuizzes, saveHomeworkQuiz, type HomeworkQuiz } from './lib/scan/storage';
 import Modal from './components/Modal';
 import Pip from './components/Pip';
 import { loadCompleted, saveCompleted } from './state/progress';
@@ -42,7 +43,7 @@ export default function App() {
   const [showTales, setShowTales] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showScan, setShowScan] = useState(false);
-  const [scanQuestion, setScanQuestion] = useState<WordPickQuestion | null>(null);
+  const [liveQuiz, setLiveQuiz] = useState<HomeworkQuiz | null>(null);
   const [showDailyGoal, setShowDailyGoal] = useState(false);
   const [dailyGoalShown, setDailyGoalShown] = useState(false);
   const [goldenBloom, setGoldenBloom] = useState<string | null>(null);
@@ -134,16 +135,16 @@ export default function App() {
     );
   }
 
-  if (scanQuestion) {
+  if (liveQuiz) {
     return (
       <div className="app">
-        <LessonScreenSoT
-          questions={[{ prompt: scanQuestion.prompt, choices: scanQuestion.choices, correct: scanQuestion.correct }]}
-          onExit={() => setScanQuestion(null)}
+        <ScanQuizScreen
+          parts={liveQuiz.parts}
+          onExit={() => setLiveQuiz(null)}
           onComplete={() => {
-            setScanQuestion(null);
+            setLiveQuiz(null);
             markTodayDone('lesson');
-            playSproutFeedback('gardenGrowth');
+            playSproutFeedback('complete');
           }}
         />
       </div>
@@ -155,9 +156,10 @@ export default function App() {
       <div className="app">
         <ScanHomeworkScreen
           onCancel={() => setShowScan(false)}
-          onParsed={(q) => {
+          onReady={(quiz) => {
+            saveHomeworkQuiz(quiz);
             setShowScan(false);
-            setScanQuestion(q);
+            setLiveQuiz(quiz);
           }}
         />
       </div>
@@ -260,7 +262,7 @@ export default function App() {
   return (
     <div className="app">
       {tab === 'learn' && (
-        <HomeScreen tab={tab} onTabChange={setTab} completed={completed} focusTarget={pendingPathFocus} onFocusSettled={() => setPendingPathFocus(null)} onStartUnit={setLessonUnit} onOpenShop={() => setShowShop(true)} onOpenWater={() => { playSproutFeedback('waterOpen'); setShowWater(true); }} onOpenScan={() => setShowScan(true)} />
+        <HomeScreen tab={tab} onTabChange={setTab} completed={completed} focusTarget={pendingPathFocus} onFocusSettled={() => setPendingPathFocus(null)} onStartUnit={setLessonUnit} onOpenShop={() => setShowShop(true)} onOpenWater={() => { playSproutFeedback('waterOpen'); setShowWater(true); }} onOpenScan={() => setShowScan(true)} homeworkQuizzes={loadHomeworkQuizzes()} onPlayHomework={(id) => setLiveQuiz(getHomeworkQuiz(id))} />
       )}
       {tab === 'garden' && <GardenScreen tab={tab} onTabChange={setTab} completed={completed} onOpenTales={() => setShowTales(true)} />}
       {tab === 'words' && <WordsScreen tab={tab} onTabChange={setTab} />}

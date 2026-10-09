@@ -2,7 +2,7 @@
    Celebrate geometry from figma bro SoT (two leaves + clear V-gap at stem tip). */
 
 interface PipPoseProps {
-  pose?: 'neutral' | 'correct' | 'almost';
+  pose?: 'neutral' | 'correct' | 'almost' | 'thinking';
   className?: string;
 }
 
@@ -30,6 +30,21 @@ export default function PipPose({ pose = 'neutral', className }: PipPoseProps) {
         <path d="M29.5 52.5 q10.5 15.5 21 0" stroke="#2f3b24" strokeWidth="3" fill="none" strokeLinecap="round" />
         <circle cx="28.5" cy="56" r="2.6" fill="#ffffff" opacity="0.28" />
         <circle cx="51.5" cy="56" r="2.6" fill="#ffffff" opacity="0.28" />
+      </svg>
+    );
+  }
+
+  if (pose === 'thinking') {
+    return (
+      <svg className={className} width="56" height="56" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Pip thinking">
+        <rect x="37.5" y="22" width="5" height="24" rx="2.5" fill="#3f7a2e" />
+        <ellipse cx="31" cy="24" rx="15" ry="8.5" fill="#6FBF5E" transform="rotate(-32 40 28)" />
+        <ellipse cx="49" cy="24" rx="15" ry="8.5" fill="#4D9E3F" transform="rotate(32 40 28)" />
+        <circle cx="40" cy="26" r="2.8" fill="#3f7a2e" />
+        <circle cx="40" cy="53" r="18" fill="#6FBF5E" />
+        <circle cx="34" cy="47.5" r="2.7" fill="#2f3b24" />
+        <circle cx="46" cy="47.5" r="2.7" fill="#2f3b24" />
+        <path d="M34 58 h12" stroke="#2f3b24" strokeWidth="2.4" strokeLinecap="round" />
       </svg>
     );
   }

@@ -12,9 +12,11 @@ interface ArrangeWordsProps {
   tiles: string[];
   revealed: boolean;
   onChange: (built: string[]) => void;
+  bankLabel?: (word: string) => string;
+  placedLabel?: (word: string, index: number) => string;
 }
 
-export default function ArrangeWords({ prompt, tiles, revealed, onChange }: ArrangeWordsProps) {
+export default function ArrangeWords({ prompt, tiles, revealed, onChange, bankLabel, placedLabel }: ArrangeWordsProps) {
   // Give each tile a stable id so duplicate words don't get confused.
   const tileObjs = tiles.map((word, i) => ({ id: String(i), word }));
   const [placed, setPlaced] = useState<string[]>([]);
@@ -82,7 +84,7 @@ export default function ArrangeWords({ prompt, tiles, revealed, onChange }: Arra
 
       <div className="arrange__build" aria-label="Your sentence" ref={buildRef}>
         {placed.length === 0 && <span className="arrange__hint">Tap the words below…</span>}
-        {placed.map((id) => (
+        {placed.map((id, index) => (
           <button
             key={id}
             type="button"
@@ -94,7 +96,7 @@ export default function ArrangeWords({ prompt, tiles, revealed, onChange }: Arra
             onPointerUp={onPointerUp}
             onPointerCancel={onPointerUp}
           >
-            {wordOf(id)}
+            {placedLabel ? placedLabel(wordOf(id), index) : wordOf(id)}
           </button>
         ))}
       </div>
@@ -108,7 +110,7 @@ export default function ArrangeWords({ prompt, tiles, revealed, onChange }: Arra
             disabled={revealed}
             onClick={() => commit([...placed, t.id])}
           >
-            {t.word}
+            {bankLabel ? bankLabel(t.word) : t.word}
           </button>
         ))}
       </div>
