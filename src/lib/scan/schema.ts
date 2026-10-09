@@ -3,6 +3,7 @@
    are not returned. A failed read must never become practice. */
 
 import { QUESTION_TYPES, type QuestionType, type ScannedQuestion } from './types';
+import { normalizeScannedQuestion } from './wordOrder';
 
 const QUESTION_KEYS = new Set(['id', 'type', 'instruction', 'prompt', 'options', 'left', 'right', 'emphasis']);
 const ROOT_KEYS = new Set(['questions', 'error']);
@@ -85,17 +86,10 @@ export function validateModelPayload(value: unknown): SchemaResult {
     if (!isQuestion(item)) return { ok: false, reason: 'A question did not match the schema.' };
     if (ids.has(item.id)) return { ok: false, reason: 'The reader repeated a question id.' };
     ids.add(item.id);
-    if (!questionIsUsable(item)) return { ok: false, reason: 'A question was missing its printed text.' };
-    questions.push({
-      id: item.id,
-      type: item.type,
-      instruction: item.instruction,
-      prompt: item.prompt,
-      options: item.options,
-      left: item.left,
-      right: item.right,
-      emphasis: item.emphasis,
-    });
+    const normalized = normalizeScannedQuestion(item);
+    if (!normalized) continue;
+    if (!questionIsUsable(normalized)) return { ok: false, reason: 'A question was missing its printed text.' };
+    questions.push(normalized);
   }
   if (questions.length === 0) {
     return { ok: false, reason: 'No printed questions were found on that page.' };

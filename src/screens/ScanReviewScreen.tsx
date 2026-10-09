@@ -6,6 +6,7 @@ import EmphasisText from '../components/EmphasisText';
 import PageViewer from '../components/PageViewer';
 import { canConfirm, reviewReducer, type ReviewAction, type ReviewQuestion } from '../lib/scan/review';
 import type { QuestionType } from '../lib/scan/types';
+import { showsPrintedChoices, wordOrderTiles } from '../lib/scan/wordOrder';
 
 interface ScanReviewScreenProps {
   questions: ReviewQuestion[];
@@ -80,6 +81,7 @@ export default function ScanReviewScreen({
           </button>
         ))}
         {visible.map((q, index) => {
+          const printed = wordOrderTiles(q.prompt);
           const collapsed = q.confirmed && !openIds.includes(q.id);
           if (collapsed) {
             return (
@@ -133,7 +135,7 @@ export default function ScanReviewScreen({
                   <input className="scan__input" value={q.instruction} onChange={(e) => send({ type: 'instruction', id: q.id, value: e.target.value })} />
                 </label>
               )}
-              {q.type !== 'matching' && (
+              {q.type !== 'matching' && !printed && (
                 <label className="scan__field">
                   <span className="scan__field-label">Question</span>
                   {q.emphasis.some((word) => q.prompt.toLowerCase().includes(word.toLowerCase())) && (
@@ -147,7 +149,29 @@ export default function ScanReviewScreen({
                   />
                 </label>
               )}
-              {(q.options.length > 0 || q.type === 'multiple_choice' || q.type === 'fill_blank') && q.type !== 'rewrite' && q.type !== 'matching' && (
+              {printed && (
+                <div className={`word-order${mark ? ' scan-shot-mark' : ''}`}>
+                  <span className="scan__field-label">Printed words</span>
+                  <div className="word-order__tiles" aria-label="Printed words">
+                    {printed.map((tile, tileIndex) => (
+                      <span className="word-order__tile" key={`${tileIndex}-${tile}`}>{tile}</span>
+                    ))}
+                  </div>
+                  <label className="scan__field">
+                    <span className="scan__field-label">
+                      Correct sentence
+                      {q.suggestion && q.answer === q.suggestion && <span className="review-card__suggested"> Suggested</span>}
+                    </span>
+                    <input
+                      className="scan__input"
+                      value={q.answer}
+                      aria-label="Correct sentence"
+                      onChange={(e) => send({ type: 'answer', id: q.id, value: e.target.value })}
+                    />
+                  </label>
+                </div>
+              )}
+              {showsPrintedChoices(q) && (
                 <fieldset className={`scan__choices${mark ? ' scan-shot-mark' : ''}`}>
                   <legend className="scan__field-label">Printed choices</legend>
                   {q.options.map((option, optionIndex) => {
@@ -188,7 +212,7 @@ export default function ScanReviewScreen({
                   ))}
                 </fieldset>
               )}
-              {q.options.length === 0 && q.type !== 'matching' && (
+              {q.options.length === 0 && q.type !== 'matching' && !printed && (
                 <label className="scan__field">
                   <span className="scan__field-label">
                     Answer
@@ -205,7 +229,7 @@ export default function ScanReviewScreen({
                   ))}
                 </div>
               )}
-              {q.type === 'rewrite' && (
+              {q.type === 'rewrite' && !printed && (
                 <div className="review-card__extras">
                   <span className="scan__field-label">Extra word tiles</span>
                   {([0, 1] as const).map((slot) => (

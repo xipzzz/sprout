@@ -326,8 +326,8 @@ export default function ScanQuizScreen({ parts, onExit, onComplete, markAnswers 
             tiles={q.tiles}
             revealed={phase === 'feedback'}
             onChange={setTiles}
-            bankLabel={(word) => bankChip(word, q.answerTokens[0] || '')}
-            placedLabel={(word, index) => placedChip(word, index, q.answerTokens[0] || '')}
+            bankLabel={(word) => (q.exactTiles ? word : bankChip(word, q.answerTokens[0] || ''))}
+            placedLabel={(word, index) => (q.exactTiles ? word : placedChip(word, index, q.answerTokens[0] || ''))}
           />
         )}
         </div>

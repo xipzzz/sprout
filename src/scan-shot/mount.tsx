@@ -9,6 +9,12 @@ import ScanReviewScreen from '../screens/ScanReviewScreen';
 import { ScanErrorPreview, ScanLoadingPreview } from '../screens/ScanHomeworkScreen';
 import type { ReviewQuestion } from '../lib/scan/review';
 import { actionsFixture, checkFixture, quizFixture } from './fixtures';
+import { createReview } from '../lib/scan/review';
+import type { ScannedQuestion } from '../lib/scan/types';
+
+function q(partial: Partial<ScannedQuestion> & Pick<ScannedQuestion, 'id' | 'type' | 'prompt'>): ScannedQuestion {
+  return { instruction: '', options: [], left: [], right: [], emphasis: [], ...partial };
+}
 
 function syntheticPage(): string {
   const canvas = document.createElement('canvas');
@@ -43,7 +49,7 @@ function ActionsShot() {
   );
 }
 
-function CheckShot() {
+function CheckShot({ mark = true }: { mark?: boolean }) {
   const [questions, setQuestions] = useState<ReviewQuestion[]>(() => checkFixture());
   return (
     <ScanReviewScreen
@@ -52,7 +58,26 @@ function CheckShot() {
       onPractice={() => {}}
       onBack={() => {}}
       photos={[syntheticPage()]}
-      mark
+      mark={mark}
+    />
+  );
+}
+
+function WordOrderShot() {
+  const [questions, setQuestions] = useState<ReviewQuestion[]>(() => createReview([
+    q({
+      id: 'q1',
+      type: 'rewrite',
+      instruction: 'Put the words in the correct order.',
+      prompt: "aren't / They / Spain. / from",
+    }),
+  ], { q1: "They aren't from Spain." }));
+  return (
+    <ScanReviewScreen
+      questions={questions}
+      onChange={setQuestions}
+      onPractice={() => {}}
+      onBack={() => {}}
     />
   );
 }
@@ -79,7 +104,11 @@ function finishCount() {
 export function mountScanShot(which: string) {
   const root = document.getElementById('root');
   if (!root) return;
-  const screen = which === 'finish'
+  const screen = which === 'word-order'
+    ? <WordOrderShot />
+    : which === 'parent-check'
+    ? <CheckShot mark={false} />
+    : which === 'finish'
     ? <ScanQuizFinish count={finishCount()} onContinue={() => {}} mark />
     : which === 'check'
     ? <CheckShot />

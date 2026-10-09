@@ -96,6 +96,18 @@ await save('check-actions.png');
 await go('finish');
 await save('quiz-finish.png');
 
+await go('parent-check');
+await mark('.review-photo');
+await save('parent-check.png');
+await page.locator('.review-photo').click();
+await page.waitForSelector('.page-viewer');
+await mark('.page-viewer__sheet');
+await save('parent-check-full-page.png');
+
+await go('word-order');
+await mark('.word-order');
+await save('parent-check-word-order.png');
+
 await go('check');
 await page.getByRole('button', { name: 'See on page' }).first().click();
 await page.waitForSelector('.page-viewer');

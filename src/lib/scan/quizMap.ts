@@ -5,6 +5,7 @@
 import type { ReviewQuestion } from './review';
 import { sentenceTokens } from './review';
 import type { Pair } from './suggestions';
+import { orderPrintedTiles, wordOrderTiles } from './wordOrder';
 
 export type Grade = 'correct' | 'almost' | 'wrong';
 
@@ -48,6 +49,8 @@ export type PlayableQuestion = (
       instruction: string;
       tiles: string[];
       answerTokens: string[];
+      /** Printed slash tiles, shown exactly, not restyled or padded. */
+      exactTiles?: boolean;
     }
 ) & { emphasis?: string[] };
 
@@ -148,6 +151,21 @@ function toPlayable(q: ReviewQuestion): PlayableQuestion[] {
       rightOrder: shuffleWithSeed(pairs.map((p) => p.right), `${q.id}:right:${index}`),
       emphasis: q.emphasis,
     }));
+  }
+  const printed = wordOrderTiles(q.prompt);
+  if (printed) {
+    const answerTokens = orderPrintedTiles(printed, q.answer);
+    if (!answerTokens) return [];
+    return [{
+      kind: 'rewrite',
+      id: q.id,
+      prompt: q.prompt,
+      instruction: q.instruction,
+      tiles: shuffleWithSeed(printed, `${q.id}:tiles`),
+      answerTokens,
+      emphasis: q.emphasis,
+      exactTiles: true,
+    }];
   }
   const answerTokens = sentenceTokens(q.answer);
   if (answerTokens.length < 2) return [];
