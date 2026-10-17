@@ -1,0 +1,109 @@
+/* Explain step (parent only) and child hint / answer box for the exam prototype. */
+
+.exam-explain { display: flex; flex-direction: column; gap: var(--s4); }
+.exam-explain__card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  padding: var(--s4);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-sm);
+}
+.exam-explain__label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: var(--fs-eyebrow);
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--green-deep);
+}
+.exam-explain__answer {
+  padding: var(--s3) var(--s4);
+  border-radius: var(--r-md);
+  background: var(--green-tint);
+}
+.exam-explain__answer-text { display: block; font-size: 1.6rem; letter-spacing: -0.02em; }
+.exam-explain__source { font-size: var(--fs-caption); font-weight: 800; color: var(--ink-soft); }
+.exam-explain__chips { display: flex; flex-wrap: wrap; gap: var(--s2); }
+.exam-explain__chip {
+  min-width: 44px;
+  padding: 8px 12px;
+  border-radius: var(--r-pill);
+  border: 2px solid var(--line);
+  background: var(--surface);
+  font-weight: 800;
+}
+.exam-explain__chip--on { border-color: var(--green); background: var(--pip-green-tint); }
+.exam-explain__steps,
+.exam-explain__variants {
+  margin: 0;
+  padding-left: 1.3em;
+  font-weight: 700;
+  line-height: 1.45;
+}
+.exam-explain__steps li + li,
+.exam-explain__variants li + li { margin-top: 4px; }
+.exam-explain__text { margin: 0; font-weight: 700; line-height: 1.45; }
+.exam-explain__say {
+  padding: var(--s3);
+  border-radius: var(--r-md);
+  background: var(--sky-tint);
+}
+.exam-explain__check {
+  padding: var(--s3);
+  border-radius: var(--r-md);
+  background: var(--clay-tint);
+}
+.exam-explain__fine { margin: 4px 0 0; font-size: var(--fs-caption); font-weight: 700; color: var(--ink-soft); }
+.exam-explain__notes {
+  margin: 0;
+  padding: var(--s3) var(--s3) var(--s3) 1.6em;
+  border-radius: var(--r-md);
+  background: var(--gold-tint);
+  font-size: var(--fs-caption);
+  font-weight: 700;
+  line-height: 1.4;
+}
+.exam-explain__meta { margin: 0; font-size: 0.72rem; font-weight: 800; color: var(--ink-muted); }
+.exam-explain__variants li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--s2); }
+.exam-explain__variant-answer { color: var(--green-deep); font-weight: 900; }
+.exam-explain__nav { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s3); }
+.exam-explain__nav button:disabled { opacity: 0.45; }
+
+.exam-child__answer { margin-top: var(--s4); }
+.exam-child__answer-label { display: block; margin-bottom: 6px; font-weight: 800; color: var(--ink-soft); }
+.exam-child__answer-row { display: flex; gap: var(--s2); }
+.exam-child__answer-input {
+  flex: 1;
+  min-width: 0;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  border: 2px solid var(--line);
+  background: var(--surface);
+  font: inherit;
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+.exam-child__answer-input:focus { outline: none; border-color: var(--sky); }
+.exam-child__answer-btn { flex: none; width: auto; padding-inline: var(--s5); }
+.exam-child__hint {
+  margin: var(--s3) 0 0;
+  padding: var(--s3);
+  border-radius: var(--r-md);
+  background: var(--sky-tint);
+  border-left: 4px solid var(--sky);
+  font-weight: 700;
+  line-height: 1.4;
+}
+.exam-child__hint-label {
+  display: block;
+  margin-bottom: 2px;
+  font-size: var(--fs-eyebrow);
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
