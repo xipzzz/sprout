@@ -197,6 +197,9 @@
   font-weight: 800;
 }
 .exam-round__next { margin-top: var(--s4); }
+.exam-round__result--nice { color: var(--green-deep); }
+.exam-round__result--almost { color: var(--clay-deep); }
+.exam-round__result--unchecked { color: var(--ink-soft); }
 .exam-round__done {
   display: flex;
   flex-direction: column;

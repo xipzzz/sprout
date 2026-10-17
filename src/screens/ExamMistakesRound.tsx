@@ -136,7 +136,7 @@ export default function ExamMistakesRound({ view, onAnswer, onFinish }: ExamMist
               </button>
             </form>
           )}
-          {grade && <p className={`exam-proto__result exam-proto__result--${grade === 'nice' ? 'nice' : 'almost'}`}>{FEEDBACK[grade]}</p>}
+          {grade && <p className={`exam-proto__result exam-round__result--${grade}`}>{FEEDBACK[grade]}</p>}
           {grade && (
             <button type="button" className="btn-primary exam-proto__cta exam-round__next" onClick={next}>
               {index + 1 < total ? 'Next question' : 'Finish'}
