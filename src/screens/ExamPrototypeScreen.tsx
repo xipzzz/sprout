@@ -5,6 +5,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { extractExam, saveExam } from '../exam/api';
 import { assertChildViewSafe, toChildView } from '../exam/childView';
 import type { ChildView, ParentQuestion, ParentScan, ReconstructionFlag } from '../exam/types';
+import { useParentUnlocked } from '../parent/hooks';
+import ParentGate from '../parent/ParentGate';
+import ParentTools from '../parent/ParentTools';
+import { lockParent } from '../parent/pin';
 import ExamChildPractice from './ExamChildPractice';
 
 interface ExamPrototypeScreenProps {
@@ -43,6 +47,7 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
   const [saved, setSaved] = useState<string[]>([]);
   const [skipped, setSkipped] = useState<string[]>([]);
   const [saveError, setSaveError] = useState('');
+  const parentOpen = useParentUnlocked();
 
   const runFile = useCallback(async (file: File, demo: boolean) => {
     setPhase('loading');
@@ -69,7 +74,7 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
   }, []);
 
   useEffect(() => {
-    if (started.current) return;
+    if (started.current || !parentOpen) return;
     const params = new URLSearchParams(window.location.search);
     if (params.get('demo') !== '1') return;
     started.current = true;
@@ -80,7 +85,7 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
       const file = new File([blob], 'sample-exam-english.png', { type: 'image/png' });
       await runFile(file, true);
     }
-  }, [runFile]);
+  }, [runFile, parentOpen]);
 
   async function onSample() {
     const response = await fetch('/sample-exam-english.png');
@@ -101,6 +106,7 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
       assertChildViewSafe(scan, view);
       setChild(view);
       setError('');
+      lockParent();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Child view was not safe to open.');
     }
@@ -116,6 +122,20 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
           const question = scan.questions.find((item) => item.id === id);
           if (!question || !question.correct_answer) return 'almost';
           return choice === question.correct_answer ? 'nice' : 'almost';
+        }}
+      />
+    );
+  }
+
+  if (!parentOpen) {
+    return (
+      <ParentGate
+        onExit={onExit}
+        onReset={() => {
+          setScan(null);
+          setSaved([]);
+          setSkipped([]);
+          setPhase('pick');
         }}
       />
     );
@@ -225,6 +245,7 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
               )}
             </div>
 
+            <ParentTools scan={scan} />
             {scan.questions.map((question) => (
               <article key={question.id} className="exam-proto__card">
                 <p className="exam-proto__kicker">Question {question.id}</p>
