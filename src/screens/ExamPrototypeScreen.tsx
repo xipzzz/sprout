@@ -6,6 +6,9 @@ import { extractExam, saveExam } from '../exam/api';
 import { assertChildViewSafe, toChildView } from '../exam/childView';
 import type { ChildView, ParentQuestion, ParentScan, ReconstructionFlag } from '../exam/types';
 import ExamChildPractice from './ExamChildPractice';
+import { useExamReview } from '../exam/useExamReview';
+import ExamReviewControls from './ExamReviewControls';
+import { useMistakesFlow } from './useMistakesFlow';
 
 interface ExamPrototypeScreenProps {
   onExit: () => void;
@@ -43,6 +46,8 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
   const [saved, setSaved] = useState<string[]>([]);
   const [skipped, setSkipped] = useState<string[]>([]);
   const [saveError, setSaveError] = useState('');
+  const marks = useExamReview(scan, saved);
+  const mistakes = useMistakesFlow();
 
   const runFile = useCallback(async (file: File, demo: boolean) => {
     setPhase('loading');
@@ -106,6 +111,8 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
     }
   }
 
+  if (mistakes.screen) return mistakes.screen;
+
   if (child && scan) {
     return (
       <ExamChildPractice
@@ -148,6 +155,9 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
             </button>
             <button type="button" className="exam-proto__secondary" onClick={() => fileRef.current?.click()}>
               Choose a photo
+            </button>
+            <button type="button" className="exam-proto__secondary" onClick={() => mistakes.openNotebook()}>
+              Mistake notebook
             </button>
             <input
               ref={fileRef}
@@ -268,6 +278,13 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
                   {question.explanation}
                 </p>
                 <FlagTape flags={flagsFor(question, 'explanation')} />
+                <ExamReviewControls
+                  question={question}
+                  subject={marks.subject}
+                  review={marks.review[question.id]}
+                  inNotebook={marks.inNotebook.has(question.id)}
+                  onChange={(patch) => marks.update(question.id, patch)}
+                />
               </article>
             ))}
 
@@ -276,8 +293,22 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
                 {error}
               </p>
             )}
+            {marks.status && <p className="exam-proto__save" role="status">{marks.status}</p>}
+            {mistakes.error && <p className="scan__edit-error" role="alert">{mistakes.error}</p>}
             <button type="button" className="btn-primary exam-proto__cta" onClick={openChild}>
               Practice with Pip
+            </button>
+            {marks.wrongHere > 0 && (
+              <button
+                type="button"
+                className="exam-proto__secondary"
+                onClick={() => mistakes.practise({ kind: 'scan', scanKey: marks.scanKey })}
+              >
+                Practise mistakes only ({marks.wrongHere})
+              </button>
+            )}
+            <button type="button" className="exam-proto__secondary" onClick={() => mistakes.openNotebook()}>
+              Mistake notebook ({marks.notebookCount})
             </button>
             <button type="button" className="exam-proto__secondary" onClick={() => setPhase('pick')}>
               Scan another photo
