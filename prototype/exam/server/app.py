@@ -52,6 +52,8 @@ async def extract_api(
 
 
 @app.post("/api/save")
-def save_api(scan: dict = Body(...)):
-    paths = save_scan(scan)
+def save_api(payload: dict = Body(...)):
+    scan = payload.get("scan") if isinstance(payload.get("scan"), dict) else payload
+    replace = payload.get("replace") if isinstance(payload.get("replace"), list) else []
+    paths = save_scan(scan, replace)
     return {"ok": True, "paths": paths["paths"], "skipped": paths["skipped"]}

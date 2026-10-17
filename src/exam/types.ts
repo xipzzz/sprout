@@ -7,6 +7,8 @@ export type ReconstructionFlag = {
   note: string;
 };
 
+export type ReviewStatus = 'open' | 'picked' | 'read_aloud' | 'dropped';
+
 export type ParentQuestion = {
   id: string;
   stem: string;
@@ -16,6 +18,8 @@ export type ParentQuestion = {
   correct_answer: string;
   explanation: string;
   flags: ReconstructionFlag[];
+  review?: ReviewStatus;
+  stem_edited?: boolean;
 };
 
 export type ParentScan = {

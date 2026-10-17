@@ -7,6 +7,7 @@ Also writes SPROUT_SAVE_DIR when that folder is different.
 from __future__ import annotations
 
 import os
+import re
 from datetime import date, datetime
 from pathlib import Path
 
@@ -14,6 +15,7 @@ from schema import subject_slug, to_child_view
 
 DEFAULT_VAULT = "/Users/ml/Documents/10_Obsidian/Xip/Sprout"
 FALLBACK_DIR = "sprout-notes"
+NOTE_NAME = re.compile(r"^\d{4}-\d{2}-\d{2}-[a-z0-9]+(?:-\d{4})?\.md$")
 
 
 def _yaml_quote(value: str) -> str:
@@ -55,9 +57,25 @@ def _unique_path(folder: str, name: str) -> str:
     return os.path.join(folder, f"{stem}-{stamp}{ext}")
 
 
+def _practice_line(question: dict) -> str:
+    review = question.get("review")
+    answer = question.get("correct_answer") or ""
+    if review == "picked":
+        return f"Practice answer, picked by parent (hidden from the child): {answer}"
+    if review == "open":
+        return "Practice answer: not picked yet. Practice stays locked."
+    if review == "dropped":
+        return "Dropped by parent. Not in practice."
+    if review == "read_aloud":
+        return "Practice: read aloud, no answer to pick."
+    return f"Practice answer (hidden from the child): {answer or '(unknown)'}"
+
+
 def render_markdown(scan: dict, when: date | None = None) -> str:
     when = when or date.today()
     questions = scan.get("questions") or []
+    locked = any(question.get("review") == "open" for question in questions)
+    practice_questions = [] if locked else to_child_view(scan)["questions"]
     flag_lines = []
     for question in questions:
         for flag in question.get("flags") or []:
@@ -70,6 +88,7 @@ def render_markdown(scan: dict, when: date | None = None) -> str:
         f"subject: {subject_slug(scan.get('subject') or '')}",
         f"source_photo: {_yaml_quote(scan.get('source_photo') or '')}",
         f"question_count: {len(questions)}",
+        f"practice_count: {len(practice_questions)}",
         f"extraction: {scan.get('extraction') or 'unknown'}",
     ]
     if flag_lines:
@@ -101,12 +120,14 @@ def render_markdown(scan: dict, when: date | None = None) -> str:
                 "",
                 f"Teacher's mark: {question.get('teacher_mark') or '(none)'}",
                 "",
-                f"Practice answer (hidden from the child): {question.get('correct_answer') or '(unknown)'}",
-                "",
-                f"For you: {question.get('explanation') or ''}",
+                _practice_line(question),
                 "",
             ]
         )
+        if question.get("stem_edited"):
+            parent.extend(["Stem edited by parent before practice.", ""])
+        explanation = question.get("explanation") or "an explanation appears once an answer is picked."
+        parent.extend([f"For you: {explanation}", ""])
         flags = question.get("flags") or []
         if flags:
             parent.append("Flags:")
@@ -116,14 +137,17 @@ def render_markdown(scan: dict, when: date | None = None) -> str:
                 parent.append(f"- {label} ({flag.get('field')}): {flag.get('note')}")
             parent.append("")
 
-    child = to_child_view(scan)
     practice = [
         "## Practice prompts",
         "",
         "The child view uses only these stems and choices. No handwritten answer, teacher's mark, or correct answer.",
         "",
     ]
-    for question in child["questions"]:
+    if locked:
+        practice.extend(["Practice is locked until every question has a picked answer or is dropped.", ""])
+    elif not practice_questions:
+        practice.extend(["No practice. Every question was dropped.", ""])
+    for question in practice_questions:
         practice.append(f"### {question['id']}. {question['stem']}")
         practice.append("")
         if question["choices"]:
@@ -135,10 +159,23 @@ def render_markdown(scan: dict, when: date | None = None) -> str:
     return "\n".join(front + parent + practice).rstrip() + "\n"
 
 
-def save_scan(scan: dict) -> dict:
+def _target_path(folder: str, name: str, replace: list[str]) -> str:
+    """Reuse an earlier note for this scan, but only a Sprout note directly inside folder."""
+    real_folder = os.path.realpath(folder)
+    for candidate in replace:
+        if not isinstance(candidate, str) or not NOTE_NAME.match(os.path.basename(candidate)):
+            continue
+        if os.path.realpath(os.path.dirname(candidate)) == real_folder and os.path.isfile(candidate):
+            return os.path.join(folder, os.path.basename(candidate))
+    return _unique_path(folder, name)
+
+
+def save_scan(scan: dict, replace: list[str] | None = None) -> dict:
+    """Write the note. Paths in replace, from an earlier save of the same scan, are overwritten."""
     when = date.today()
     body = render_markdown(scan, when)
     name = _filename(scan.get("subject") or "", when)
+    replace = list(replace or [])
     written: list[str] = []
     skipped: list[str] = []
     for folder in destination_dirs():
@@ -146,14 +183,14 @@ def save_scan(scan: dict) -> dict:
         if not usable:
             skipped.append(folder)
             continue
-        path = _unique_path(usable, name)
+        path = _target_path(usable, name, replace)
         Path(path).write_text(body, encoding="utf-8")
         written.append(path)
     if not written:
         fallback = _usable(os.path.abspath(FALLBACK_DIR))
         if not fallback:
             raise OSError("Could not write the Markdown note")
-        path = _unique_path(fallback, name)
+        path = _target_path(fallback, name, replace)
         Path(path).write_text(body, encoding="utf-8")
         written.append(path)
     return {"paths": written, "skipped": skipped}

@@ -36,8 +36,12 @@ export async function extractExam(file: File, demo: boolean): Promise<ParentScan
   throw new Error(first.message || 'Could not read that photo.');
 }
 
-export async function saveExam(scan: ParentScan): Promise<{ paths: string[]; skipped: string[] }> {
-  const payload = { ...scan, previews: undefined };
+/** Saves the parent copy. Passing the paths from an earlier save of the same scan updates that note. */
+export async function saveExam(
+  scan: ParentScan,
+  replace: string[] = [],
+): Promise<{ paths: string[]; skipped: string[] }> {
+  const payload = { scan: { ...scan, previews: undefined }, replace };
   const res = await fetch('/api/save', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

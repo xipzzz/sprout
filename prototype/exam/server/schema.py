@@ -17,7 +17,11 @@ FORBIDDEN_CHILD_KEYS = {
     "flags",
     "reconstructions",
     "previews",
+    "review",
+    "stem_edited",
 }
+
+PRACTICE_REVIEWS = {"picked", "read_aloud"}
 
 FLAG_FIELDS = {
     "stem",
@@ -139,6 +143,7 @@ def to_child_view(scan: dict) -> dict:
                 "choices": list(question.get("choices") or []),
             }
             for question in scan.get("questions") or []
+            if "review" not in question or question["review"] in PRACTICE_REVIEWS
         ],
     }
 

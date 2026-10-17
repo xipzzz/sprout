@@ -15,6 +15,8 @@ const FORBIDDEN_KEYS = new Set([
   'flags',
   'reconstructions',
   'previews',
+  'review',
+  'stem_edited',
 ]);
 
 export function toChildView(scan: ParentScan): ChildView {

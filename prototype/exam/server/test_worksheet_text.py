@@ -93,6 +93,12 @@ class RealWorksheetTests(unittest.TestCase):
         self.assertNotIn("Tesseract", blob)
         self.assertNotIn("placeholder", blob)
 
+    def test_real_photo_answers_wait_for_the_parent(self):
+        scan = asyncio.run(extract_scan(PHOTO.read_bytes(), "src-01.jpg", False, self.text))["scan"]
+        for question in scan["questions"]:
+            self.assertEqual(question["correct_answer"], "", f"Q{question['id']} must not default to a choice")
+            self.assertFalse(any(flag["field"] == "correct_answer" for flag in question["flags"]))
+
 
 class LayoutTests(unittest.TestCase):
     def test_dot_number_and_lettered_choices(self):

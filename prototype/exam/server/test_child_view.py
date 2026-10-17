@@ -62,8 +62,9 @@ class SchemaTests(unittest.TestCase):
         questions = questions_from_ocr("1. Which word?\nA) bloom\nB) root\n")
         fields = {flag["field"] for flag in questions[0]["flags"]}
         self.assertIn("stem", fields)
-        self.assertIn("correct_answer", fields)
-        self.assertIn("explanation", fields)
+        self.assertNotIn("explanation", fields)
+        self.assertEqual(questions[0]["correct_answer"], "")
+        self.assertEqual(questions[0]["explanation"], "")
 
 
 class DeskewTests(unittest.TestCase):
@@ -113,6 +114,102 @@ class SaveTests(unittest.TestCase):
         finally:
             os.environ.pop("SPROUT_VAULT_DIR", None)
             os.environ.pop("SPROUT_SAVE_DIR", None)
+
+    def test_resave_updates_the_same_note_only_inside_the_vault(self):
+        scan = reviewed_scan()
+        try:
+            with tempfile.TemporaryDirectory() as vault, tempfile.TemporaryDirectory() as elsewhere:
+                os.environ["SPROUT_VAULT_DIR"] = vault
+                os.environ.pop("SPROUT_SAVE_DIR", None)
+                first = save_scan(scan)["paths"]
+                again = save_scan(scan, first)["paths"]
+                self.assertEqual(first, again)
+                self.assertEqual(len(os.listdir(vault)), 1)
+
+                outside = Path(elsewhere) / Path(first[0]).name
+                outside.write_text("keep", encoding="utf-8")
+                odd = Path(vault) / "notes.md"
+                odd.write_text("keep", encoding="utf-8")
+                moved = save_scan(scan, [str(outside), str(odd)])["paths"]
+                self.assertEqual(outside.read_text(encoding="utf-8"), "keep")
+                self.assertEqual(odd.read_text(encoding="utf-8"), "keep")
+                self.assertEqual(Path(moved[0]).parent, Path(vault))
+                self.assertNotEqual(moved, first)
+        finally:
+            os.environ.pop("SPROUT_VAULT_DIR", None)
+
+
+def reviewed_scan(statuses=("picked", "picked", "dropped")):
+    answers = ["He", "are", ""]
+    stems = [
+        "Ali is playing with his new toy. ____ is having fun.",
+        "Samad and Ali ____ cleaning the whiteboard.",
+        "The horse jumped ____ the fence.",
+    ]
+    choices = [["It", "He", "She"], ["is", "are", "was"], ["in", "on", "over"]]
+    questions = []
+    for index, status in enumerate(statuses):
+        questions.append(
+            {
+                "id": str(index + 1),
+                "stem": stems[index],
+                "choices": choices[index],
+                "student_answer": "",
+                "teacher_mark": "",
+                "correct_answer": answers[index] if status == "picked" else "",
+                "explanation": "Tesseract read the print.",
+                "flags": [],
+                "review": status,
+                "stem_edited": index == 0,
+            }
+        )
+    return {
+        "extraction": "tesseract",
+        "subject": "english",
+        "paper_title": "Worksheet 2",
+        "source_photo": "src-01.jpg",
+        "note": "",
+        "deskew": {"applied": True, "corners": []},
+        "ink_pixels_lifted": 0,
+        "questions": questions,
+    }
+
+
+class ReviewNoteTests(unittest.TestCase):
+    def test_picks_go_to_the_parent_section_only(self):
+        scan = reviewed_scan()
+        text = render_markdown(scan)
+        parent, practice = text.split("## Practice prompts", 1)
+        self.assertIn("practice_count: 2", parent)
+        self.assertIn("Practice answer, picked by parent (hidden from the child): He", parent)
+        self.assertIn("Practice answer, picked by parent (hidden from the child): are", parent)
+        self.assertIn("Dropped by parent. Not in practice.", parent)
+        self.assertIn("Stem edited by parent before practice.", parent)
+        self.assertNotIn("picked", practice)
+        self.assertNotIn("Practice answer", practice)
+        self.assertNotIn("The horse jumped", practice)
+        self.assertIn("### 1. Ali is playing with his new toy. ____ is having fun.", practice)
+
+        child = to_child_view(scan)
+        assert_child_view_safe(scan, child)
+        self.assertEqual([q["id"] for q in child["questions"]], ["1", "2"])
+        for question in child["questions"]:
+            self.assertEqual(set(question), {"id", "stem", "choices"})
+
+    def test_open_question_locks_practice_in_the_note(self):
+        text = render_markdown(reviewed_scan(("picked", "open", "picked")))
+        parent, practice = text.split("## Practice prompts", 1)
+        self.assertIn("practice_count: 0", parent)
+        self.assertIn("Practice answer: not picked yet. Practice stays locked.", parent)
+        self.assertIn("Practice is locked", practice)
+        self.assertNotIn("###", practice)
+
+    def test_every_question_dropped_means_no_practice(self):
+        scan = reviewed_scan(("dropped", "dropped", "dropped"))
+        self.assertEqual(to_child_view(scan)["questions"], [])
+        practice = render_markdown(scan).split("## Practice prompts", 1)[1]
+        self.assertIn("No practice. Every question was dropped.", practice)
+        self.assertNotIn("###", practice)
 
 
 if __name__ == "__main__":

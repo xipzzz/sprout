@@ -1,10 +1,23 @@
 /* Exam scan prototype. Parent review, then child practice.
-   Open with ?exam=1. The sample photo runs without an API key. */
+   Open with ?exam=1. The sample photo runs without an API key.
+   Practice stays locked until the parent picks or drops every question. */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { extractExam, saveExam } from '../exam/api';
-import { assertChildViewSafe, toChildView } from '../exam/childView';
-import type { ChildView, ParentQuestion, ParentScan, ReconstructionFlag } from '../exam/types';
+import {
+  BLANK,
+  blankBefore,
+  blankInstead,
+  buildPractice,
+  initialReview,
+  parentCopy,
+  reviewProgress,
+  stemWords,
+  type Practice,
+  type QuestionReview,
+  type ReviewState,
+} from '../exam/review';
+import type { ParentQuestion, ParentScan, ReconstructionFlag } from '../exam/types';
 import ExamChildPractice from './ExamChildPractice';
 
 interface ExamPrototypeScreenProps {
@@ -13,8 +26,21 @@ interface ExamPrototypeScreenProps {
 
 type Phase = 'pick' | 'loading' | 'parent' | 'error';
 
+const STATUS_LABEL: Record<QuestionReview['status'], string> = {
+  open: 'Needs an answer',
+  picked: 'Ready',
+  read_aloud: 'Read-aloud',
+  dropped: 'Dropped',
+};
+
 function flagsFor(question: ParentQuestion, field: ReconstructionFlag['field']) {
   return question.flags.filter((flag) => flag.field === field);
+}
+
+function listIds(ids: string[]) {
+  const labels = ids.map((id) => `Q${id}`);
+  if (labels.length < 2) return labels.join('');
+  return `${labels.slice(0, -1).join(', ')} and ${labels[labels.length - 1]}`;
 }
 
 function FlagTape({ flags }: { flags: ReconstructionFlag[] }) {
@@ -33,40 +59,222 @@ function FlagTape({ flags }: { flags: ReconstructionFlag[] }) {
   );
 }
 
+function StemEditor({
+  question,
+  original,
+  onChange,
+}: {
+  question: ParentQuestion;
+  original: string;
+  onChange: (stem: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(question.stem);
+  const [selected, setSelected] = useState<number | null>(null);
+  const words = stemWords(question.stem);
+  const missingBlank = question.choices.length > 0 && !question.stem.includes(BLANK);
+
+  function commit(stem: string) {
+    setSelected(null);
+    setEditing(false);
+    if (stem.trim()) onChange(stem.trim());
+  }
+
+  if (editing) {
+    return (
+      <div className="exam-proto__stem-edit">
+        <textarea
+          className="exam-proto__stem-input"
+          value={draft}
+          aria-label={`Question ${question.id} text`}
+          onChange={(event) => setDraft(event.target.value)}
+          rows={3}
+        />
+        <div className="exam-proto__row">
+          <button type="button" className="exam-proto__small" onClick={() => commit(draft)}>
+            Save text
+          </button>
+          <button type="button" className="exam-proto__small exam-proto__small--quiet" onClick={() => setEditing(false)}>
+            Cancel
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {missingBlank ? (
+        <>
+          <p className="exam-proto__tap-hint">
+            The blank was not read. Tap the word right after the blank, or the word sitting in it.
+          </p>
+          <p className="exam-proto__stem exam-proto__stem--tap">
+            {words.map((word, index) => (
+              <button
+                key={`${index}-${word}`}
+                type="button"
+                className={`exam-proto__word${selected === index ? ' exam-proto__word--on' : ''}`}
+                aria-pressed={selected === index}
+                onClick={() => setSelected(selected === index ? null : index)}
+              >
+                {word}
+              </button>
+            ))}
+          </p>
+          {selected !== null && (
+            <div className="exam-proto__row">
+              <button
+                type="button"
+                className="exam-proto__small"
+                onClick={() => commit(blankBefore(question.stem, selected))}
+              >
+                Blank before “{words[selected]}”
+              </button>
+              <button
+                type="button"
+                className="exam-proto__small"
+                onClick={() => commit(blankInstead(question.stem, selected))}
+              >
+                Blank instead of “{words[selected]}”
+              </button>
+            </div>
+          )}
+        </>
+      ) : (
+        <h2 className="exam-proto__stem">{question.stem}</h2>
+      )}
+      <div className="exam-proto__row">
+        <button
+          type="button"
+          className="exam-proto__small exam-proto__small--quiet"
+          onClick={() => {
+            setDraft(question.stem);
+            setEditing(true);
+          }}
+        >
+          Edit text
+        </button>
+        {question.stem_edited && (
+          <button type="button" className="exam-proto__small exam-proto__small--quiet" onClick={() => commit(original)}>
+            Undo my edits
+          </button>
+        )}
+      </div>
+    </>
+  );
+}
+
+function AnswerPicker({
+  question,
+  entry,
+  onReview,
+}: {
+  question: ParentQuestion;
+  entry: QuestionReview;
+  onReview: (entry: QuestionReview) => void;
+}) {
+  if (entry.status === 'dropped') return null;
+  if (!question.choices.length) {
+    return (
+      <div className="exam-proto__answer">
+        <p className="exam-proto__answer-label">No choices to pick</p>
+        <button
+          type="button"
+          className={`exam-proto__answer-pick${entry.status === 'read_aloud' ? ' exam-proto__answer-pick--on' : ''}`}
+          aria-pressed={entry.status === 'read_aloud'}
+          onClick={() => onReview(entry.status === 'read_aloud' ? { status: 'open' } : { status: 'read_aloud' })}
+        >
+          Keep as read-aloud
+        </button>
+      </div>
+    );
+  }
+  return (
+    <div className="exam-proto__answer">
+      <p className="exam-proto__answer-label" id={`answer-${question.id}`}>
+        Pick the right answer, hidden from the child
+      </p>
+      <div className="exam-proto__answer-choices" role="radiogroup" aria-labelledby={`answer-${question.id}`}>
+        {question.choices.map((choice) => {
+          const on = entry.status === 'picked' && entry.answer === choice;
+          return (
+            <button
+              key={choice}
+              type="button"
+              role="radio"
+              aria-checked={on}
+              className={`exam-proto__answer-pick${on ? ' exam-proto__answer-pick--on' : ''}`}
+              onClick={() => onReview({ status: 'picked', answer: choice })}
+            >
+              {choice}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps) {
   const fileRef = useRef<HTMLInputElement>(null);
   const started = useRef(false);
+  const scanToken = useRef(0);
+  const savedPaths = useRef<string[]>([]);
+  const saveChain = useRef<Promise<void>>(Promise.resolve());
   const [phase, setPhase] = useState<Phase>('pick');
   const [error, setError] = useState('');
   const [scan, setScan] = useState<ParentScan | null>(null);
-  const [child, setChild] = useState<ChildView | null>(null);
+  const [review, setReview] = useState<ReviewState>({});
+  const [practice, setPractice] = useState<Practice | null>(null);
   const [saved, setSaved] = useState<string[]>([]);
   const [skipped, setSkipped] = useState<string[]>([]);
   const [saveError, setSaveError] = useState('');
+  const [originalStems, setOriginalStems] = useState<Record<string, string>>({});
 
   const runFile = useCallback(async (file: File, demo: boolean) => {
+    scanToken.current += 1;
+    savedPaths.current = [];
     setPhase('loading');
     setError('');
     setSaveError('');
+    setSaved([]);
     setSkipped([]);
-    setChild(null);
+    setPractice(null);
     try {
       const next = await extractExam(file, demo);
+      setOriginalStems(Object.fromEntries(next.questions.map((question) => [question.id, question.stem])));
       setScan(next);
+      setReview(initialReview(next));
       setPhase('parent');
-      try {
-        const savedNote = await saveExam(next);
-        setSaved(savedNote.paths);
-        setSkipped(savedNote.skipped);
-      } catch (err) {
-        setSaved([]);
-        setSaveError(err instanceof Error ? err.message : 'Could not save the note.');
-      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not scan that photo.');
       setPhase('error');
     }
   }, []);
+
+  useEffect(() => {
+    if (!scan || phase !== 'parent') return;
+    const token = scanToken.current;
+    const copy = parentCopy(scan, review);
+    const timer = window.setTimeout(() => {
+      saveChain.current = saveChain.current.then(async () => {
+        if (token !== scanToken.current) return;
+        try {
+          const result = await saveExam(copy, savedPaths.current);
+          if (token !== scanToken.current) return;
+          savedPaths.current = result.paths;
+          setSaved(result.paths);
+          setSkipped(result.skipped);
+          setSaveError('');
+        } catch (err) {
+          if (token !== scanToken.current) return;
+          setSaveError(err instanceof Error ? err.message : 'Could not save the note.');
+        }
+      });
+    }, 400);
+    return () => window.clearTimeout(timer);
+  }, [scan, review, phase]);
 
   useEffect(() => {
     if (started.current) return;
@@ -94,32 +302,50 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
     void runFile(file, false);
   }
 
+  function setEntry(id: string, entry: QuestionReview) {
+    setReview((prev) => ({ ...prev, [id]: entry }));
+  }
+
+  function setStem(id: string, stem: string) {
+    setScan((prev) =>
+      prev && {
+        ...prev,
+        questions: prev.questions.map((question) =>
+          question.id === id ? { ...question, stem, stem_edited: stem !== originalStems[id] } : question,
+        ),
+      },
+    );
+  }
+
   function openChild() {
     if (!scan) return;
     try {
-      const view = toChildView(scan);
-      assertChildViewSafe(scan, view);
-      setChild(view);
+      const next = buildPractice(scan, review);
+      if (!next) {
+        setError('Practice is locked until every question has an answer or is dropped.');
+        return;
+      }
+      setPractice(next);
       setError('');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Child view was not safe to open.');
     }
   }
 
-  if (child && scan) {
+  if (practice) {
     return (
-      <ExamChildPractice
-        view={child}
-        onBack={() => setChild(null)}
-        onExit={onExit}
-        onGrade={(id, choice) => {
-          const question = scan.questions.find((item) => item.id === id);
-          if (!question || !question.correct_answer) return 'almost';
-          return choice === question.correct_answer ? 'nice' : 'almost';
-        }}
-      />
+      <ExamChildPractice view={practice.view} onGrade={practice.grade} onBack={() => setPractice(null)} onExit={onExit} />
     );
   }
+
+  const progress = scan ? reviewProgress(scan, review) : null;
+  const copy = scan ? parentCopy(scan, review) : null;
+  const copyById = new Map(
+    (copy?.questions ?? [])
+      .filter((question) => question.explanation)
+      .map((question) => [question.id, question]),
+  );
+  const total = scan?.questions.length ?? 0;
 
   return (
     <div className="screen exam-proto" data-screen={phase === 'parent' ? 'parent-review' : 'exam-pick'}>
@@ -176,10 +402,14 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
           </div>
         )}
 
-        {phase === 'parent' && scan && (
+        {phase === 'parent' && scan && progress && (
           <div className="exam-proto__review">
-            {scan.extraction === 'stub' && <p className="exam-proto__banner">{scan.note}</p>}
-            {scan.extraction !== 'stub' && scan.note && <p className="exam-proto__banner">{scan.note}</p>}
+            {scan.note && <p className="exam-proto__banner">{scan.note}</p>}
+            <p className="exam-proto__progress" role="status">
+              Answers checked: {progress.ready + progress.dropped} of {total}.
+              {progress.dropped > 0 && ` ${progress.dropped} dropped.`} Practice opens when every question has
+              an answer or is dropped.
+            </p>
             <p className="exam-proto__save" role="status">
               {saved.length > 0 && (
                 <>
@@ -188,12 +418,13 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
               )}
               {skipped.length > 0 && <> Vault folder not writable here: {skipped.join(' · ')}.</>}
               {saveError && <>Could not save the note. {saveError}</>}
+              {!saved.length && !skipped.length && !saveError && 'Saving the note…'}
             </p>
-            {scan.questions.some((question) => question.flags.length > 0) && (
+            {copy?.questions.some((question) => question.flags.length > 0) && (
               <ul className="exam-proto__flag-summary">
                 {[
                   ...new Map(
-                    scan.questions.flatMap((question) =>
+                    copy.questions.flatMap((question) =>
                       question.flags.map((flag) => [
                         `${question.id}|${flag.field}|${flag.kind}`,
                         { id: question.id, field: flag.field, kind: flag.kind },
@@ -225,60 +456,94 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
               )}
             </div>
 
-            {scan.questions.map((question) => (
-              <article key={question.id} className="exam-proto__card">
-                <p className="exam-proto__kicker">Question {question.id}</p>
-                <h2 className="exam-proto__stem">{question.stem}</h2>
-                <FlagTape flags={flagsFor(question, 'stem')} />
-                {question.choices.length > 0 && (
-                  <>
-                    <ul className="exam-proto__choices">
-                      {question.choices.map((choice) => (
-                        <li key={choice}>{choice}</li>
-                      ))}
-                    </ul>
-                    <FlagTape flags={flagsFor(question, 'choices')} />
-                  </>
-                )}
-                <dl className="exam-proto__facts">
-                  <div>
-                    <dt>Handwritten answer</dt>
-                    <dd>
-                      {question.student_answer || 'Blank'}
-                      <FlagTape flags={flagsFor(question, 'student_answer')} />
-                    </dd>
+            {scan.questions.map((question) => {
+              const entry = review[question.id] ?? { status: 'open' };
+              const explained = copyById.get(question.id);
+              const dropped = entry.status === 'dropped';
+              return (
+                <article
+                  key={question.id}
+                  className={`exam-proto__card${dropped ? ' exam-proto__card--dropped' : ''}`}
+                  data-review={entry.status}
+                >
+                  <div className="exam-proto__card-head">
+                    <p className="exam-proto__kicker">Question {question.id}</p>
+                    <span className={`exam-proto__status exam-proto__status--${entry.status}`}>
+                      {STATUS_LABEL[entry.status]}
+                    </span>
                   </div>
-                  <div>
-                    <dt>Teacher’s mark</dt>
-                    <dd>
-                      {question.teacher_mark || 'None'}
-                      <FlagTape flags={flagsFor(question, 'teacher_mark')} />
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>Practice answer, hidden from the child</dt>
-                    <dd>
-                      {question.correct_answer || 'Unknown'}
-                      <FlagTape flags={flagsFor(question, 'correct_answer')} />
-                    </dd>
-                  </div>
-                </dl>
-                <p className="exam-proto__explain">
-                  <span className="exam-proto__explain-label">For you</span>
-                  {question.explanation}
-                </p>
-                <FlagTape flags={flagsFor(question, 'explanation')} />
-              </article>
-            ))}
+                  {dropped ? (
+                    <h2 className="exam-proto__stem">{question.stem}</h2>
+                  ) : (
+                    <StemEditor
+                      question={question}
+                      original={originalStems[question.id] ?? question.stem}
+                      onChange={(stem) => setStem(question.id, stem)}
+                    />
+                  )}
+                  {!dropped && <FlagTape flags={flagsFor(question, 'stem')} />}
+                  {!dropped && (
+                    <>
+                      <AnswerPicker question={question} entry={entry} onReview={(next) => setEntry(question.id, next)} />
+                      <FlagTape flags={[...flagsFor(question, 'choices'), ...flagsFor(question, 'correct_answer')]} />
+                      <dl className="exam-proto__facts">
+                        <div>
+                          <dt>Handwritten answer</dt>
+                          <dd>
+                            {question.student_answer || 'Blank'}
+                            <FlagTape flags={flagsFor(question, 'student_answer')} />
+                          </dd>
+                        </div>
+                        <div>
+                          <dt>Teacher’s mark</dt>
+                          <dd>
+                            {question.teacher_mark || 'None'}
+                            <FlagTape flags={flagsFor(question, 'teacher_mark')} />
+                          </dd>
+                        </div>
+                      </dl>
+                      <p className="exam-proto__explain">
+                        <span className="exam-proto__explain-label">For you</span>
+                        {explained?.explanation || 'Pick the right answer and a short explanation appears here.'}
+                      </p>
+                      {explained && <FlagTape flags={flagsFor(explained, 'explanation')} />}
+                    </>
+                  )}
+                  <button
+                    type="button"
+                    className="exam-proto__small exam-proto__small--quiet exam-proto__drop"
+                    onClick={() => setEntry(question.id, dropped ? { status: 'open' } : { status: 'dropped' })}
+                  >
+                    {dropped ? 'Put this question back' : 'Drop this question'}
+                  </button>
+                </article>
+              );
+            })}
 
             {error && (
               <p className="scan__edit-error" role="alert">
                 {error}
               </p>
             )}
-            <button type="button" className="btn-primary exam-proto__cta" onClick={openChild}>
-              Practice with Pip
-            </button>
+            <div className={`exam-proto__gate${progress.unlocked ? '' : ' exam-proto__gate--locked'}`}>
+              <p className="exam-proto__gate-note" role="status">
+                {progress.unlocked && `Ready. ${progress.ready} of ${total} questions go to practice.`}
+                {!progress.unlocked &&
+                  progress.open.length > 0 &&
+                  `Practice is locked. Pick an answer or drop ${listIds(progress.open)}.`}
+                {!progress.unlocked &&
+                  progress.open.length === 0 &&
+                  'Practice is locked. Every question was dropped, so there is nothing to practice.'}
+              </p>
+              <button
+                type="button"
+                className="btn-primary exam-proto__cta"
+                onClick={openChild}
+                disabled={!progress.unlocked}
+              >
+                {progress.unlocked ? 'Practice with Pip' : 'Practice locked'}
+              </button>
+            </div>
             <button type="button" className="exam-proto__secondary" onClick={() => setPhase('pick')}>
               Scan another photo
             </button>

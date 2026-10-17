@@ -148,18 +148,13 @@ def sheet_from_ocr(text: str) -> tuple[str, list[dict]]:
             "choices": choices,
             "student_answer": "",
             "teacher_mark": "",
-            "correct_answer": choices[0] if choices else "",
-            "explanation": "Tesseract read the print. It cannot tell handwriting from the question, so check this before practice.",
+            "correct_answer": "",
+            "explanation": "",
             "flags": [
                 {
                     "field": "stem",
                     "kind": "reconstructed",
                     "note": "Read by Tesseract.js. Handwriting was not separated from the print.",
-                },
-                {
-                    "field": "explanation",
-                    "kind": "generated",
-                    "note": "Written for the parent. The child does not see this.",
                 },
             ],
         }
@@ -169,13 +164,6 @@ def sheet_from_ocr(text: str) -> tuple[str, list[dict]]:
                     "field": "choices",
                     "kind": "reconstructed",
                     "note": "Choices came from the text scan and may include stray handwriting.",
-                }
-            )
-            raw["flags"].append(
-                {
-                    "field": "correct_answer",
-                    "kind": "reconstructed",
-                    "note": "No answer key was visible. The first choice is only a placeholder.",
                 }
             )
         if parsed.stem_changes:
