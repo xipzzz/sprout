@@ -62,7 +62,7 @@ def render_markdown(scan: dict, when: date | None = None) -> str:
     for question in questions:
         for flag in question.get("flags") or []:
             flag_lines.append(
-                f"{question.get('id')} {flag.get('field')}: {flag.get('kind')} — {flag.get('note')}"
+                f"{question.get('id')} {flag.get('field')}: {flag.get('kind')}. {flag.get('note')}"
             )
     front = [
         "---",

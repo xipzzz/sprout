@@ -34,20 +34,21 @@ npm run exam         # Vite on :5173 and the local saver on :8787
 Open http://localhost:5173/?exam=1 and tap **Try the sample photo**. That path needs no API key.
 Add `?exam=1&demo=1` to open the sample immediately.
 
-The saver writes one Obsidian note per scan, named like `2026-10-17-english.md`, to
-`SPROUT_VAULT_DIR` (default `/Users/ml/Documents/10_Obsidian/Xip/Sprout/`). If that folder
-cannot be created, the note falls back to `./sprout-notes/` (gitignored). Set
-`SPROUT_SAVE_DIR` to also keep a copy in another local folder. Keys live in `.env`
-(see `.env.example`, gitignored) or, on a Mac, in Keychain:
+A real photo is read with free Tesseract.js in the browser (or a local `tesseract` binary
+if one is installed). No Zhipu key. Guessed text is flagged on the parent screen.
+`ZHIPU_API_KEY` is optional, and only turns on a Zhipu GLM-4.6V vision read. Put it in
+`.env` (see `.env.example`, gitignored) or, on a Mac, in Keychain:
 
 ```bash
 security add-generic-password -s sprout -a ZHIPU_API_KEY -w
 ```
 
-`ZHIPU_API_KEY` is the Zhipu key for **GLM-4.6V**. Without it, the sample stub still runs.
-Any other photo falls back to Tesseract.js in the browser (or a local `tesseract` binary
-if one is installed). Guessed text is flagged on the parent screen. The child screen
-receives a different data shape with no handwritten answer, teacher's mark, or correct answer.
+The child screen receives a different data shape with no handwritten answer, teacher's mark, or correct answer.
+
+The saver writes one Obsidian note per scan, named like `2026-10-17-english.md`, to
+`SPROUT_VAULT_DIR` (default `/Users/ml/Documents/10_Obsidian/Xip/Sprout/`). If that folder
+cannot be created, the note falls back to `./sprout-notes/` (gitignored). Set
+`SPROUT_SAVE_DIR` to also keep a copy in another local folder.
 
 ```bash
 npm run test:exam    # child-view leak test + saver tests

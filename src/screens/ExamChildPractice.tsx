@@ -94,7 +94,7 @@ export default function ExamChildPractice({ view, onGrade, onBack, onExit }: Exa
           )}
           {grade === 'nice' && <p className="exam-proto__result exam-proto__result--nice">Nicely done.</p>}
           {grade === 'almost' && (
-            <p className="exam-proto__result exam-proto__result--almost">Almost — try another word.</p>
+            <p className="exam-proto__result exam-proto__result--almost">Almost. Try another word.</p>
           )}
           {grade === 'nice' && index + 1 < total && (
             <button type="button" className="btn-primary exam-proto__cta" onClick={next}>

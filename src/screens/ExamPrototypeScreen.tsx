@@ -1,4 +1,4 @@
-/* Exam scan prototype — parent review, then child practice.
+/* Exam scan prototype. Parent review, then child practice.
    Open with ?exam=1. The sample photo runs without an API key. */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -140,8 +140,8 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
               off the preview, and lays out each question for you to check.
             </p>
             <p className="exam-proto__hint">
-              The sample runs with no API key. A live read of your own photo needs <code>ZHIPU_API_KEY</code>{' '}
-              (Zhipu GLM-4.6V). Without it, your photo falls back to Tesseract.js.
+              Your photo is read with free Tesseract.js. No account and no API key.
+              Zhipu GLM-4.6V is optional, and only runs if <code>ZHIPU_API_KEY</code> is set.
             </p>
             <button type="button" className="btn-primary exam-proto__cta" onClick={() => void onSample()}>
               Try the sample photo

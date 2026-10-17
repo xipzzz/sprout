@@ -1,8 +1,8 @@
-"""Photo → parent scan.
+"""Photo to parent scan.
 
-Live read: Zhipu GLM-4.6V when ZHIPU_API_KEY is set (env, .env, or macOS Keychain).
-Without a key: the sample photo uses the labeled stub. Any other photo can be
-structured from Tesseract text, with every guessed field flagged.
+Default read is free Tesseract. No API key.
+Zhipu GLM-4.6V is optional, and runs only when ZHIPU_API_KEY is set
+(env, .env, or macOS Keychain). The sample photo uses the labeled stub.
 """
 
 from __future__ import annotations
@@ -99,7 +99,7 @@ def stub_scan(filename: str) -> dict:
         "note": (
             "Sample demo. These questions are a labeled stub, not a live read of the photo. "
             "The page was still straightened and colored ink was lifted. "
-            "A live read needs ZHIPU_API_KEY for Zhipu GLM-4.6V."
+            "A real photo is read with free Tesseract. ZHIPU_API_KEY is optional, for a Zhipu vision read."
         ),
         "questions": fixture["questions"],
     }
@@ -240,7 +240,7 @@ async def vision_extract(image_jpeg: bytes, api_key: str) -> dict:
         "extraction": "zhipu",
         "subject": subject_slug(str(data.get("subject") or "english")),
         "paper_title": str(data.get("paper_title") or "Homework"),
-        "note": f"Read with Zhipu {model}. Anything guessed is flagged on the question.",
+        "note": f"Optional vision read with Zhipu {model}. Anything guessed is flagged on the question.",
         "questions": questions_from_model(data),
     }
 
@@ -276,8 +276,8 @@ async def extract_scan(
                     "ok": False,
                     "need_ocr": True,
                     "message": (
-                        "No ZHIPU_API_KEY yet, and this server has no Tesseract binary. "
-                        "The browser will retry with Tesseract.js, or use the sample photo."
+                        "This server has no Tesseract binary. "
+                        "The browser will retry with free Tesseract.js, or use the sample photo."
                     ),
                     "previews": previews,
                     "deskew": page["deskew"],
@@ -288,7 +288,7 @@ async def extract_scan(
                 "paper_title": "Homework",
                 "source_photo": filename,
                 "note": (
-                    "No ZHIPU_API_KEY, so this used Tesseract text instead of a vision model. "
+                    "Read with free Tesseract. "
                     "Handwriting is not reliably separated. Flagged fields need a parent look."
                 ),
                 "questions": questions_from_ocr(text),

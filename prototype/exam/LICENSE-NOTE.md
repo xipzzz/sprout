@@ -1,4 +1,4 @@
-# License note — Goppai/exam was not vendored
+# License note: Goppai/exam was not vendored
 
 Checked 2026-10-17 by cloning https://github.com/Goppai/exam (default branch `main`).
 
@@ -19,4 +19,4 @@ Field names in Sprout (`stem`, `choices`, `student_answer`, `teacher_mark`) matc
 
 ## Extraction attempt
 
-Goppai's own `POST /api/extract` was run on their sample `inputs/english1.png` (subject `english`). The call reached Zhipu **GLM-4.6V** and the API returned HTTP 429, error code 1113: insufficient balance or no resource package (`余额不足或无可用资源包,请充值。`). A live read needs a funded `ZHIPU_API_KEY`. Nothing from that clone, including any `.env`, was copied into Sprout.
+Goppai's own `POST /api/extract` was run on their sample `inputs/english1.png` (subject `english`). The call reached Zhipu **GLM-4.6V** and the API returned HTTP 429, error code 1113: insufficient balance or no resource package (`余额不足或无可用资源包,请充值。`). Sprout stays on free Tesseract. `ZHIPU_API_KEY` is optional and unused unless you set it. Nothing from that clone, including any `.env`, was copied into Sprout.
