@@ -191,14 +191,21 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
             </p>
             {scan.questions.some((question) => question.flags.length > 0) && (
               <ul className="exam-proto__flag-summary">
-                {scan.questions.flatMap((question) =>
-                  question.flags.map((flag) => (
-                    <li key={`${question.id}-${flag.field}`}>
-                      {flag.kind === 'generated' ? 'AI wrote this' : 'AI filled this in'}
-                      {' · '}Q{question.id} {flag.field.replaceAll('_', ' ')}
-                    </li>
-                  )),
-                )}
+                {[
+                  ...new Map(
+                    scan.questions.flatMap((question) =>
+                      question.flags.map((flag) => [
+                        `${question.id}|${flag.field}|${flag.kind}`,
+                        { id: question.id, field: flag.field, kind: flag.kind },
+                      ]),
+                    ),
+                  ),
+                ].map(([key, chip]) => (
+                  <li key={key}>
+                    {chip.kind === 'generated' ? 'AI wrote this' : 'AI filled this in'}
+                    {' · '}Q{chip.id} {chip.field.replaceAll('_', ' ')}
+                  </li>
+                ))}
               </ul>
             )}
             <div className="exam-proto__previews">
