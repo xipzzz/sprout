@@ -120,6 +120,9 @@ def _split_token(token: str, next_word: str, names: set[str]) -> list[str] | Non
         return pieces
     if not token[0].isupper():
         return None
+    pair = re.fullmatch(r"([A-Z][a-z]{2,7})(and|or)([A-Z][a-z]{2,})", token)
+    if pair:
+        return list(pair.groups())
     # A leading name glued to the next word, e.g. "Aliis" or "Fionafelldown".
     # Only with evidence, so real names like "Ethan" or "Simon" stay whole.
     options = []
@@ -147,6 +150,8 @@ def standalone_names(text: str) -> set[str]:
         word = match.group(1)
         if not _known(word):
             names.add(word)
+    for match in re.finditer(r"\b([A-Z][a-z]{2,7})(?:and|or)([A-Z][a-z]{2,})\b", text or ""):
+        names.update(word for word in match.groups() if not _known(word))
     return names
 
 
@@ -186,17 +191,69 @@ def resplit_glued(text: str, names: set[str] | None = None) -> tuple[str, list[s
     return "".join(quoted), changes
 
 
+_HAN = "\u3400-\u9fff"
+_HAN_RE = re.compile(f"[{_HAN}]")
+_FULL_WIDTH = str.maketrans(
+    {"（": "(", "）": ")", "［": "[", "］": "]", "｛": "{", "｝": "}", "．": ".", "：": ":", "？": "?", "！": "!", "；": ";", "\u3000": " "}
+)
+_FOOTER_RE = re.compile(
+    r"\bwww\b|https?://|\b[\w-]+\.(?:com|sg|net|org)\b|\bsgexam\b|copyright|©|\bpage\s+\d+\s+of\s+\d+",
+    re.IGNORECASE,
+)
+_OPEN = r"[\(\[\{<|]"
+_CLOSE = r"[\)\]\}>|]"
+_JUNK_CHARS = set("®©€¢¥£§¶\\|[]{}<>«»^`@#*")
+_DASHES = {"-", "—", "–", "~"}
+_FUZZY_DIGITS = str.maketrans({"l": "1", "I": "1", "|": "1", "i": "1", "O": "0", "o": "0", "S": "5", "s": "5", "B": "8", "Z": "2", "A": "4", "q": "9", "g": "9"})
+_WEAK_CHOICE_RE = re.compile(r"^(?:\S{1,2}\s)?([1-9])\s+(?=\S)")
+_FUZZY_QUESTION_RE = re.compile(r"^\W{0,2}([0-9lI|iOoSsBZAqg]{1,2})\s*[\.\)]\s+(?P<rest>\S.*)$")
+_INLINE_MARK_RE = re.compile(r"\((\d{1,2})\)")
+_EDITING_RE = re.compile(r"\b(mistake|error|spelling|underlined|correct the)\b", re.IGNORECASE)
+
+
+def normalize_text(text: str) -> str:
+    """Full-width punctuation to ASCII, circled numbers to (1), and no spaces between Han characters."""
+    text = (text or "").replace("\r", "").translate(_FULL_WIDTH)
+    text = re.sub("[\u2460-\u2468]", lambda m: f" ({ord(m.group(0)) - 0x2460 + 1}) ", text)
+    text = re.sub(rf"(?<=[{_HAN}])[ \t]+(?=[{_HAN}。，！？、；：])", "", text)
+    return re.sub(r"(?m)^(\s*\d{1,2})、", r"\1.", text)
+
+
+def normalize_markers(line: str) -> str:
+    """Repair choice and question markers that OCR noise broke: '{3)', '(L)', '(2)-on', '\\ 1) nurse', ': 9.'."""
+    text = re.sub(r"^\(\s*[lLI|]\s*\)\s*", "(1) ", line)
+    text = re.sub(r"^\(([1-9])[MJlI|](?=\s)", r"(\1)", text)
+    text = re.sub(r"(?<=\s)\(\s*[lLI|]\s*\)(?=\s|$)", "(1)", text)
+    text = re.sub(rf"(?:(?<=\s)|^){_OPEN}\s?([1-9])\s?{_CLOSE}", r"(\1)", text)
+    text = re.sub(r"(\([1-9]\))[-–—~:=]+\s*", r"\1 ", text)
+    text = re.sub(r"(\([1-9]\))(?=[^\s\d.,)])", r"\1 ", text)
+    text = re.sub(rf"(?:(?<=\s)|^)([1-9]\))(?=[A-Za-z{_HAN}])", r"\1 ", text)
+    text = re.sub(rf"([A-D][\.\)])(?=[{_HAN}])", r"\1 ", text)
+    text = re.sub(r"^(?:[^\w\s(]{1,3}|[A-Za-z])\s+(?=\([1-9]\)\s|[1-9]\)\s|[a-dA-D][\)\.]\s)", "", text)
+    return re.sub(r"^[^\w\s(]{1,3}\s*(?=\d{1,2}\s*[\.\)]\s)", "", text)
+
+
+def is_footer(line: str) -> bool:
+    return bool(_FOOTER_RE.search(line))
+
+
 def strip_junk(line: str) -> str:
-    """Drop leading bars and trailing answer-bracket debris like '( )', '«9', 'C0)'."""
+    """Drop leading bars and trailing answer-bracket debris like '( )', '«9', 'C0)', '( I'."""
     text = line.strip().lstrip("|¦").strip()
     text = re.sub(r"_+", f" {_BLANK} ", text)
+    text = re.sub(r"(?:(?<=\s)|^)~(?=\s|$)", f" {_BLANK} ", text)
+    if re.match(r"\([1-9a-dA-D]\)\s+\S", text):
+        text = re.sub(r"(?<=\S)\s+[\(\[\{][^\s()\[\]{}]{0,4}[\)\]\}]?\s*$", "", text)
+    tail = re.search(r"\s+([\(\[\{]\s*\S{0,2}\s*[\)\]\}]?)\s*$", text)
+    if tail and not re.fullmatch(r"\(\w+\)", tail.group(1)):
+        text = text[: tail.start()]
     while True:
         parts = text.rsplit(None, 1)
         if len(parts) < 2:
             break
-        tail = parts[1]
-        is_debris = len(tail) <= 4 and any(char in _BRACKET_CHARS for char in tail)
-        if is_debris and not re.fullmatch(r"\(\w+\)", tail):
+        end = parts[1]
+        is_debris = len(end) <= 4 and any(char in _BRACKET_CHARS for char in end)
+        if is_debris and not re.fullmatch(r"\(\w+\)", end):
             text = parts[0].rstrip()
             continue
         break
@@ -204,49 +261,211 @@ def strip_junk(line: str) -> str:
     return re.sub(r"\s{2,}", " ", text).strip()
 
 
+def _is_number(token: str) -> bool:
+    return bool(re.fullmatch(r"[\d.,/]+[A-Za-z]{0,2}", token.strip("()?.,")))
+
+
+def _junk_token(token: str) -> bool:
+    if token == _BLANK or any(char.isalnum() for char in token):
+        return False
+    if any(char in _JUNK_CHARS for char in token):
+        return True
+    if any(char in "()" for char in token) and any(char in "=:;~" for char in token):
+        return True
+    return token in {":", ";"}
+
+
+def _junk_word(token: str) -> bool:
+    """Short debris that OCR finds in picture boxes: 'Re', 'AR', 'TERY', 'TT]'."""
+    core = token.strip(".,;:!?\"'“”")
+    if not core or core == _BLANK or _is_number(core) or _HAN_RE.search(core):
+        return False
+    if re.fullmatch(r"[A-Za-z]{2,}['’][a-z]{1,2}", core):
+        return False
+    if not core.isalpha():
+        return True
+    if _known(core):
+        return False
+    return len(core) <= 2 or (core.isupper() and len(core) <= 4)
+
+
+def clean_stem(text: str) -> tuple[str, list[str]]:
+    """Drop stray symbols and picture-box debris from a stem. Returns the text and what was dropped."""
+    tokens = text.split()
+    kept: list[str] = []
+    removed: list[str] = []
+    for index, token in enumerate(tokens):
+        before = tokens[index - 1] if index else ""
+        after = tokens[index + 1] if index + 1 < len(tokens) else ""
+        beside_number = _is_number(before) or _is_number(after)
+        single_letter = len(token) == 1 and token.isalpha() and token not in {"a", "A", "I"} and not _HAN_RE.match(token)
+        if _junk_token(token) or (token in _DASHES and not beside_number) or (single_letter and not beside_number):
+            removed.append(token)
+            continue
+        kept.append(token)
+    out: list[str] = []
+    boundary = True
+    for token in kept:
+        if boundary and _junk_word(token) and not _HAN_RE.search(token):
+            removed.append(token)
+            continue
+        out.append(token)
+        boundary = token.endswith((".", "?", "!", "。"))
+    return " ".join(out), removed
+
+
+def clean_choice(value: str) -> str:
+    tokens = strip_junk(value).split()
+    while len(tokens) > 1:
+        last = tokens[-1]
+        rest = " ".join(tokens[:-1])
+        drop = (
+            _junk_token(last)
+            or not any(char.isalnum() for char in last)
+            or bool(re.fullmatch(r"[-–—=~]+\S{0,2}", last))
+            or (len(last) == 1 and last.isalpha() and last not in {"a", "A", "I"})
+            or bool(re.fullmatch(r"[A-Za-z][:;,.]", last))
+            or (last.isdigit() and len(last) == 1 and not re.search(r"\d", rest))
+            or (last.isupper() and len(last) <= 4 and last.isalpha() and not _known(last) and tokens[0].islower())
+        )
+        if not drop:
+            break
+        tokens.pop()
+    while tokens and (
+        _junk_token(tokens[0])
+        or re.fullmatch(r"[-–—=~]+", tokens[0])
+        or (len(tokens) > 1 and re.fullmatch(r"[\[\]{}|]\S{0,2}|\S{0,2}[\[\]{}|]", tokens[0]))
+    ):
+        tokens.pop(0)
+    return " ".join(tokens)
+
+
 def _choice_key(raw: str) -> int:
     return int(raw) if raw.isdigit() else ord(raw.lower()) - ord("a") + 1
 
 
-def _sequential(found: list[tuple[int, int, int]], expected: int) -> list[tuple[int, int, int]]:
-    run: list[tuple[int, int, int]] = []
-    for start, end, key in found:
-        if key == ((run[-1][2] + 1) if run else expected):
-            run.append((start, end, key))
-    return run
+@dataclass
+class _Hit:
+    part: int
+    start: int
+    end: int
+    key: int
+    family: str
+    strong: bool
 
 
-def split_choices(text: str, expected: int) -> tuple[str, list[str]]:
-    """Find a run of sequential choice markers. Returns (text before, choices)."""
-    marked = [
-        (m.start(), m.end(), _choice_key(m.group(1) or m.group(2)))
-        for m in _CHOICE_TOKEN_RE.finditer(text)
-    ]
-    run = _sequential(marked, expected)
-    if len(run) == 1 and run[0][0] != 0:
-        run = []
-    if not run:
-        bare = [(m.start(), m.end(), _choice_key(m.group(1))) for m in _BARE_LETTER_RE.finditer(text)]
-        run = _sequential(bare, expected)
-        if len(run) < 2 and not (run and expected > 1 and run[0][0] == 0):
-            run = []
-    if not run:
-        return text, []
-    before = text[: run[0][0]].strip()
+def _hits(parts: list[str]) -> list[_Hit]:
+    hits: list[_Hit] = []
+    for index, part in enumerate(parts):
+        taken: set[int] = set()
+        for match in _CHOICE_TOKEN_RE.finditer(part):
+            raw = match.group(1) or match.group(2)
+            family = "num" if raw.isdigit() else "letter"
+            hits.append(_Hit(index, match.start(), match.end(), _choice_key(raw), family, True))
+            taken.add(match.start())
+        weak = _WEAK_CHOICE_RE.match(part) if index else None
+        if weak and weak.start(1) not in taken and not any(h.part == index and h.start <= weak.end() for h in hits):
+            hits.append(_Hit(index, weak.start(1), weak.end(), int(weak.group(1)), "num", False))
+        for match in _BARE_LETTER_RE.finditer(part):
+            hits.append(_Hit(index, match.start(), match.end(), _choice_key(match.group(1)), "bare", False))
+    hits.sort(key=lambda hit: (hit.part, hit.start))
+    return hits
+
+
+def _best_chain(hits: list[_Hit], families: set[str]) -> list[_Hit]:
+    pool = [hit for hit in hits if hit.family in families]
+    best: list[tuple[float, int]] = []
+    for i, hit in enumerate(pool):
+        own = 2.0 if hit.strong else 1.0
+        score, previous = (own if hit.key == 1 else own - 1.5 if hit.key == 2 else float("-inf")), -1
+        for j in range(i):
+            earlier = pool[j]
+            step = hit.key - earlier.key
+            if earlier.family != hit.family or step not in (1, 2) or best[j][0] == float("-inf"):
+                continue
+            candidate = best[j][0] + own - (1.5 if step == 2 else 0.0)
+            if candidate > score:
+                score, previous = candidate, j
+        best.append((score, previous))
+    if not best:
+        return []
+    end = max(range(len(best)), key=lambda k: (best[k][0], k))
+    if best[end][0] <= 0:
+        return []
+    chain = []
+    while end != -1:
+        chain.append(pool[end])
+        end = best[end][1]
+    return chain[::-1]
+
+
+def _fill_gaps(parts: list[str], chain: list[_Hit]) -> list[_Hit]:
+    """A missing marker between B and D, like '5. 公园' or '.学校', becomes C."""
+    filled: list[_Hit] = []
+    for index, hit in enumerate(chain):
+        filled.append(hit)
+        if index + 1 >= len(chain) or chain[index + 1].key - hit.key != 2 or chain[index + 1].part != hit.part:
+            continue
+        nxt = chain[index + 1]
+        segment = parts[hit.part][hit.end : nxt.start]
+        pseudo = re.search(r"(?:(?<=\s)|^)\S{0,2}[\.\)](?=\s*\S)", segment)
+        if pseudo and segment[: pseudo.start()].strip():
+            filled.append(_Hit(hit.part, hit.end + pseudo.start(), hit.end + pseudo.end(), hit.key + 1, hit.family, False))
+    return filled
+
+
+def _sentence_line(line: str) -> bool:
+    return len(line.split()) >= 4 and line[:1].isupper() and line.rstrip().endswith((".", "!", "?"))
+
+
+def _split_body(parts: list[str]) -> tuple[list[str], list[str], list[str]]:
+    """Split a question's lines into stem text, choices, and trailing lines that belong to neither."""
+    hits = _hits(parts)
+    chain = _best_chain(hits, {"num", "letter"})
+    if len(chain) < 2:
+        bare = _best_chain(hits, {"bare"})
+        if len(bare) >= 2 or (bare and bare[0].start == 0 and bare[0].part > 0):
+            chain = bare
+    if len(chain) == 1 and (chain[0].start != 0 or not chain[0].strong):
+        chain = []
+    if not chain:
+        return parts, [], []
+    chain = _fill_gaps(parts, chain)
+    chosen = {(hit.part, hit.start) for hit in chain}
+    stray_lines = {
+        hit.part
+        for hit in hits
+        if hit.start == 0 and (hit.part, hit.start) not in chosen and hit.family != "bare" and hit.part > chain[0].part
+    }
+    first = chain[0]
+    stem = [part for index, part in enumerate(parts[: first.part])] + [parts[first.part][: first.start]]
     choices = []
-    for index, (_, end, _) in enumerate(run):
-        stop = run[index + 1][0] if index + 1 < len(run) else len(text)
-        value = text[end:stop].strip()
-        if value:
-            choices.append(value)
-    return before, choices
+    trailing: list[str] = []
+    for index, hit in enumerate(chain):
+        nxt = chain[index + 1] if index + 1 < len(chain) else None
+        if nxt and nxt.part == hit.part:
+            value = parts[hit.part][hit.end : nxt.start]
+        else:
+            pieces = [parts[hit.part][hit.end :]]
+            stop = nxt.part if nxt else len(parts)
+            for middle in range(hit.part + 1, stop):
+                if middle in stray_lines:
+                    continue
+                if not nxt and (trailing or _sentence_line(parts[middle])):
+                    trailing.append(parts[middle])
+                    continue
+                pieces.append(parts[middle])
+            if nxt:
+                pieces.append(parts[nxt.part][: nxt.start])
+            value = " ".join(pieces)
+        choices.append(value)
+    return [piece for piece in stem if piece.strip()], choices, trailing
 
 
 @dataclass
 class _Draft:
     number: int
     stem_parts: list[str] = field(default_factory=list)
-    choices: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -256,56 +475,132 @@ class ParsedQuestion:
     choices: list[str]
     stem_changes: list[str]
     choice_changes: list[str]
+    removed: list[str] = field(default_factory=list)
+    set_aside: list[str] = field(default_factory=list)
 
 
 @dataclass
 class ParsedSheet:
     title: str
     questions: list[ParsedQuestion]
+    layout: str = "questions"
 
 
-def _question_match(line: str):
-    if line.lstrip().startswith("("):
-        return None
-    return _QUESTION_RE.match(line)
+@dataclass
+class _Candidate:
+    index: int
+    number: int
+    rest: str
+    mark: str
+    prefixed: bool
+    strong: bool
 
 
-def _looks_like_choice(match, current: _Draft) -> bool:
+def _stem_like(rest: str) -> bool:
+    words = re.findall(r"[A-Za-z']+|\d+(?:\.\d+)?", rest)
+    return len(words) >= 4 or len(_HAN_RE.findall(rest)) >= 5 or "?" in rest or _BLANK in rest
+
+
+def _candidates(lines: list[str]) -> list[_Candidate]:
+    found = []
+    for index, line in enumerate(lines):
+        if line.lstrip().startswith("("):
+            continue
+        match = _QUESTION_RE.match(line)
+        if not match:
+            continue
+        rest = match.group("rest")
+        prefixed = bool(match.group("q"))
+        mark = "q" if prefixed else (match.group("mark").strip() or " ")
+        found.append(_Candidate(index, int(match.group("n")), rest, mark, prefixed, prefixed or _stem_like(rest)))
+    return found
+
+
+def _backbone(candidates: list[_Candidate]) -> list[_Candidate]:
+    """The longest believable run of question numbers among stem-like lines. Gaps cost a little."""
+    strong = [c for c in candidates if c.strong]
+    best: list[tuple[float, int]] = []
+    for i, cand in enumerate(strong):
+        own = 3.0 + (0.5 if cand.mark in {".", "q"} else 0.0)
+        score, previous = own, -1
+        for j in range(i):
+            earlier = strong[j]
+            step = cand.number - earlier.number
+            if not 1 <= step <= 3:
+                continue
+            value = best[j][0] + own - 1.5 * (step - 1) - (1.0 if earlier.mark != cand.mark else 0.0)
+            if value > score:
+                score, previous = value, j
+        best.append((score, previous))
+    if not best:
+        return []
+    end = max(range(len(best)), key=lambda k: (best[k][0], -k))
+    chain = []
+    while end != -1:
+        chain.append(strong[end])
+        end = best[end][1]
+    return chain[::-1]
+
+
+def _choice_marker_line(line: str) -> bool:
+    return bool(_CHOICE_TOKEN_RE.match(line) or _WEAK_CHOICE_RE.match(line))
+
+
+def _looks_like_choice(cand: _Candidate, marker_lines: int) -> bool:
     """'2) He' under question 1 is a choice, not question 2."""
-    if match.group("q"):
+    if cand.prefixed:
         return False
-    rest = match.group("rest")
-    number = int(match.group("n"))
-    return number == len(current.choices) + 1 and len(rest.split()) <= 3 and _BLANK not in rest
+    return cand.number == marker_lines + 1 and len(cand.rest.split()) <= 3 and _BLANK not in cand.rest
+
+
+def _fuzzy_number(line: str, wanted: int) -> str | None:
+    match = _FUZZY_QUESTION_RE.match(line)
+    if not match or not _stem_like(match.group("rest")):
+        return None
+    digits = match.group(1).translate(_FUZZY_DIGITS)
+    return match.group("rest") if digits.isdigit() and int(digits) == wanted else None
 
 
 def _drafts_from_lines(lines: list[str]) -> tuple[list[str], list[_Draft]]:
-    has_question_one = any((m := _question_match(line)) and int(m.group("n")) == 1 for line in lines)
+    candidates = _candidates(lines)
+    by_line = {cand.index: cand for cand in candidates}
+    backbone = _backbone(candidates)
+    spine = {cand.index for cand in backbone}
+    if not backbone and candidates:
+        has_one = any(cand.number == 1 for cand in candidates)
+        first = next((c for c in candidates if c.number == 1), candidates[0]) if has_one else candidates[0]
+        spine = {first.index}
+    spine_numbers = sorted((by_line[i].number, i) for i in spine)
     header: list[str] = []
     drafts: list[_Draft] = []
-    for line in lines:
+    marker_lines = 0
+    for index, line in enumerate(lines):
         if re.fullmatch(r"\d{1,3}", line):
             continue
         current = drafts[-1] if drafts else None
-        match = _question_match(line)
-        if match:
-            number = int(match.group("n"))
-            expected = current.number + 1 if current else (1 if has_question_one else number)
-            if number == expected and not (current and _looks_like_choice(match, current)):
-                stem, choices = split_choices(match.group("rest"), 1)
-                drafts.append(_Draft(number=number, stem_parts=[stem] if stem else [], choices=choices))
-                continue
-        if current:
-            before, choices = split_choices(line, len(current.choices) + 1)
-            if choices and not before:
-                current.choices.extend(choices)
-                continue
+        upcoming = next((number for number, at in spine_numbers if at > index), None)
+        cand = by_line.get(index)
+        start_rest = None
+        if index in spine:
+            start_rest = (cand.number, cand.rest)
+        elif current and cand and cand.number == current.number + 1 and (upcoming is None or cand.number < upcoming):
+            if not _looks_like_choice(cand, marker_lines):
+                start_rest = (cand.number, cand.rest)
+        elif current and upcoming is not None and upcoming - current.number >= 2:
+            rest = _fuzzy_number(line, current.number + 1)
+            if rest:
+                start_rest = (current.number + 1, rest)
+        if start_rest:
+            number, rest = start_rest
+            drafts.append(_Draft(number=number, stem_parts=[rest]))
+            marker_lines = 0
+            continue
         if not current:
             header.append(line)
-        elif current.choices:
-            current.choices[-1] = f"{current.choices[-1]} {line}"
-        else:
-            current.stem_parts.append(line)
+            continue
+        if _choice_marker_line(line):
+            marker_lines += 1
+        current.stem_parts.append(line)
     return header, drafts
 
 
@@ -313,33 +608,148 @@ def _unnumbered_draft(lines: list[str]) -> list[_Draft]:
     if not lines:
         return []
     stem_index = next((i for i, line in enumerate(lines) if "?" in line), 0)
-    draft = _Draft(number=1, stem_parts=[lines[stem_index]])
-    for line in lines[stem_index + 1 :]:
-        before, choices = split_choices(line, len(draft.choices) + 1)
-        if choices and not before:
-            draft.choices.extend(choices)
-    return [draft]
+    return [_Draft(number=1, stem_parts=lines[stem_index:])]
+
+
+def _inline_chain(lines: list[str]) -> list[tuple[int, int, int]]:
+    """Sequential '(n)' markers anywhere in the text, as (line, offset, number)."""
+    marks = [
+        (index, match.start(), int(match.group(1)))
+        for index, line in enumerate(lines)
+        for match in _INLINE_MARK_RE.finditer(line)
+    ]
+    best: list[list[tuple[int, int, int]]] = []
+    for mark in marks:
+        runs = [run for run in best if 1 <= mark[2] - run[-1][2] <= 2]
+        chosen = max(runs, key=len) if runs else None
+        best.append((chosen + [mark]) if chosen else [mark])
+    return max(best, key=len) if best else []
+
+
+def _is_cloze(lines: list[str], drafts: list[_Draft]) -> list[tuple[int, int, int]]:
+    chain = _inline_chain(lines)
+    if len(chain) < 3:
+        return []
+    with_choices = sum(1 for draft in drafts if len(_split_body(draft.stem_parts)[1]) >= 2)
+    blanks = sum(1 for line, offset, _ in chain if lines[line][offset:].split(")", 1)[1].lstrip().startswith(_BLANK))
+    mid_line = sum(1 for line, offset, _ in chain if offset > 0)
+    joined, starts = "", []
+    for line in lines:
+        starts.append(len(joined))
+        joined += line + " "
+    positions = [starts[line] + offset for line, offset, _ in chain]
+    gaps = [len(re.findall(r"[A-Za-z]+|[\u3400-\u9fff]", joined[a:b])) - 1 for a, b in zip(positions, positions[1:])]
+    prose = sum(gaps) / len(gaps) >= 3
+    if not prose:
+        return []
+    if len(chain) >= 5 and with_choices <= len(chain) // 3:
+        return chain
+    if with_choices <= 1 and (blanks >= 2 or mid_line >= 2):
+        return chain
+    return []
+
+
+_INSTRUCTION_RE = re.compile(
+    r"marks?\)|^\s*(section|part)\b|\b(fill|read|blank|blanks|passage|choose|complete|underlined|mistake|error|spelling|correct)\b",
+    re.IGNORECASE,
+)
+
+
+def _cloze_questions(
+    lines: list[str], chain: list[tuple[int, int, int]], names: set[str]
+) -> tuple[str, list[ParsedQuestion], bool]:
+    marker_line = chain[0][0]
+    cues = [index for index in range(marker_line) if _INSTRUCTION_RE.search(lines[index])]
+    first_line = cues[-1] + 1 if cues else marker_line
+    header = lines[:first_line]
+    editing = any(_EDITING_RE.search(line) for line in header)
+    body = ""
+    offsets: dict[int, int] = {}
+    starts = []
+    for index in range(first_line, len(lines)):
+        starts.append(len(body))
+        body += lines[index] + " "
+    for line, offset, number in chain:
+        offsets[number] = starts[line - first_line] + offset
+    sentences = [(m.start(), m.end()) for m in re.finditer(r"[^.!?。]+[.!?。]*\s*", body)]
+    questions = []
+    for _, _, number in chain:
+        at = offsets[number]
+        start, end = next(((s, e) for s, e in sentences if s <= at < e), (0, len(body)))
+        sentence = body[start:end]
+        local = at - start
+        marker = f"({number})"
+        own = sentence[:local] + "\u0000" + sentence[local + len(marker) :]
+        own = re.sub(rf"\((\d{{1,2}})\)\s*(?:{_BLANK})?", lambda m: "…" if not editing else "", own)
+        if editing:
+            own = own.replace("\u0000", marker)
+        else:
+            own = re.sub(rf"\u0000\s*(?:{_BLANK})?", f"{_BLANK} ", own)
+        stem = re.sub(r"\s{2,}", " ", own).strip()
+        stem = re.sub(rf"{_BLANK}\s+(?=[.,!?;:])", _BLANK, stem)
+        stem, changes = resplit_glued(stem, names)
+        stem, removed = clean_stem(stem)
+        questions.append(ParsedQuestion(number, stem, [], changes, [], removed))
+    return (header[0] if header else ""), questions, editing
+
+
+def text_script(text: str) -> dict:
+    """How the OCR text looks: Han share, and whether English OCR produced gibberish."""
+    han = len(_HAN_RE.findall(text or ""))
+    letters = len(re.findall(r"[A-Za-z]", text or ""))
+    tokens = re.findall(r"[A-Za-z]{3,}", text or "")
+    upper = sum(1 for token in tokens if token.isupper())
+    known = sum(1 for token in tokens if _known(token))
+    garbled = len(tokens) >= 6 and upper / len(tokens) >= 0.5 and known / len(tokens) < 0.2
+    return {
+        "han_share": han / max(1, han + letters),
+        "garbled": garbled and han == 0,
+    }
 
 
 def parse_worksheet_text(text: str) -> ParsedSheet:
-    raw = (text or "").replace("\r", "")
-    lines = [line for line in (strip_junk(line) for line in raw.split("\n")) if line]
+    raw = normalize_text(text)
+    lines = []
+    for line in raw.split("\n"):
+        if is_footer(line):
+            continue
+        cleaned = strip_junk(normalize_markers(line))
+        if cleaned:
+            lines.append(cleaned)
     names = standalone_names("\n".join(lines))
     header, drafts = _drafts_from_lines(lines)
+
+    cloze = _is_cloze(lines, drafts)
+    if cloze:
+        title, questions, editing = _cloze_questions(lines, cloze, names)
+        return ParsedSheet(title=title, questions=questions, layout="editing" if editing else "cloze")
+
     if not drafts:
         header, drafts = [], _unnumbered_draft(lines)
 
     questions = []
     for draft in drafts:
-        stem, stem_changes = resplit_glued(re.sub(r"\s{2,}", " ", " ".join(draft.stem_parts)).strip(), names)
+        stem_parts, raw_choices, set_aside = _split_body(draft.stem_parts)
+        joined = re.sub(r"\s{2,}", " ", " ".join(stem_parts)).strip()
+        stem, stem_changes = resplit_glued(joined, names)
+        stem, removed = clean_stem(stem)
         choices: list[str] = []
         choice_changes: list[str] = []
-        for value in draft.choices:
-            cleaned, changes = resplit_glued(strip_junk(value), names)
+        for value in raw_choices:
+            cleaned, changes = resplit_glued(clean_choice(value), names)
             if cleaned:
                 choices.append(cleaned)
                 choice_changes.extend(changes)
         if len(choices) < 2:
             choices, choice_changes = [], []
-        questions.append(ParsedQuestion(draft.number, stem, choices, stem_changes, choice_changes))
-    return ParsedSheet(title=header[0] if header else "", questions=questions)
+        questions.append(ParsedQuestion(draft.number, stem, choices, stem_changes, choice_changes, removed, set_aside))
+    title = next(
+        (
+            line
+            for line in header
+            if (len(re.findall(r"[A-Za-z]", line)) >= 3 or _HAN_RE.search(line))
+            and not re.match(r"(name|class|date|index)\b", line, re.IGNORECASE)
+        ),
+        "",
+    )
+    return ParsedSheet(title=title, questions=questions)
