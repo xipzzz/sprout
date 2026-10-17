@@ -31,10 +31,16 @@ export type ExplainDraft = {
   notes: string[];
 };
 
-export type TeacherExplanation = ExplainDraft & {
+export type CachedCard = ExplainDraft & {
+  source: string;
+  /** When the card was first made (epoch ms) and how long that took. */
+  madeAt: number;
+  madeMs: number;
+};
+
+export type TeacherExplanation = CachedCard & {
   questionId: string;
   key: string;
-  source: string;
   fromCache: boolean;
   ms: number;
 };
@@ -47,8 +53,8 @@ export interface ExplainSource {
 }
 
 export interface ExplainCache {
-  get(key: string): (ExplainDraft & { source: string }) | undefined;
-  set(key: string, value: ExplainDraft & { source: string }): void;
+  get(key: string): CachedCard | undefined;
+  set(key: string, value: CachedCard): void;
 }
 
 const TEMPLATE_VERSION = 'v1';
@@ -228,7 +234,7 @@ export const localTemplates: ExplainSource = {
 };
 
 export function memoryCache(): ExplainCache {
-  const store = new Map<string, ExplainDraft & { source: string }>();
+  const store = new Map<string, CachedCard>();
   return { get: (key) => store.get(key), set: (key, value) => void store.set(key, value) };
 }
 
@@ -243,7 +249,7 @@ export function browserCache(prefix = `sprout.explain.${TEMPLATE_VERSION}.`): Ex
       try {
         const raw = storage.getItem(prefix + key);
         if (!raw) return undefined;
-        const value = JSON.parse(raw) as ExplainDraft & { source: string };
+        const value = JSON.parse(raw) as CachedCard;
         memory.set(key, value);
         return value;
       } catch {
@@ -269,8 +275,18 @@ export function appExplainCache(): ExplainCache {
   return shared;
 }
 
-function finish(input: ExplainInput, key: string, draft: ExplainDraft & { source: string }, fromCache: boolean, t0: number) {
-  return { ...draft, questionId: input.question.id, key, fromCache, ms: Math.round((now() - t0) * 10) / 10 };
+function elapsed(t0: number) {
+  return Math.round((now() - t0) * 10) / 10;
+}
+
+function remember(cache: ExplainCache, key: string, draft: ExplainDraft, source: string, t0: number): CachedCard {
+  const value = { ...draft, source, madeAt: Date.now(), madeMs: elapsed(t0) };
+  cache.set(key, value);
+  return value;
+}
+
+function finish(input: ExplainInput, key: string, card: CachedCard, fromCache: boolean, t0: number): TeacherExplanation {
+  return { ...card, questionId: input.question.id, key, fromCache, ms: elapsed(t0) };
 }
 
 /** Sync path for the local templates. Used for child hints so nothing waits. */
@@ -279,9 +295,7 @@ export function explainNow(input: ExplainInput, cache: ExplainCache): TeacherExp
   const key = explainKey(input);
   const hit = cache.get(key);
   if (hit) return finish(input, key, hit, true, t0);
-  const value = { ...explainLocal(input), source: localTemplates.id };
-  cache.set(key, value);
-  return finish(input, key, value, false, t0);
+  return finish(input, key, remember(cache, key, explainLocal(input), localTemplates.id, t0), false, t0);
 }
 
 /** Tries each source in order, then falls back to the local templates. */
@@ -297,16 +311,10 @@ export async function explainQuestion(
   for (const source of sources) {
     try {
       const draft = await source.explain(input);
-      if (draft) {
-        const value = { ...draft, source: source.id };
-        cache.set(key, value);
-        return finish(input, key, value, false, t0);
-      }
+      if (draft) return finish(input, key, remember(cache, key, draft, source.id, t0), false, t0);
     } catch {
       /* a broken optional source should not block the local card */
     }
   }
-  const value = { ...explainLocal(input), source: localTemplates.id };
-  cache.set(key, value);
-  return finish(input, key, value, false, t0);
+  return finish(input, key, remember(cache, key, explainLocal(input), localTemplates.id, t0), false, t0);
 }

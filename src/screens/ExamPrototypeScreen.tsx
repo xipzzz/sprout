@@ -6,6 +6,8 @@ import { extractExam, saveExam } from '../exam/api';
 import { assertChildViewSafe, toChildView } from '../exam/childView';
 import type { ChildView, ParentQuestion, ParentScan, ReconstructionFlag } from '../exam/types';
 import ExamChildPractice from './ExamChildPractice';
+import ExamExplainStep from './ExamExplainStep';
+import * as extras from '../exam/extras/screenHooks';
 
 interface ExamPrototypeScreenProps {
   onExit: () => void;
@@ -36,9 +38,11 @@ function FlagTape({ flags }: { flags: ReconstructionFlag[] }) {
 export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps) {
   const fileRef = useRef<HTMLInputElement>(null);
   const started = useRef(false);
-  const [phase, setPhase] = useState<Phase>('pick');
+  const [phase, setPhase] = useState<Phase>(() => (extras.initialSample() ? 'parent' : 'pick'));
   const [error, setError] = useState('');
-  const [scan, setScan] = useState<ParentScan | null>(null);
+  const [scan, setScan] = useState<ParentScan | null>(() => extras.initialSample());
+  const [explaining, setExplaining] = useState(false);
+  const [practice, setPractice] = useState<extras.PracticeRun | null>(null);
   const [child, setChild] = useState<ChildView | null>(null);
   const [saved, setSaved] = useState<string[]>([]);
   const [skipped, setSkipped] = useState<string[]>([]);
@@ -106,10 +110,37 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
     }
   }
 
+  if (practice) {
+    return (
+      <ExamChildPractice
+        view={practice.view}
+        typed
+        onGrade={extras.practiceGrade(practice)}
+        onHint={extras.practiceChildHint(practice)}
+        onBack={() => setPractice(null)}
+        onExit={onExit}
+      />
+    );
+  }
+
+  if (explaining && scan) {
+    return (
+      <ExamExplainStep
+        scan={scan}
+        onPick={(id, answer) => setScan(extras.applyParentPick(scan, id, answer))}
+        onPractice={setPractice}
+        onBack={() => setExplaining(false)}
+        onExit={onExit}
+      />
+    );
+  }
+
   if (child && scan) {
     return (
       <ExamChildPractice
         view={child}
+        typed={scan.subject === 'math'}
+        onHint={extras.childHint(scan)}
         onBack={() => setChild(null)}
         onExit={onExit}
         onGrade={(id, choice) => {
@@ -148,6 +179,16 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
             </button>
             <button type="button" className="exam-proto__secondary" onClick={() => fileRef.current?.click()}>
               Choose a photo
+            </button>
+            <button
+              type="button"
+              className="exam-proto__secondary"
+              onClick={() => {
+                setScan(extras.mathsSampleScan());
+                setPhase('parent');
+              }}
+            >
+              Try a maths sample
             </button>
             <input
               ref={fileRef}
@@ -276,6 +317,9 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
                 {error}
               </p>
             )}
+            <button type="button" className="exam-proto__secondary" onClick={() => setExplaining(true)}>
+              Explain each question
+            </button>
             <button type="button" className="btn-primary exam-proto__cta" onClick={openChild}>
               Practice with Pip
             </button>
