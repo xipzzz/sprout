@@ -38,6 +38,7 @@ async def extract_api(
     demo: str = Form("0"),
     ocr_text: str = Form(""),
     subject: str = Form("auto"),
+    ocr_lang: str = Form(""),
 ):
     data = await file.read()
     if not data:
@@ -48,6 +49,7 @@ async def extract_api(
         demo in {"1", "true", "yes"},
         ocr_text,
         subject,
+        ocr_lang,
     )
 
 

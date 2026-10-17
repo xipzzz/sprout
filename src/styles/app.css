@@ -2413,6 +2413,40 @@ body.calm-motion *, body.calm-motion *::before, body.calm-motion *::after { anim
   line-height: 1.4;
   overflow-wrap: anywhere;
 }
+.exam-proto__subject {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+  font-weight: 800;
+  color: var(--ink);
+}
+.exam-proto__subject select {
+  flex: 1;
+  max-width: 60%;
+  padding: 10px 12px;
+  border-radius: var(--r-md);
+  border: 2px solid var(--green-tint);
+  background: var(--bg-soft);
+  font: inherit;
+}
+.exam-proto__page-flags {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--s2);
+}
+.exam-proto__page-flags li {
+  padding: var(--s2) var(--s3);
+  border-radius: var(--r-md);
+  border-left: 4px solid var(--gold, #d9a400);
+  background: var(--bg-soft);
+  font-size: var(--fs-caption);
+  font-weight: 700;
+  line-height: 1.4;
+}
+.exam-proto__page-flags li[data-kind='pencil'] { border-left-color: #8a8a90; }
 .exam-proto__previews {
   display: grid;
   grid-template-columns: 1fr 1fr;

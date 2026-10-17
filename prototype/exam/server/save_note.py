@@ -96,6 +96,10 @@ def render_markdown(scan: dict, when: date | None = None) -> str:
         front.extend(f"  - {_yaml_quote(line)}" for line in flag_lines)
     else:
         front.append("flags: []")
+    page_notes = scan.get("page_flags") or []
+    if page_notes:
+        front.append("page_flags:")
+        front.extend(f"  - {_yaml_quote(str(flag.get('kind')) + ': ' + str(flag.get('note')))}" for flag in page_notes)
     front.append("---")
 
     parent = [
@@ -109,6 +113,8 @@ def render_markdown(scan: dict, when: date | None = None) -> str:
     ]
     if scan.get("note"):
         parent.extend([scan["note"], ""])
+    for flag in page_notes:
+        parent.extend([f"Page check ({flag.get('kind')}): {flag.get('note')}", ""])
     for question in questions:
         parent.extend(
             [

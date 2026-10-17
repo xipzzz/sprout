@@ -3,7 +3,8 @@
    Practice stays locked until the parent picks or drops every question. */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { extractExam, saveExam } from '../exam/api';
+import { extractExam, saveExam, UnsupportedPageError } from '../exam/api';
+import { SUBJECTS, type SubjectChoice } from '../exam/ocr';
 import {
   BLANK,
   blankBefore,
@@ -231,23 +232,29 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
   const [skipped, setSkipped] = useState<string[]>([]);
   const [saveError, setSaveError] = useState('');
   const [originalStems, setOriginalStems] = useState<Record<string, string>>({});
+  const [subject, setSubject] = useState<SubjectChoice>('auto');
+  const [step, setStep] = useState('Straightening the page…');
+  const [unsupported, setUnsupported] = useState(false);
 
-  const runFile = useCallback(async (file: File, demo: boolean) => {
+  const runFile = useCallback(async (file: File, demo: boolean, subjectChoice: SubjectChoice = 'auto') => {
     scanToken.current += 1;
     savedPaths.current = [];
     setPhase('loading');
     setError('');
+    setUnsupported(false);
+    setStep('Straightening the page and lifting ink…');
     setSaveError('');
     setSaved([]);
     setSkipped([]);
     setPractice(null);
     try {
-      const next = await extractExam(file, demo);
+      const next = await extractExam(file, demo, subjectChoice, setStep);
       setOriginalStems(Object.fromEntries(next.questions.map((question) => [question.id, question.stem])));
       setScan(next);
       setReview(initialReview(next));
       setPhase('parent');
     } catch (err) {
+      setUnsupported(err instanceof UnsupportedPageError);
       setError(err instanceof Error ? err.message : 'Could not scan that photo.');
       setPhase('error');
     }
@@ -299,7 +306,7 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
 
   function onPicked(file: File | undefined) {
     if (!file) return;
-    void runFile(file, false);
+    void runFile(file, false, subject);
   }
 
   function setEntry(id: string, entry: QuestionReview) {
@@ -375,6 +382,16 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
             <button type="button" className="exam-proto__secondary" onClick={() => fileRef.current?.click()}>
               Choose a photo
             </button>
+            <label className="exam-proto__subject">
+              Subject
+              <select value={subject} onChange={(event) => setSubject(event.target.value as SubjectChoice)}>
+                {SUBJECTS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
             <input
               ref={fileRef}
               className="scan__file"
@@ -388,13 +405,13 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
         {phase === 'loading' && (
           <div className="scan__loading" role="status">
             <span className="scan__spinner" aria-hidden="true" />
-            <p>Straightening the page…</p>
+            <p>{step}</p>
           </div>
         )}
 
         {phase === 'error' && (
           <div className="scan__error" role="alert">
-            <p className="scan__error-title">Could not scan that photo</p>
+            <p className="scan__error-title">{unsupported ? 'This page is not supported yet' : 'Could not scan that photo'}</p>
             <p className="scan__error-body">{error}</p>
             <button type="button" className="exam-proto__secondary" onClick={() => setPhase('pick')}>
               Back
@@ -405,6 +422,15 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
         {phase === 'parent' && scan && progress && (
           <div className="exam-proto__review">
             {scan.note && <p className="exam-proto__banner">{scan.note}</p>}
+            {(scan.page_flags ?? []).length > 0 && (
+              <ul className="exam-proto__page-flags" aria-label="Page checks">
+                {(scan.page_flags ?? []).map((flag) => (
+                  <li key={flag.kind} data-kind={flag.kind}>
+                    {flag.note}
+                  </li>
+                ))}
+              </ul>
+            )}
             <p className="exam-proto__progress" role="status">
               Answers checked: {progress.ready + progress.dropped} of {total}.
               {progress.dropped > 0 && ` ${progress.dropped} dropped.`} Practice opens when every question has

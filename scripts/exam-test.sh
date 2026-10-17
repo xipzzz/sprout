@@ -4,6 +4,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 node --experimental-strip-types src/exam/childView.test.ts
 node --experimental-strip-types src/exam/review.test.ts
+node --experimental-strip-types src/exam/ocr.test.ts
 VENV="$ROOT/prototype/exam/.venv"
 if [[ ! -x "$VENV/bin/python" ]]; then
   python3 -m venv "$VENV"

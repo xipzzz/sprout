@@ -31,10 +31,20 @@ export type ParentScan = {
   deskew: { applied: boolean; corners: number[][] };
   ink_pixels_lifted: number;
   questions: ParentQuestion[];
+  /** Whole-page notes for the parent: pencil seen, passage blanks, Chinese read. */
+  page_flags?: PageFlag[];
+  ocr_lang?: OcrLang;
   previews?: {
     deskew_jpeg?: string;
     clean_jpeg?: string;
   };
+};
+
+export type OcrLang = 'eng' | 'chi_sim';
+
+export type PageFlag = {
+  kind: 'pencil' | 'cloze' | 'editing' | 'chinese';
+  note: string;
 };
 
 /** What the child practice screen is allowed to receive. */

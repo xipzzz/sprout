@@ -1,12 +1,8 @@
-import { recognizeHomeworkText } from '../lib/homeworkParse';
-import type { ParentScan } from './types.ts';
+import { createWorker } from 'tesseract.js';
+import { dataUrlToBlob, nextOcrPass, type ExtractResponse, type SubjectChoice } from './ocr.ts';
+import type { OcrLang, ParentScan } from './types.ts';
 
-export type ExtractResponse = {
-  ok: boolean;
-  need_ocr?: boolean;
-  message?: string;
-  scan?: ParentScan;
-};
+export type { ExtractResponse } from './ocr.ts';
 
 async function postExtract(file: File, extra: Record<string, string>): Promise<ExtractResponse> {
   const body = new FormData();
@@ -20,20 +16,40 @@ async function postExtract(file: File, extra: Record<string, string>): Promise<E
   return res.json() as Promise<ExtractResponse>;
 }
 
-export async function extractExam(file: File, demo: boolean): Promise<ParentScan> {
-  const first = await postExtract(file, { demo: demo ? '1' : '0', subject: 'auto' });
-  if (first.ok && first.scan) return first.scan;
-  if (first.need_ocr) {
-    const ocrText = await recognizeHomeworkText(file);
-    const second = await postExtract(file, {
-      demo: '0',
-      subject: 'auto',
-      ocr_text: ocrText,
-    });
-    if (second.ok && second.scan) return second.scan;
-    throw new Error(second.message || 'Could not read that photo.');
+/** Free Tesseract.js. Language data (eng, chi_sim) comes from the public tesseract.js CDN, no sign-in. */
+async function recognizeCleanPage(image: string, lang: OcrLang): Promise<string> {
+  const worker = await createWorker(lang);
+  try {
+    const { data } = await worker.recognize(dataUrlToBlob(image));
+    return data?.text || '';
+  } finally {
+    try {
+      await worker.terminate();
+    } catch {
+      /* ignore */
+    }
   }
-  throw new Error(first.message || 'Could not read that photo.');
+}
+
+export class UnsupportedPageError extends Error {}
+
+export async function extractExam(
+  file: File,
+  demo: boolean,
+  subject: SubjectChoice = 'auto',
+  onStep: (message: string) => void = () => {},
+): Promise<ParentScan> {
+  let response = await postExtract(file, { demo: demo ? '1' : '0', subject });
+  const tried: OcrLang[] = [];
+  for (let pass = nextOcrPass(response, tried); pass; pass = nextOcrPass(response, tried)) {
+    tried.push(pass.lang);
+    onStep(pass.lang === 'chi_sim' ? 'Reading the cleaned page in Chinese…' : 'Reading the cleaned page…');
+    const ocrText = await recognizeCleanPage(pass.image, pass.lang);
+    response = await postExtract(file, { demo: '0', subject, ocr_text: ocrText, ocr_lang: pass.lang });
+  }
+  if (response.ok && response.scan) return response.scan;
+  if (response.unsupported) throw new UnsupportedPageError(response.message || 'Sprout cannot read this page yet.');
+  throw new Error(response.message || 'Could not read that photo.');
 }
 
 /** Saves the parent copy. Passing the paths from an earlier save of the same scan updates that note. */

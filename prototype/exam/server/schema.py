@@ -19,6 +19,7 @@ FORBIDDEN_CHILD_KEYS = {
     "previews",
     "review",
     "stem_edited",
+    "page_flags",
 }
 
 PRACTICE_REVIEWS = {"picked", "read_aloud"}
@@ -129,6 +130,8 @@ def subject_slug(subject: str) -> str:
         return "math"
     if text in {"英语", "english"}:
         return "english"
+    if text in {"华文", "中文", "语文", "chinese"}:
+        return "chinese"
     cleaned = "".join(ch for ch in text if ch.isalnum())
     return cleaned or "homework"
 

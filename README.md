@@ -34,11 +34,20 @@ npm run exam         # Vite on :5173 and the local saver on :8787
 Open http://localhost:5173/?exam=1 and tap **Try the sample photo**. That path needs no API key.
 Add `?exam=1&demo=1` to open the sample immediately.
 
-A real photo is read with free Tesseract.js in the browser (or a local `tesseract` binary
-if one is installed). No Zhipu key. Guessed text is flagged on the parent screen.
-The text is split into questions by `prototype/exam/server/worksheet_text.py`, which reads
+A real photo is straightened and its blue and red ink is lifted first. Free Tesseract.js in
+the browser (or a local `tesseract` binary if one is installed) then reads that cleaned page,
+never the raw photo. No Zhipu key. Guessed text is flagged on the parent screen.
+The text is split into questions by `prototype/exam/server/worksheet_text.py`. It reads
 numbers like `1.`, `1)`, `1` or `Q1`, choices like `A.`, `a)`, `(1)` or `1)`, a title line,
-and blanks. Words Tesseract ran together are re-split from a small wordlist and flagged.
+and blanks, and it tolerates OCR noise such as `{3)`, `(2)-on`, `k 3`, `\ 1)` or `: 9.`.
+Passages with inline `(1)` blanks (cloze, editing) become one question per blank, with that
+blank's sentence as the stem. Footer and URL lines are dropped. Words Tesseract ran together
+are re-split from a small wordlist and flagged.
+
+Pick **Chinese** as the subject, or let an English read that comes out garbled retry once,
+and the page is read with Tesseract `chi_sim` (open-source language data from the
+tesseract.js CDN, no sign-in). If that finds no Chinese either, the page is reported as not
+supported. Pencil is not lifted yet; a page with likely pencil marks gets a parent-only flag.
 `ZHIPU_API_KEY` is optional, and only turns on a Zhipu GLM-4.6V vision read. Put it in
 `.env` (see `.env.example`, gitignored) or, on a Mac, in Keychain:
 
@@ -54,8 +63,14 @@ cannot be created, the note falls back to `./sprout-notes/` (gitignored). Set
 `SPROUT_SAVE_DIR` to also keep a copy in another local folder.
 
 ```bash
-npm run test:exam    # child-view leak test, saver tests, real-photo parser test
+npm run test:exam    # child-view leak test, saver tests, real-photo parser test, synthetic pages
 ```
+
+Real P1-P4 pages stay private. `prototype/exam/server/synthetic_pages.py` draws synthetic
+pages that reproduce their patterns (blue answers over print, a blue printed URL, pencil, a
+cloze passage, a Chinese page), with ground-truth layers for the ink-lift tests. Their
+Tesseract.js text lives in `prototype/exam/fixtures/synthetic/`; regenerate one with
+`node prototype/exam/ocr_fixture.mjs IMAGE [eng|chi_sim]`.
 
 License: [prototype/exam/LICENSE-NOTE.md](prototype/exam/LICENSE-NOTE.md). Goppai/exam was
 not copied in; the note says why.
