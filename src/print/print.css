@@ -128,7 +128,7 @@
   font-weight: 800;
 }
 
-.print-key { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+.print-key { width: 100%; border-collapse: collapse; font-size: 0.95rem; font-weight: 700; }
 .print-key th,
 .print-key td {
   padding: 8px 6px;
