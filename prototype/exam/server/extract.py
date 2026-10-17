@@ -22,6 +22,7 @@ from dotenv import load_dotenv
 
 from deskew import prepare_page
 from schema import map_question, subject_slug
+from worksheet_text import parse_worksheet_text
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 FIXTURE_PATH = REPO_ROOT / "src" / "exam" / "fixture.json"
@@ -134,21 +135,13 @@ def questions_from_model(data: dict) -> list[dict]:
     return [map_question(item, index + 1) for index, item in enumerate(raw_questions) if isinstance(item, dict)]
 
 
-def questions_from_ocr(text: str) -> list[dict]:
-    blocks = re.split(r"\n(?=\s*\d+[\.\)]\s+)", text.strip())
+def sheet_from_ocr(text: str) -> tuple[str, list[dict]]:
+    sheet = parse_worksheet_text(text)
     questions = []
-    for index, block in enumerate(blocks, start=1):
-        lines = [line.strip() for line in block.splitlines() if line.strip()]
-        if not lines:
-            continue
-        stem = re.sub(r"^\d+[\.\)]\s*", "", lines[0]).strip()
-        choices = []
-        for line in lines[1:]:
-            matched = re.match(r"^(?:[\(\[]?[A-Da-d][\)\]\.\:])\s+(.+)$", line)
-            if matched:
-                choices.append(matched.group(1).strip())
-        if len(choices) < 2:
-            choices = []
+    for parsed in sheet.questions:
+        index = parsed.number
+        stem = parsed.stem
+        choices = parsed.choices
         raw = {
             "id": str(index),
             "stem": stem or "Question from the photo",
@@ -185,10 +178,38 @@ def questions_from_ocr(text: str) -> list[dict]:
                     "note": "No answer key was visible. The first choice is only a placeholder.",
                 }
             )
+        if parsed.stem_changes:
+            raw["flags"].append(
+                {
+                    "field": "stem",
+                    "kind": "reconstructed",
+                    "note": "Tesseract ran words together. Spaces were added: " + "; ".join(parsed.stem_changes) + ".",
+                }
+            )
+        if parsed.choice_changes:
+            raw["flags"].append(
+                {
+                    "field": "choices",
+                    "kind": "reconstructed",
+                    "note": "Tesseract ran words together. Spaces were added: " + "; ".join(parsed.choice_changes) + ".",
+                }
+            )
+        if choices and "____" not in stem:
+            raw["flags"].append(
+                {
+                    "field": "stem",
+                    "kind": "reconstructed",
+                    "note": "The answer line was not read. Check where the blank goes before practice.",
+                }
+            )
         questions.append(map_question(raw, index))
     if not questions:
         raise ValueError("Could not find a question in the scanned text")
-    return questions
+    return sheet.title, questions
+
+
+def questions_from_ocr(text: str) -> list[dict]:
+    return sheet_from_ocr(text)[1]
 
 
 def _tesseract_text(rgb) -> str:
@@ -282,16 +303,17 @@ async def extract_scan(
                     "previews": previews,
                     "deskew": page["deskew"],
                 }
+            title, questions = sheet_from_ocr(text)
             scan = {
                 "extraction": "tesseract",
                 "subject": subject_slug(subject) if subject not in {"", "auto"} else "english",
-                "paper_title": "Homework",
+                "paper_title": title or "Homework",
                 "source_photo": filename,
                 "note": (
                     "Read with free Tesseract. "
                     "Handwriting is not reliably separated. Flagged fields need a parent look."
                 ),
-                "questions": questions_from_ocr(text),
+                "questions": questions,
             }
     scan["source_photo"] = filename
     scan["deskew"] = page["deskew"]

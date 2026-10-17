@@ -36,6 +36,9 @@ Add `?exam=1&demo=1` to open the sample immediately.
 
 A real photo is read with free Tesseract.js in the browser (or a local `tesseract` binary
 if one is installed). No Zhipu key. Guessed text is flagged on the parent screen.
+The text is split into questions by `prototype/exam/server/worksheet_text.py`, which reads
+numbers like `1.`, `1)`, `1` or `Q1`, choices like `A.`, `a)`, `(1)` or `1)`, a title line,
+and blanks. Words Tesseract ran together are re-split from a small wordlist and flagged.
 `ZHIPU_API_KEY` is optional, and only turns on a Zhipu GLM-4.6V vision read. Put it in
 `.env` (see `.env.example`, gitignored) or, on a Mac, in Keychain:
 
@@ -51,7 +54,7 @@ cannot be created, the note falls back to `./sprout-notes/` (gitignored). Set
 `SPROUT_SAVE_DIR` to also keep a copy in another local folder.
 
 ```bash
-npm run test:exam    # child-view leak test + saver tests
+npm run test:exam    # child-view leak test, saver tests, real-photo parser test
 ```
 
 License: [prototype/exam/LICENSE-NOTE.md](prototype/exam/LICENSE-NOTE.md). Goppai/exam was
