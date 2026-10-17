@@ -1,0 +1,139 @@
+/* Parent PIN gate, year group picker, and parent tools on the review page. */
+
+.parent-gate__body { display: flex; flex-direction: column; }
+.parent-gate__panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s3);
+  margin: var(--s4) 0;
+  text-align: center;
+}
+.parent-gate__badge {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--green-tint);
+  color: var(--green-deep);
+  font-size: 1.6rem;
+  font-weight: 900;
+}
+.parent-gate__badge svg {
+  width: 28px;
+  height: 28px;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.parent-gate__title { margin: 0; font-size: var(--fs-h1); letter-spacing: -0.02em; }
+.parent-gate__text {
+  margin: 0;
+  max-width: 32ch;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--ink-soft);
+}
+.parent-gate__dots { display: flex; gap: var(--s4); margin-top: var(--s3); }
+.parent-gate__dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2.5px solid var(--green-deep);
+  transition: background var(--dur) var(--ease);
+}
+.parent-gate__dot.is-on { background: var(--green-deep); }
+.parent-gate__msg {
+  min-height: 1.4em;
+  margin: 0;
+  font-size: var(--fs-caption);
+  font-weight: 800;
+  color: var(--clay-deep);
+}
+.parent-gate__pad {
+  display: grid;
+  grid-template-columns: repeat(3, 72px);
+  gap: var(--s3) var(--s5);
+  justify-content: center;
+}
+.parent-gate__key {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: 0 3px 0 var(--line);
+  font-size: 1.6rem;
+  font-weight: 800;
+}
+.parent-gate__key:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--line); }
+.parent-gate__key:disabled { opacity: 0.45; }
+.parent-gate__key--del { display: grid; place-items: center; background: transparent; border-color: transparent; box-shadow: none; }
+.parent-gate__key--del svg {
+  width: 28px;
+  height: 28px;
+  stroke: var(--ink-soft);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.parent-gate__forgot { margin-top: var(--s2); }
+.parent-gate__danger { background: var(--clay); box-shadow: 0 4px 0 var(--clay-deep); }
+
+.parent-year__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s3);
+  width: 100%;
+  margin-top: var(--s3);
+}
+.parent-year__card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: var(--s4);
+  border-radius: var(--r-lg);
+  border: 2px solid var(--line);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  text-align: left;
+}
+.parent-year__card:hover,
+.parent-year__card:focus-visible { border-color: var(--green); }
+.parent-year__name { font-size: 1.6rem; font-weight: 900; color: var(--green-deep); }
+.parent-year__summary { font-size: var(--fs-caption); font-weight: 700; line-height: 1.35; color: var(--ink-soft); }
+
+.parent-tools {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  padding: var(--s4);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-sm);
+}
+.parent-tools__row { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); }
+.parent-tools__label {
+  margin: 0;
+  font-size: var(--fs-eyebrow);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.parent-tools__years { display: flex; gap: 6px; }
+.parent-tools__year {
+  padding: 6px 12px;
+  border-radius: var(--r-pill);
+  border: 2px solid var(--line);
+  font-weight: 900;
+}
+.parent-tools__year.is-on { border-color: var(--green); background: var(--green-tint); color: var(--green-deep); }
+.parent-tools__hint { margin: 0; font-size: var(--fs-caption); font-weight: 700; color: var(--ink-soft); }
+.parent-tools__actions { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s2); }
+.parent-tools__actions .exam-proto__secondary { padding-inline: 8px; font-size: var(--fs-caption); }
+.parent-tools__lock { align-self: center; }
