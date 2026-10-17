@@ -26,3 +26,10 @@ dist-ssr
 
 # stray screenshots dropped at repo root (keep design art under design/)
 /*.png
+
+# Exam prototype — keys and local notes stay off git
+.env
+sprout-notes/
+prototype/exam/.venv/
+__pycache__/
+*.py[cod]

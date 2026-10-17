@@ -189,6 +189,20 @@ export function draftWordPickFromOcrText(text: string): WordPickJson | null {
   return { prompt, choices, correct };
 }
 
+/** Browser Tesseract.js text, kept as the key-free fallback for the exam prototype. */
+export async function recognizeHomeworkText(file: File): Promise<string> {
+  const blob = await compressHomeworkImage(file);
+  const worker = await createWorker('eng');
+  try {
+    const { data } = await worker.recognize(blob);
+    return data?.text || '';
+  } finally {
+    try {
+      await worker.terminate();
+    } catch { /* ignore */ }
+  }
+}
+
 /** Browser Tesseract.js OCR → draft word-pick. Key-free / static-host friendly. */
 export function createTesseractProvider(): HomeworkParseProvider {
   return {
@@ -196,12 +210,9 @@ export function createTesseractProvider(): HomeworkParseProvider {
     label: 'Tesseract.js (open-source OCR)',
     isAvailable: () => typeof window !== 'undefined' && typeof document !== 'undefined',
     parseImage: async (file: File): Promise<ParseOutcome> => {
-      let worker: Awaited<ReturnType<typeof createWorker>> | null = null;
       try {
-        const blob = await compressHomeworkImage(file);
-        worker = await createWorker('eng');
-        const { data } = await worker.recognize(blob);
-        const draft = draftWordPickFromOcrText(data?.text || '');
+        const text = await recognizeHomeworkText(file);
+        const draft = draftWordPickFromOcrText(text);
         if (!draft) {
           return {
             ok: false,
@@ -227,12 +238,6 @@ export function createTesseractProvider(): HomeworkParseProvider {
           message:
             'Open-source text scan failed on that photo. Try again, or use the sample homework.',
         };
-      } finally {
-        if (worker) {
-          try {
-            await worker.terminate();
-          } catch { /* ignore */ }
-        }
       }
     },
   };

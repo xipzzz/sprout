@@ -21,6 +21,41 @@ npx tsc -b         # type-check
 The dev server listens on all interfaces, so a phone on the same network (or Tailscale)
 can open it too — handy for on-device review.
 
+## Exam scan prototype
+
+A separate route reads **one worksheet photo** into clean questions for a parent, then
+practice for the child. The existing Scan homework button is unchanged.
+
+```bash
+npm install          # once
+npm run exam         # Vite on :5173 and the local saver on :8787
+```
+
+Open http://localhost:5173/?exam=1 and tap **Try the sample photo**. That path needs no API key.
+Add `?exam=1&demo=1` to open the sample immediately.
+
+The saver writes one Obsidian note per scan, named like `2026-10-17-english.md`, to
+`SPROUT_VAULT_DIR` (default `/Users/ml/Documents/10_Obsidian/Xip/Sprout/`). If that folder
+cannot be created, the note falls back to `./sprout-notes/` (gitignored). Set
+`SPROUT_SAVE_DIR` to also keep a copy in another local folder. Keys live in `.env`
+(see `.env.example`, gitignored) or, on a Mac, in Keychain:
+
+```bash
+security add-generic-password -s sprout -a ZHIPU_API_KEY -w
+```
+
+`ZHIPU_API_KEY` is the Zhipu key for **GLM-4.6V**. Without it, the sample stub still runs.
+Any other photo falls back to Tesseract.js in the browser (or a local `tesseract` binary
+if one is installed). Guessed text is flagged on the parent screen. The child screen
+receives a different data shape with no handwritten answer, teacher's mark, or correct answer.
+
+```bash
+npm run test:exam    # child-view leak test + saver tests
+```
+
+License: [prototype/exam/LICENSE-NOTE.md](prototype/exam/LICENSE-NOTE.md). Goppai/exam was
+not copied in; the note says why.
+
 ## How it's organized
 
 ```

@@ -2352,3 +2352,209 @@ body.calm-motion *, body.calm-motion *::before, body.calm-motion *::after { anim
 .cta-bottom-safe {
   padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px) + 56px);
 }
+
+/* ============================================================
+   Exam scan prototype (?exam=1)
+   A paper review for a parent, then a clean practice card for the child.
+   ============================================================ */
+.exam-proto { background: var(--cream-bg, var(--bg)); }
+.exam-proto__top {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  padding: calc(var(--s4) + env(safe-area-inset-top)) var(--s4) var(--s3);
+  background: var(--cream-bg, var(--bg));
+}
+.exam-proto__title {
+  margin: 0;
+  flex: 1;
+  font-size: var(--fs-h2);
+  letter-spacing: -0.02em;
+}
+.exam-proto__text-btn {
+  font-weight: 800;
+  color: var(--green-deep);
+}
+.exam-proto__body {
+  padding: 0 var(--s4) var(--s8);
+}
+.exam-proto__intro,
+.exam-proto__review { display: flex; flex-direction: column; gap: var(--s4); }
+.exam-proto__lead,
+.exam-proto__hint {
+  margin: 0;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--ink);
+}
+.exam-proto__hint { color: var(--ink-soft); font-size: var(--fs-caption); }
+.exam-proto__hint code {
+  font-family: ui-monospace, monospace;
+  font-size: 0.85em;
+}
+.exam-proto__cta { width: 100%; }
+.exam-proto__secondary {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: var(--r-pill);
+  font-weight: 800;
+  color: var(--green-deep);
+  background: var(--green-tint);
+}
+.exam-proto__banner,
+.exam-proto__save {
+  margin: 0;
+  padding: var(--s3) var(--s4);
+  border-radius: var(--r-md);
+  background: var(--gold-tint);
+  color: var(--ink);
+  font-weight: 700;
+  font-size: var(--fs-caption);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.exam-proto__previews {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s3);
+}
+.exam-proto__previews figure { margin: 0; }
+.exam-proto__previews img {
+  width: 100%;
+  height: 132px;
+  object-fit: cover;
+  object-position: top;
+  border-radius: var(--r-md);
+  background: var(--bg-soft);
+  box-shadow: var(--shadow-sm);
+}
+.exam-proto__previews figcaption {
+  margin-top: 6px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: var(--ink-soft);
+}
+.exam-proto__card,
+.exam-proto__sheet {
+  padding: var(--s4);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--line);
+}
+.exam-proto__kicker {
+  margin: 0 0 var(--s2);
+  font-size: var(--fs-eyebrow);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.exam-proto__stem {
+  margin: 0;
+  font-size: 1.25rem;
+  line-height: 1.35;
+  letter-spacing: -0.02em;
+}
+.exam-proto__choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  margin: var(--s3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+.exam-proto__choices li {
+  padding: 6px 10px;
+  border-radius: var(--r-pill);
+  background: var(--green-tint);
+  font-weight: 800;
+}
+.exam-proto__facts { margin: var(--s4) 0 0; }
+.exam-proto__facts div {
+  padding: var(--s3) 0;
+  border-top: 1px solid var(--line);
+}
+.exam-proto__facts dt {
+  font-size: var(--fs-eyebrow);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.exam-proto__facts dd { margin: 4px 0 0; font-weight: 800; }
+.exam-proto__explain {
+  margin: var(--s3) 0 0;
+  padding: var(--s3);
+  border-radius: var(--r-md);
+  background: var(--bg);
+  font-weight: 700;
+  line-height: 1.4;
+}
+.exam-proto__explain-label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: var(--fs-eyebrow);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--green-deep);
+}
+.exam-proto__flag-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.exam-proto__flag-summary li {
+  padding: 4px 8px;
+  border-radius: var(--r-pill);
+  background: var(--gold-tint);
+  border: 1px solid var(--gold);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+.exam-proto__flag {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: var(--r-sm);
+  background: var(--gold-tint);
+  border-left: 4px solid var(--gold);
+}
+.exam-proto__flag-label {
+  display: block;
+  font-size: var(--fs-eyebrow);
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.exam-proto__flag-note {
+  display: block;
+  margin-top: 2px;
+  font-weight: 700;
+  font-size: var(--fs-caption);
+  line-height: 1.35;
+  color: var(--ink-soft);
+}
+.exam-proto__picks { display: flex; flex-direction: column; gap: var(--s3); margin-top: var(--s4); }
+.exam-proto__pick {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: var(--r-md);
+  border: 2px solid var(--line);
+  background: var(--surface);
+  font-weight: 800;
+  text-align: left;
+}
+.exam-proto__pick--picked { border-color: var(--sky); background: var(--sky-tint); }
+.exam-proto__pick--nice { border-color: var(--green); background: var(--pip-green-tint); }
+.exam-proto__pick--almost { border-color: var(--clay); background: var(--clay-tint); }
+.exam-proto__result { margin: var(--s4) 0 0; font-weight: 800; }
+.exam-proto__result--nice { color: var(--green-deep); }
+.exam-proto__result--almost { color: var(--clay-deep); }
+.exam-proto__read,
+.exam-proto__done { margin: var(--s4) 0 0; font-weight: 700; color: var(--ink-soft); }
+

@@ -1,0 +1,79 @@
+{
+  "paper_title": "English homework",
+  "subject": "english",
+  "questions": [
+    {
+      "id": "1",
+      "stem": "Which word means a baby plant?",
+      "choices": ["bloom", "seedling", "root", "fence"],
+      "student_answer": "seedling",
+      "teacher_mark": "✓",
+      "correct_answer": "seedling",
+      "explanation": "A seedling is a baby plant that has just started to grow.",
+      "flags": [
+        {
+          "field": "explanation",
+          "kind": "generated",
+          "note": "Written for the parent. The child does not see this."
+        }
+      ]
+    },
+    {
+      "id": "2",
+      "stem": "She ____ a red bag.",
+      "choices": ["have", "has"],
+      "student_answer": "has",
+      "teacher_mark": "✓",
+      "correct_answer": "has",
+      "explanation": "She is one person, so the matching word is has. Have is for I, you, we, and they.",
+      "flags": [
+        {
+          "field": "explanation",
+          "kind": "generated",
+          "note": "Written for the parent. The child does not see this."
+        }
+      ]
+    },
+    {
+      "id": "3",
+      "stem": "The plant needs ____ to grow.",
+      "choices": ["water", "soil", "light", "wind"],
+      "student_answer": "watr",
+      "teacher_mark": "×",
+      "correct_answer": "water",
+      "explanation": "The missing word is water. The handwriting was hard to read, and the printed choices were smudged, so those parts were filled in.",
+      "flags": [
+        {
+          "field": "stem",
+          "kind": "reconstructed",
+          "note": "A smudge covered the word grow. It was filled in."
+        },
+        {
+          "field": "choices",
+          "kind": "reconstructed",
+          "note": "The printed choices were smudged. These four words are a guess."
+        },
+        {
+          "field": "student_answer",
+          "kind": "reconstructed",
+          "note": "The handwriting looks like watr. That spelling is what we saw."
+        },
+        {
+          "field": "teacher_mark",
+          "kind": "reconstructed",
+          "note": "The mark is messy. It was read as a cross."
+        },
+        {
+          "field": "correct_answer",
+          "kind": "reconstructed",
+          "note": "The practice answer water is a guess from the sentence, not from a printed key."
+        },
+        {
+          "field": "explanation",
+          "kind": "generated",
+          "note": "Written for the parent. The child does not see this."
+        }
+      ]
+    }
+  ]
+}
