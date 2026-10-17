@@ -2,6 +2,8 @@
    Grading happens in the parent screen through onAnswer, which returns a word, never the answer. */
 
 import { useState } from 'react';
+import Pip from '../components/Pip';
+import PipPose from '../components/PipPose';
 import type { RoundGrade } from '../exam/mistakesRound';
 import type { ChildView } from '../exam/types';
 import '../styles/exam-notebook.css';
@@ -58,6 +60,7 @@ export default function ExamMistakesRound({ view, onAnswer, onFinish }: ExamMist
     return (
       <div className="screen exam-proto" data-screen="mistakes-round-done">
         <main className="screen__body exam-proto__body exam-round__done">
+          <Pip className="exam-round__pip-big" />
           <p className="exam-round__big">All done</p>
           <p className="exam-proto__lead">
             {total ? `You practised ${total} ${total === 1 ? 'question' : 'questions'}. Well done for trying.` : 'Nothing to practise right now.'}
@@ -82,9 +85,12 @@ export default function ExamMistakesRound({ view, onAnswer, onFinish }: ExamMist
         <div className="exam-round__progress" aria-hidden="true">
           <span style={{ width: `${((index + (grade ? 1 : 0)) / total) * 100}%` }} />
         </div>
-        <p className="exam-proto__kicker">
-          {view.subject} · {index + 1} of {total}
-        </p>
+        <div className="exam-round__pip-row">
+          <PipPose pose={grade === 'nice' ? 'correct' : grade === 'almost' ? 'almost' : 'neutral'} className="exam-round__pip" />
+          <p className="exam-proto__kicker">
+            {view.subject} · {index + 1} of {total}
+          </p>
+        </div>
         <article className="exam-proto__sheet">
           <h2 className="exam-proto__stem">{question.stem}</h2>
           {question.choices.length > 0 ? (

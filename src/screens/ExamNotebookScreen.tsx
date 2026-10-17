@@ -13,7 +13,6 @@ import {
   type PracticeSession,
 } from '../exam/notebook';
 import type { RoundScope } from '../exam/mistakesRound';
-import { subjectLabel, topicLabel } from '../exam/topics';
 import '../styles/exam-notebook.css';
 
 export type NotebookTab = 'notebook' | 'weak';
@@ -207,10 +206,6 @@ export default function ExamNotebookScreen({
                       {shortDate(session.at)}
                       {missed.length > 0 &&
                         ` · Missed: ${missed.map((item) => `${item.label} ${item.count}`).join(', ')}`}
-                    </p>
-                    <p className="exam-book__meta exam-book__meta--soft">
-                      {[...new Set(session.results.map((result) => subjectLabel(result.subject)))].join(', ')} ·{' '}
-                      {[...new Set(session.results.map((result) => topicLabel(result.topic)))].join(', ')}
                     </p>
                   </li>
                 );

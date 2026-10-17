@@ -280,7 +280,7 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
                 <FlagTape flags={flagsFor(question, 'explanation')} />
                 <ExamReviewControls
                   question={question}
-                  subject={scan.subject}
+                  subject={marks.subject}
                   review={marks.review[question.id]}
                   inNotebook={marks.inNotebook.has(question.id)}
                   onChange={(patch) => marks.update(question.id, patch)}

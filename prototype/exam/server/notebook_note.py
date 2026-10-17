@@ -56,6 +56,7 @@ def render_block(payload: dict, now: datetime | None = None) -> str:
                     f"- {_text(entry.get('stem'))} Choices: {choices}. "
                     f"Child wrote: {_text(entry.get('student_answer')) or '(blank)'}. "
                     f"Practice answer: {_text(entry.get('correct_answer')) or '(unknown)'}. "
+                    f"Your mark: {MARK_WORDS.get(str(entry.get('parent_mark') or 'wrong'), 'Wrong')}. "
                     f"From {_text(entry.get('paper_title')) or 'a scan'}, {_text(entry.get('added'))}."
                 )
             lines.append("")

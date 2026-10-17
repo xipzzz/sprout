@@ -204,4 +204,16 @@
   padding-top: var(--s12);
   text-align: center;
 }
+.exam-round__pip-row { display: flex; align-items: center; gap: var(--s3); margin-bottom: var(--s3); }
+.exam-round__pip-row .exam-proto__kicker { margin: 0; }
+.exam-round__pip { width: 52px; height: 52px; flex-shrink: 0; }
+.exam-round__pip-big { width: 120px; height: 120px; align-self: center; }
+.exam-book .lesson__close svg {
+  width: 22px;
+  height: 22px;
+  stroke: var(--ink-soft);
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 .exam-round__big { margin: 0; font-size: var(--fs-display); font-weight: 900; color: var(--green-deep); }

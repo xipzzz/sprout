@@ -88,7 +88,7 @@ class NotebookNoteTests(unittest.TestCase):
         self.assertIn("#### Fractions (1)", text)
         self.assertIn("### English (1)", text)
         self.assertLess(text.index("### Maths (2)"), text.index("### English (1)"))
-        self.assertIn("Child wrote: 8. Practice answer: 9.", text)
+        self.assertIn("Child wrote: 8. Practice answer: 9. Your mark: Wrong.", text)
         self.assertIn("| 1 | Fractions | Maths | 1 | 2 of 2 |", text)
         self.assertIn("| 2 | Word meaning (vocabulary) | English | 1 | not practised |", text)
         self.assertIn("| 2026-10-17 10:00 | This page | 1 of 3, 1 not checked | Fractions 1, Word problems 1 |", text)

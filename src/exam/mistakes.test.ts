@@ -2,7 +2,7 @@
    The round checks extend the no-answers rule: the child payload has stems and choices only.
    Run: node --experimental-strip-types src/exam/mistakes.test.ts */
 
-import { assertRoundSafe, buildMistakesRound, gradeRoundAnswer, sessionFromTries } from './mistakesRound.ts';
+import { MAX_ROUND, assertRoundSafe, buildMistakesRound, gradeRoundAnswer, sessionFromTries } from './mistakesRound.ts';
 import {
   groupNotebook,
   loadNotebook,
@@ -16,7 +16,7 @@ import {
   type KeyValue,
 } from './notebook.ts';
 import { notebookPayload } from './notebookApi.ts';
-import { TOPICS, guessTopic, topicsFor } from './topics.ts';
+import { TOPICS, effectiveSubject, guessTopic, topicsFor } from './topics.ts';
 import type { ParentQuestion, ParentScan } from './types.ts';
 
 let passed = 0;
@@ -106,6 +106,20 @@ for (const [question, subject, topic] of expectTopics) {
   const guess = guessTopic(question, subject);
   check(`topic ${question.id} "${question.stem.slice(0, 30)}" -> ${topic}`, guess.topic === topic, `got ${guess.topic}`);
 }
+const ocrMaths = scanOf('english', 'Maths worksheet', [
+  q('1', '25+17= ____', [], '', ''),
+  q('2', '6xX7= ____', [], '', ''),
+  q('3', 'How many sides does a triangle have?', [], '', ''),
+  q('4', 'The lesson starts at 9.30 a.m. and ends at 10.15 a.m. How long is it?', [], '', ''),
+]);
+check('a maths page the OCR labelled English is treated as maths', effectiveSubject(ocrMaths) === 'math');
+check('the English sample stays English', effectiveSubject(english) === 'english');
+const ocrReview = loadReview(memoryStore(), ocrMaths);
+check(
+  'OCR maths topics use the maths list',
+  ocrReview['1'].topic === 'math-add-subtract' && ocrReview['2'].topic === 'math-multiply-divide' && ocrReview['3'].topic === 'math-shapes-patterns' && ocrReview['4'].topic === 'math-time',
+  JSON.stringify(ocrReview),
+);
 check('topic ids are unique', new Set(TOPICS.map((t) => t.id)).size === TOPICS.length);
 check('maths list is the fixed P1 to P4 list', topicsFor('math').every((t) => t.subject === 'math') && topicsFor('math').length >= 14);
 check('english list is fixed', topicsFor('english').every((t) => t.subject === 'english'));
@@ -119,6 +133,9 @@ const reloaded = loadReview(store, english);
 check('topic change persists after reload', reloaded['2'].topic === 'en-tenses' && reloaded['2'].topicSource === 'parent');
 check('scan key is stable', scanKeyOf(english) === scanKeyOf(JSON.parse(JSON.stringify(english))));
 
+// Only a parent tap saves a mistake. The teacher's cross on the photo is a hint, not a save.
+check('teacher cross alone saves nothing', loadNotebook(store).length === 0 && loadReview(store, english)['3'].mark === 'unmarked');
+
 // Slice 5: two wrong questions from two scans, grouped by subject then topic with counts.
 updateQuestion(store, english, '3', { mark: 'wrong' });
 updateQuestion(store, maths, '3', { mark: 'wrong' });
@@ -126,6 +143,11 @@ updateQuestion(store, maths, '6', { mark: 'right' });
 let groups = groupNotebook(loadNotebook(store));
 const groupText = JSON.stringify(groups.map((g) => [g.label, g.count, g.topics.map((t) => [t.label, t.entries.length])]));
 check('notebook has both mistakes', loadNotebook(store).length === 2, groupText);
+const firstEntry = loadNotebook(store)[0];
+check(
+  'child answer, practice answer and parent mark are separate fields',
+  firstEntry.student_answer === 'watr-secret' && firstEntry.correct_answer === 'water' && firstEntry.parent_mark === 'wrong',
+);
 check(
   'grouped by subject then topic',
   groupText === JSON.stringify([
@@ -159,7 +181,7 @@ const blob = JSON.stringify(round.view);
 const banned = [
   '41-secret', '8-secret', '30-secret', 'watr-secret', 'Parent-only note', 'Guessed',
   'correct_answer', 'student_answer', 'teacher_mark', 'explanation', 'flags', 'topic', 'scanKey',
-  'Maths worksheet', scanKeyOf(maths), '"42"', '"9"', '"36"',
+  'Maths worksheet', scanKeyOf(maths), '"42"', '"9"', '"36"', 'parent_mark', 'wrong',
 ];
 for (const secret of banned) check(`child round JSON has no ${secret}`, !blob.includes(secret), blob);
 check(
@@ -189,6 +211,13 @@ check('notebook ids in the child payload are refused', leakedStemCaught);
 const fullBlob = JSON.stringify(buildMistakesRound(loadNotebook(store), { kind: 'all' }).view);
 check('all-mistakes round has 4 questions', JSON.parse(fullBlob).questions.length === 4);
 check('all-mistakes round has no handwriting', !fullBlob.includes('watr-secret') && !fullBlob.includes('8-secret'));
+
+const bigStore = memoryStore();
+const bigScan = scanOf('math', 'Long page', Array.from({ length: 12 }, (_, i) => q(String(i + 1), `${i + 2} + ${i + 3} = ____`, [], '', String(2 * i + 5))));
+for (const item of bigScan.questions) updateQuestion(bigStore, bigScan, item.id, { mark: 'wrong' });
+const capped = buildMistakesRound(loadNotebook(bigStore), { kind: 'all' });
+check('rounds stay short: 12 mistakes give a round of 10', loadNotebook(bigStore).length === 12 && capped.view.questions.length === MAX_ROUND && MAX_ROUND === 10);
+check('a capped round starts with the oldest mistake', capped.view.questions[0].stem === '2 + 3 = ____');
 
 const idOf = (stem: string) => round.view.questions.find((item) => item.stem === stem)!.id;
 check('grading says nice for the right answer', gradeRoundAnswer(round, idOf('25 + 17 = ____'), ' 42 ') === 'nice');

@@ -59,6 +59,18 @@ export function topicSubject(subject: string): TopicSubject | '' {
   return '';
 }
 
+const MATHS_STEM = /\d|\b(how many|how much|triangles?|rectangles?|squares?|circles?|sides?|sum|total|altogether|fractions?|o'clock|minutes?)\b/i;
+
+/** The scan's subject for topics. The OCR path labels every page English, so a page
+   whose stems mostly look like maths is treated as maths. */
+export function effectiveSubject(scan: { subject: string; questions: { stem: string }[] }): TopicSubject | string {
+  const stated = topicSubject(scan.subject);
+  if (stated === 'math') return 'math';
+  const mathsLike = scan.questions.filter((question) => MATHS_STEM.test(question.stem || '')).length;
+  if (scan.questions.length && mathsLike * 2 > scan.questions.length) return 'math';
+  return stated || scan.subject;
+}
+
 export function subjectLabel(subject: string): string {
   const kind = topicSubject(subject);
   if (kind === 'math') return 'Maths';
@@ -88,7 +100,7 @@ const MATH_RULES: Rule[] = [
   { topic: 'math-money', test: has(/\$\s?\d|\d\s?¢|\b(cents?|dollars?|price|costs?|cost|change|spent|spend|paid|pay)\b/) },
   {
     topic: 'math-time',
-    test: has(/\b(o'clock|minutes?|hours?|a\.m\.|p\.m\.|clock|half past|quarter (past|to)|seconds?|days?|weeks?|months?)\b|\d{1,2}[:.]\d{2}\s?(am|pm)/),
+    test: has(/\b(o'clock|minutes?|hours?|clock|half past|quarter (past|to)|seconds?|days?|weeks?|months?)\b|\d\s?(a\.m\.|p\.m\.|am\b|pm\b)/),
   },
   {
     topic: 'math-measurement',
@@ -104,7 +116,7 @@ const MATH_RULES: Rule[] = [
 ];
 
 const OPERATION_RULES: Rule[] = [
-  { topic: 'math-multiply-divide', test: has(/\d\s*[×x*÷]\s*\d|\b(times|multiply|multiplied|divide|divided|share[sd]? equally|groups? of|product|quotient|remainder|each|every)\b/) },
+  { topic: 'math-multiply-divide', test: has(/\d\s*[×x*÷]+\s*\d|\b(times|multiply|multiplied|divide|divided|share[sd]? equally|groups? of|product|quotient|remainder|each|every)\b/) },
   { topic: 'math-add-subtract', test: has(/\d\s*[+\-−]\s*\d|\b(add|added|plus|sum|total|altogether|in all|subtract|minus|take away|difference|left|more than|less than|fewer than)\b/) },
 ];
 

@@ -17,6 +17,9 @@ export type MistakesRound = {
 
 export type RoundGrade = 'nice' | 'almost' | 'unchecked';
 
+/** Rounds stay short. Oldest mistakes come first, so older ones get cleared. */
+export const MAX_ROUND = 10;
+
 export function entriesInScope(entries: NotebookEntry[], scope: RoundScope): NotebookEntry[] {
   if (scope.kind === 'scan') return entries.filter((entry) => entry.scanKey === scope.scanKey);
   if (scope.kind === 'topic') return entries.filter((entry) => entry.topic === scope.topic);
@@ -73,7 +76,9 @@ export function assertRoundSafe(round: MistakesRound): void {
 
 export function buildMistakesRound(entries: NotebookEntry[], scope: RoundScope): MistakesRound {
   const answerKey = new Map<string, NotebookEntry>();
-  entriesInScope(entries, scope).forEach((entry, index) => answerKey.set(`q${index + 1}`, entry));
+  entriesInScope(entries, scope)
+    .slice(0, MAX_ROUND)
+    .forEach((entry, index) => answerKey.set(`q${index + 1}`, entry));
   const round = { view: toChildView(stemsOnly(scopeLabel(scope), answerKey)), scope, answerKey };
   assertRoundSafe(round);
   return round;

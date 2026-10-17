@@ -33,6 +33,7 @@ export function notebookPayload(entries: NotebookEntry[], sessions: PracticeSess
           choices: entry.choices,
           student_answer: entry.student_answer,
           correct_answer: entry.correct_answer,
+          parent_mark: entry.parent_mark,
           paper_title: entry.paper_title,
           added: when(entry.addedAt).slice(0, 10),
         })),

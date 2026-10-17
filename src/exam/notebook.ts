@@ -2,7 +2,7 @@
    Lives in browser storage. Nothing here is passed to the child screens; the child
    round goes through mistakesRound.ts, which strips it down to stems and choices. */
 
-import { guessTopic, subjectLabel, topicById, topicLabel, topicSubject } from './topics.ts';
+import { effectiveSubject, guessTopic, subjectLabel, topicById, topicLabel } from './topics.ts';
 import type { ParentQuestion, ParentScan } from './types.ts';
 
 export type Mark = 'right' | 'wrong' | 'unmarked';
@@ -25,6 +25,7 @@ export type NotebookEntry = {
   choices: string[];
   student_answer: string;
   correct_answer: string;
+  parent_mark: 'wrong';
   paper_title: string;
   addedAt: string;
 };
@@ -103,7 +104,7 @@ export function loadReview(store: KeyValue, scan: ParentScan): ScanReview {
   const review: ScanReview = {};
   for (const question of scan.questions) {
     const prior = saved[question.id];
-    review[question.id] = prior && topicById(prior.topic) ? prior : freshReview(question, scan.subject);
+    review[question.id] = prior && topicById(prior.topic) ? prior : freshReview(question, effectiveSubject(scan));
   }
   return review;
 }
@@ -132,12 +133,13 @@ function toEntry(scan: ParentScan, question: ParentQuestion, topic: string, now:
     key: entryKeyOf(scanKey, question.id),
     scanKey,
     questionId: question.id,
-    subject: topicSubject(scan.subject) || scan.subject || 'other',
+    subject: effectiveSubject(scan) || 'other',
     topic,
     stem: question.stem,
     choices: [...question.choices],
     student_answer: question.student_answer,
     correct_answer: question.correct_answer,
+    parent_mark: 'wrong',
     paper_title: scan.paper_title,
     addedAt: now.toISOString(),
   };

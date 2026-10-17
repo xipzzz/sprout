@@ -11,7 +11,7 @@ import {
   type ReviewChange,
 } from './notebook.ts';
 import { saveNotebookNote, saveReviewNote } from './notebookApi.ts';
-import { subjectLabel, topicLabel } from './topics.ts';
+import { effectiveSubject, subjectLabel, topicLabel } from './topics.ts';
 import type { ParentScan } from './types.ts';
 
 function short(stem: string) {
@@ -70,6 +70,7 @@ export function useExamReview(scan: ParentScan | null, notePaths: string[]) {
     notebookCount: notebook.length,
     wrongHere: inNotebook.size,
     scanKey,
+    subject: scan ? effectiveSubject(scan) : '',
     status,
   };
 }
