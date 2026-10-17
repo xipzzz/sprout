@@ -3,6 +3,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 node --experimental-strip-types src/exam/childView.test.ts
+node --import ./scripts/register-tsx.mjs src/parent/parent.test.ts
+node --import ./scripts/register-tsx.mjs src/print/print.test.tsx
 VENV="$ROOT/prototype/exam/.venv"
 if [[ ! -x "$VENV/bin/python" ]]; then
   python3 -m venv "$VENV"
