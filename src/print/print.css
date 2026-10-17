@@ -1,0 +1,162 @@
+/* Print preview (screen) and A4 print output for worksheets and the answer key. */
+
+.print-child-btn { margin-top: var(--s4); }
+
+.print-root {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  overflow-y: auto;
+  background: var(--bg-soft);
+  font-family: var(--font);
+  color: var(--ink);
+}
+.print-root__bar {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  padding: calc(var(--s3) + env(safe-area-inset-top)) var(--s4) var(--s3);
+  background: var(--cream-bg, var(--bg));
+  box-shadow: var(--shadow-sm);
+}
+.print-root__note {
+  flex: 1;
+  margin: 0;
+  font-size: var(--fs-caption);
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+.print-root__go { width: auto; padding-inline: var(--s4); white-space: nowrap; }
+.print-root__pages {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s6);
+  padding: var(--s6) var(--s4) var(--s10);
+}
+
+.print-sheet {
+  box-sizing: border-box;
+  width: min(100%, 210mm);
+  min-height: min(297mm, 140vw);
+  padding: 14mm 14mm 12mm;
+  background: #fff;
+  color: #1d1916;
+  border-radius: 4px;
+  box-shadow: var(--shadow-md);
+}
+.print-sheet__head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s3);
+  padding-bottom: var(--s2);
+  border-bottom: 2px solid #1d1916;
+}
+.print-sheet__brand {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--green-deep);
+}
+.print-sheet__title { flex: 1; margin: 0; font-size: 1.4rem; letter-spacing: -0.01em; }
+.print-sheet__year { margin: 0; font-weight: 800; }
+.print-sheet__name {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--s2);
+  margin: var(--s4) 0 0;
+  font-weight: 800;
+}
+.print-sheet__blank {
+  display: inline-block;
+  flex: 1;
+  min-width: 48px;
+  height: 1.1em;
+  border-bottom: 1.5px solid #1d1916;
+}
+.print-sheet__blank--short { flex: 0 0 72px; }
+.print-sheet__instructions { margin: var(--s4) 0; font-weight: 700; line-height: 1.4; }
+.print-sheet__questions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.print-q { display: flex; gap: var(--s3); break-inside: avoid; }
+.print-q__num {
+  flex: 0 0 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 2px solid #1d1916;
+  border-radius: 50%;
+  font-weight: 900;
+}
+.print-q__body { flex: 1; display: flex; flex-direction: column; gap: var(--s3); }
+.print-q__stem { margin: 3px 0 0; font-size: 1.1rem; font-weight: 700; line-height: 1.4; }
+.print-q__choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s3) var(--s5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+.print-q__choices li { display: flex; align-items: center; gap: var(--s2); }
+.print-q__circle {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #1d1916;
+  border-radius: 50%;
+}
+.print-q__line { display: block; height: 30px; border-bottom: 1.5px solid #8a8079; }
+.print-sheet__foot {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: var(--s2);
+  margin: var(--s8) 0 0;
+  font-weight: 800;
+}
+
+.print-key { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+.print-key th,
+.print-key td {
+  padding: 8px 6px;
+  border-bottom: 1px solid #cfc6bb;
+  text-align: left;
+  vertical-align: top;
+}
+.print-key th {
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #5d534c;
+}
+.print-key__answer { font-weight: 900; }
+
+@media print {
+  @page { size: A4; margin: 12mm; }
+  body.sprout-print-open { min-height: 0; background: #fff; }
+  body.sprout-print-open > :not(.print-root) { display: none !important; }
+  .print-root { position: static; overflow: visible; background: #fff; }
+  .print-root__bar { display: none; }
+  .print-root__pages { display: block; padding: 0; }
+  .print-sheet {
+    width: auto;
+    min-height: 0;
+    padding: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .print-sheet + .print-sheet { break-before: page; }
+}
