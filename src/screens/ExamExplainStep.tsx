@@ -67,7 +67,7 @@ export default function ExamExplainStep({ scan, onPick, onPractice, onBack, onEx
     );
   }
 
-  const attempts = attemptsFor(question.id);
+  const attempts = attemptsFor(question);
   const right = attempts.filter((attempt) => attempt.is_correct).length;
 
   function go(step: number) {

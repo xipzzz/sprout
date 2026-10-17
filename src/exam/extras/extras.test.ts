@@ -134,6 +134,8 @@ for (const [id, template, answer] of grammarCases) {
   const card = explainNow({ subject: 'english', question, pick: getPick('english', question) }, memoryCache());
   check('card uses the parent pick', card.answer === 'on' && card.answerSource === 'parent');
   check('card notes the rule disagrees', card.notes.some((note) => note.includes('"over"')));
+  const ruleCard = explainNow({ subject: 'english', question: worksheet.questions[0] }, memoryCache());
+  check('rule over a guess says practice still uses the guess', ruleCard.notes.some((note) => note.includes('"It"')));
   const mathsPick = explainNow({ subject: 'math', question: maths.questions[0], pick: '122' }, memoryCache());
   check('maths card uses the pick and flags the mismatch', mathsPick.answer === '122' && mathsPick.notes.some((n) => n.includes('132')));
   clearPicks();
@@ -271,7 +273,7 @@ check('non maths gives no similar set', makeSimilar(worksheet.questions[0], 'eng
   const wrongChoice = first.choices.find((choice) => choice !== first.answer)!;
   check('wrong choice grades almost', gradePractice(set, first.id, wrongChoice) === 'almost');
   check('right choice grades nice', gradePractice(set, first.id, first.answer) === 'nice');
-  const log = attemptsFor(set.sourceId);
+  const log = attemptsFor(maths.questions[0]);
   check('attempts keep separate fields', log.length === 2 && log.every((a) => Object.keys(a).sort().join(',') === 'child_answer,correct_answer,id,is_correct'));
   check('attempt values', log[0].child_answer === wrongChoice && log[0].correct_answer === first.answer && log[0].is_correct === false && log[1].is_correct === true);
   const typed = makeSimilar(maths.questions[2], 'math', 3)!;

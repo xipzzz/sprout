@@ -280,12 +280,17 @@ export function recordAttempt(set: PracticeSet, id: string, given: string): Prac
     correct_answer: variant?.answer ?? '',
     is_correct: variant ? isRight(variant, given) : false,
   };
-  attemptLog.set(set.sourceId, [...(attemptLog.get(set.sourceId) ?? []), attempt]);
+  const key = logKey(set.sourceId, set.sourceStem);
+  attemptLog.set(key, [...(attemptLog.get(key) ?? []), attempt]);
   return attempt;
 }
 
-export function attemptsFor(sourceId: string): PracticeAttempt[] {
-  return attemptLog.get(sourceId) ?? [];
+function logKey(sourceId: string, sourceStem: string) {
+  return `${sourceId}|${sourceStem}`;
+}
+
+export function attemptsFor(question: Pick<ParentQuestion, 'id' | 'stem'>): PracticeAttempt[] {
+  return attemptLog.get(logKey(question.id, question.stem)) ?? [];
 }
 
 export function gradePractice(set: PracticeSet, id: string, given: string): 'nice' | 'almost' {

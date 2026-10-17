@@ -176,6 +176,9 @@ function resolveChoiceAnswer(input: ExplainInput, ruleAnswer: string | null) {
     notes.push(`Pip's rule points to "${ruleAnswer}". Check which one is right.`);
   }
   if (answerSource === 'guess' || answerSource === 'none') notes.push(AUTO_NOTE_PICK);
+  if (answerSource === 'rule' && page && guessed && !sameAnswer(page, answer)) {
+    notes.push(`Practice still checks against the scan's guess, "${page}". Tap the right answer below to change it.`);
+  }
   return { answer, answerSource, notes };
 }
 
