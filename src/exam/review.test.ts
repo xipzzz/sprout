@@ -170,6 +170,11 @@ const tesseract: ParentScan = {
   assert.equal(blankBefore(stem, 7), 'Ali is playing with his new toy. ____ is having fun.');
   assert.equal(blankInstead('Ali is playing with his new toy. He is having fun.', 7), 'Ali is playing with his new toy. ____ is having fun.');
   assert.equal(blankInstead('Pour it into the jar.', 4), 'Pour it into the ____.');
+  const han = '小明每天早上七点钟去学校。';
+  assert.equal(stemWords(han).length, 12, 'each Han character can be tapped');
+  assert.equal(stemWords(han)[11], '校。');
+  assert.equal(blankBefore(han, 10), '小明每天早上七点钟去____学校。');
+  assert.equal(blankInstead(blankInstead(han, 10), 11), '小明每天早上七点钟去____。', 'two taps blank a two-character word');
 }
 
 {

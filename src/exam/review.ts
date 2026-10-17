@@ -111,19 +111,27 @@ export function buildPractice(scan: ParentScan, review: ReviewState): Practice |
 
 export { BLANK };
 
+/** Tappable words. Chinese has no spaces, so each Han character is its own word. */
 export function stemWords(stem: string): string[] {
-  return stem.split(/\s+/).filter(Boolean);
+  return stem.match(/\p{Script=Han}[。，！？、；：]*|[^\s\p{Script=Han}]+/gu) ?? [];
+}
+
+function joinWords(words: string[]): string {
+  return words
+    .join(' ')
+    .replace(/(?<=\p{Script=Han}[。，！？、；：]*)\s+|\s+(?=\p{Script=Han})/gu, '')
+    .replace(new RegExp(`${BLANK}(?:\\s*${BLANK})+`, 'g'), BLANK);
 }
 
 export function blankBefore(stem: string, index: number): string {
   const words = stemWords(stem);
   words.splice(index, 0, BLANK);
-  return words.join(' ');
+  return joinWords(words);
 }
 
 export function blankInstead(stem: string, index: number): string {
   const words = stemWords(stem);
-  const match = /^(\W*)(.*?)(\W*)$/u.exec(words[index] ?? '');
+  const match = /^([^\p{L}\p{N}]*)(.*?)([^\p{L}\p{N}]*)$/u.exec(words[index] ?? '');
   words[index] = `${match?.[1] ?? ''}${BLANK}${match?.[3] ?? ''}`;
-  return words.join(' ');
+  return joinWords(words);
 }
