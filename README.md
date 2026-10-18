@@ -72,6 +72,8 @@ cloze passage, a Chinese page), with ground-truth layers for the ink-lift tests.
 Tesseract.js text lives in `prototype/exam/fixtures/synthetic/`; regenerate one with
 `node prototype/exam/ocr_fixture.mjs IMAGE [eng|chi_sim]`.
 
+Optional local PaddleOCR and batch CSV export: [prototype/exam/README.md](prototype/exam/README.md).
+
 License: [prototype/exam/LICENSE-NOTE.md](prototype/exam/LICENSE-NOTE.md). Goppai/exam was
 not copied in; the note says why.
 

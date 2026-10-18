@@ -11,10 +11,8 @@ import base64
 import json
 import os
 import re
-import shutil
 import subprocess
 import sys
-import tempfile
 from pathlib import Path
 
 import httpx
@@ -22,6 +20,7 @@ from dotenv import load_dotenv
 
 from deskew import prepare_page
 from schema import map_question, subject_slug
+from local_ocr import OcrUnavailable, recognize
 from worksheet_text import ParsedSheet, parse_worksheet_text, text_script
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -153,13 +152,13 @@ def _flag(field: str, note: str) -> dict:
     return {"field": field, "kind": "reconstructed", "note": note}
 
 
-def read_sheet(text: str, ocr_lang: str = "eng") -> tuple[ParsedSheet, list[dict]]:
+def read_sheet(text: str, ocr_lang: str = "eng", engine: str = "tesseract") -> tuple[ParsedSheet, list[dict]]:
     sheet = parse_worksheet_text(text)
     questions = []
     for parsed in sheet.questions:
         stem = parsed.stem
         choices = parsed.choices
-        flags = [_flag("stem", OCR_NOTE.get(ocr_lang, OCR_NOTE["eng"]))]
+        flags = [_flag("stem", OCR_NOTE.get(ocr_lang, OCR_NOTE["eng"]) if engine == "tesseract" else "Read by local PaddleOCR from the cleaned page. Check the printed text; pencil was not lifted.")]
         if choices:
             flags.append(_flag("choices", "Choices came from the text scan and may include stray handwriting."))
         if sheet.layout == "cloze":
@@ -167,10 +166,10 @@ def read_sheet(text: str, ocr_lang: str = "eng") -> tuple[ParsedSheet, list[dict
         if sheet.layout == "editing":
             flags.append(_flag("stem", "Editing passage. The child fixes the word after the number in brackets."))
         if parsed.stem_changes:
-            flags.append(_flag("stem", "Tesseract ran words together. Spaces were added: " + "; ".join(parsed.stem_changes) + "."))
+            flags.append(_flag("stem", "OCR ran words together. Spaces were added: " + "; ".join(parsed.stem_changes) + "."))
         if parsed.choice_changes:
             flags.append(
-                _flag("choices", "Tesseract ran words together. Spaces were added: " + "; ".join(parsed.choice_changes) + ".")
+                _flag("choices", "OCR ran words together. Spaces were added: " + "; ".join(parsed.choice_changes) + ".")
             )
         if parsed.removed:
             flags.append(_flag("stem", "Stray marks were left out of the question: " + " ".join(parsed.removed) + "."))
@@ -207,25 +206,13 @@ def questions_from_ocr(text: str) -> list[dict]:
 
 
 def _tesseract_text(rgb, lang: str = "eng") -> str:
-    if not shutil.which("tesseract"):
+    try:
+        return recognize(rgb, "tesseract", lang)
+    except OcrUnavailable:
         return ""
-    from PIL import Image
-
-    with tempfile.NamedTemporaryFile(suffix=".png") as handle:
-        Image.fromarray(rgb, "RGB").save(handle.name)
-        try:
-            out = subprocess.check_output(
-                ["tesseract", handle.name, "stdout", "-l", lang],
-                stderr=subprocess.DEVNULL,
-                text=True,
-                timeout=40,
-            )
-        except (OSError, subprocess.SubprocessError):
-            return ""
-    return out.strip()
 
 
-def page_flags(pencil: dict, layout: str, ocr_lang: str) -> list[dict]:
+def page_flags(pencil: dict, layout: str, ocr_lang: str, engine: str = "tesseract") -> list[dict]:
     flags = []
     if pencil.get("likely"):
         flags.append(
@@ -242,7 +229,7 @@ def page_flags(pencil: dict, layout: str, ocr_lang: str) -> list[dict]:
     if layout == "editing":
         flags.append({"kind": "editing", "note": "Editing passage. Each numbered word became its own question."})
     if ocr_lang == "chi_sim":
-        flags.append({"kind": "chinese", "note": "Chinese page, read with Tesseract chi_sim. Check characters closely."})
+        flags.append({"kind": "chinese", "note": f"Chinese page, read with {engine} chi_sim. Check characters closely."})
     return flags
 
 
@@ -363,6 +350,38 @@ def _tesseract_scan(page: dict, previews: dict, filename: str, ocr_text: str, su
     return {"ok": True, "scan": scan}
 
 
+def local_scan(image_bytes: bytes, filename: str, backend: str, subject: str = "auto") -> dict:
+    """Batch and Paddle web entry point. No model keys, browser fallback or saving."""
+    page = prepare_page(image_bytes)
+    lang = wanted_lang(subject)
+    text = recognize(page["clean_rgb"], backend, lang)
+    decision = ocr_decision(text, lang)
+    if decision["action"] == "retry":
+        lang = decision["ocr_lang"]
+        text = recognize(page["clean_rgb"], backend, lang)
+        decision = ocr_decision(text, lang)
+    if not text.strip() or decision["action"] != "parse":
+        raise ValueError(UNSUPPORTED)
+    sheet, questions = read_sheet(text, lang, backend)
+    return {
+        "extraction": backend,
+        "subject": "chinese" if lang == "chi_sim" else subject_slug(subject) if subject != "auto" else "english",
+        "paper_title": sheet.title or "Homework", "source_photo": filename,
+        "note": f"Read with local {backend}. Pencil is not lifted. Check each question before practice.",
+        "questions": questions, "ocr_lang": lang,
+        "page_flags": page_flags(page["pencil"], sheet.layout, lang, backend),
+        "deskew": page["deskew"], "ink_pixels_lifted": page["ink_pixels_lifted"],
+        "previews": {"deskew_jpeg": page["deskew_jpeg"], "clean_jpeg": page["clean_jpeg"]},
+    }
+
+
+def selected_ocr(requested: str = "") -> str:
+    choice = (requested or os.environ.get("SPROUT_OCR", "")).strip().lower()
+    if choice not in {"", "paddle", "tesseract"}:
+        raise ValueError("Choose OCR paddle or tesseract.")
+    return choice
+
+
 async def extract_scan(
     image_bytes: bytes,
     filename: str,
@@ -370,8 +389,15 @@ async def extract_scan(
     ocr_text: str,
     subject: str = "auto",
     ocr_lang: str = "",
+    ocr: str = "",
 ) -> dict:
     """OCR always reads the cleaned, straightened page, never the raw photo."""
+    backend = selected_ocr(ocr)
+    if not demo and backend == "paddle":
+        try:
+            return {"ok": True, "scan": local_scan(image_bytes, filename, backend, subject)}
+        except (OcrUnavailable, ValueError) as exc:
+            return {"ok": False, "message": str(exc)}
     page = prepare_page(image_bytes)
     previews = {"deskew_jpeg": page["deskew_jpeg"], "clean_jpeg": page["clean_jpeg"]}
     sample_name = filename.lower().startswith("sample-exam")
@@ -379,7 +405,7 @@ async def extract_scan(
         scan = stub_scan(filename)
         scan["page_flags"] = page_flags(page["pencil"], "questions", "eng")
     else:
-        key = vision_api_key()
+        key = None if backend else vision_api_key()
         if key:
             scan = await vision_extract(_jpeg_bytes(page["clean_jpeg"]), key)
             scan["page_flags"] = page_flags(page["pencil"], "questions", "eng")

@@ -228,3 +228,11 @@ const tesseract: ParentScan = {
 }
 
 console.log('review gate test passed');
+
+
+// Local Paddle OCR must never pre-approve answers, including imported values.
+const paddleScan = { ...tesseract, extraction: 'paddle', questions: tesseract.questions.map((question) => ({ ...question, correct_answer: question.choices[0], flags: [] })) } satisfies ParentScan;
+const paddleReview = initialReview(paddleScan);
+if (Object.values(paddleReview).some((entry) => entry.status !== 'open')) {
+  throw new Error('Paddle OCR skipped parent review');
+}

@@ -30,7 +30,7 @@ export type ParentQuestion = {
 };
 
 export type ParentScan = {
-  extraction: 'stub' | 'zhipu' | 'tesseract';
+  extraction: 'stub' | 'zhipu' | 'tesseract' | 'paddle';
   subject: string;
   paper_title: string;
   source_photo: string;

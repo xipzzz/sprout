@@ -22,18 +22,18 @@ export type Practice = {
 };
 
 function readerAnswer(scan: ParentScan, question: ParentQuestion): string {
-  if (scan.extraction === 'tesseract') return '';
+  if (scan.extraction === 'tesseract' || scan.extraction === 'paddle') return '';
   if (question.flags.some((flag) => flag.field === 'correct_answer')) return '';
   return question.choices.includes(question.correct_answer) ? question.correct_answer : '';
 }
 
-/** Tesseract answers always start open. A reader answer is kept only when it is a choice and was not guessed. */
+/** Local OCR answers always start open. A reader answer is kept only when it is a choice and was not guessed. */
 export function initialReview(scan: ParentScan): ReviewState {
   const review: ReviewState = {};
   for (const question of scan.questions) {
     const answer = readerAnswer(scan, question);
     if (answer) review[question.id] = { status: 'picked', answer };
-    else if (!question.choices.length && scan.extraction !== 'tesseract') review[question.id] = { status: 'read_aloud' };
+    else if (!question.choices.length && scan.extraction !== 'tesseract' && scan.extraction !== 'paddle') review[question.id] = { status: 'read_aloud' };
     else review[question.id] = { status: 'open' };
   }
   return review;

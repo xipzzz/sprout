@@ -1,0 +1,3 @@
+# Optional local CPU OCR. Install alongside requirements.txt in a compatible Python environment.
+paddlepaddle>=3.0,<4
+paddleocr>=3.0,<4

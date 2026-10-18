@@ -8,7 +8,9 @@ async function postExtract(file: File, extra: Record<string, string>): Promise<E
   const body = new FormData();
   body.append('file', file, file.name || 'homework.jpg');
   for (const [key, value] of Object.entries(extra)) body.append(key, value);
-  const res = await fetch('/api/extract', { method: 'POST', body });
+  const requestedOcr = new URLSearchParams(window.location.search).get('ocr');
+  const endpoint = requestedOcr ? `/api/extract?ocr=${encodeURIComponent(requestedOcr)}` : '/api/extract';
+  const res = await fetch(endpoint, { method: 'POST', body });
   if (!res.ok) {
     const text = await res.text();
     throw new Error(text || `Scan server returned ${res.status}`);
