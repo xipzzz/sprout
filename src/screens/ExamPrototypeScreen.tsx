@@ -469,11 +469,13 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
                 {flagRows(copy.questions).map((row) => (
                   <li key={row.id} className="exam-proto__flag-row">
                     <span className="exam-proto__flag-qid">Q{row.id}</span>
-                    {row.chips.map((chip) => (
-                      <span key={chip.kind} className="exam-proto__flag-chip" data-kind={chip.kind}>
-                        {chip.label} · {chip.fields.join(', ')}
-                      </span>
-                    ))}
+                    <span className="exam-proto__flag-chips">
+                      {row.chips.map((chip) => (
+                        <span key={chip.kind} className="exam-proto__flag-chip" data-kind={chip.kind}>
+                          {chip.label} · {chip.fields.join(', ')}
+                        </span>
+                      ))}
+                    </span>
                   </li>
                 ))}
               </ul>

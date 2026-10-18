@@ -2542,13 +2542,18 @@ body.calm-motion *, body.calm-motion *::before, body.calm-motion *::after { anim
   list-style: none;
 }
 .exam-proto__flag-row {
+  display: grid;
+  grid-template-columns: 2.4em 1fr;
+  align-items: start;
+  gap: 6px;
+}
+.exam-proto__flag-chips {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
   gap: 6px;
 }
 .exam-proto__flag-qid {
-  min-width: 2.4em;
+  padding-top: 4px;
   font-size: 0.78rem;
   font-weight: 900;
   color: var(--ink);
