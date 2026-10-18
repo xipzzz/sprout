@@ -22,7 +22,7 @@ from deskew import _ink_candidates, _luma, lift_colored_ink, pencil_score, prepa
 from extract import extract_scan, ocr_decision, read_sheet
 from save_note import render_markdown
 from schema import assert_child_view_safe, to_child_view
-from worksheet_text import parse_worksheet_text, text_script
+from worksheet_text import parse_worksheet_text, printed_numbers, text_script
 
 SYNTH = Path(__file__).resolve().parents[1] / "fixtures" / "synthetic"
 
@@ -285,6 +285,16 @@ class ChineseTests(unittest.TestCase):
         self.assertTrue(all("chi_sim" in q["flags"][0]["note"] for q in scan["questions"]))
         child_safe(scan)
 
+    def test_chi_sim_read_of_an_inked_page_keeps_all_four_questions(self):
+        result = tesseract_scan(fixture("chinese-ink-mcq.ocr-chi_sim.txt"), "chi_sim")
+        scan = result["scan"]
+        self.assertEqual([q["stem"] for q in scan["questions"]], [
+            "小华和妈妈去公园玩。", "弟弟地吃着苹果。", "天了，我们回家吧。", "这本书好看。",
+        ])
+        self.assertEqual(scan["questions"][0]["choices"], ["昨天", "明天", "每天", "今天"])
+        self.assertEqual([len(q["choices"]) for q in scan["questions"]], [4, 4, 4, 4])
+        child_safe(scan)
+
     def test_chi_sim_that_finds_no_chinese_is_unsupported(self):
         result = tesseract_scan(fixture("chinese-mcq.ocr-eng.txt"), "chi_sim")
         self.assertFalse(result["ok"])
@@ -296,6 +306,27 @@ class ChineseTests(unittest.TestCase):
 
         for name in ("华文", "中文", "Chinese"):
             self.assertEqual(subject_slug(name), "chinese")
+
+
+class PrintedNumberTests(unittest.TestCase):
+    """The batch split check compares parsed questions with numbers printed on the page."""
+
+    def test_printed_numbers(self):
+        expected = {
+            "blue-ink-mcq.ocr-clean.txt": [1, 2, 3, 4, 5],
+            "cloze-passage.ocr-clean.txt": [1, 2, 3, 4, 5, 6],
+            "editing-passage.ocr.txt": [1, 2, 3, 4, 5],
+            "chinese-mcq.ocr-chi_sim.txt": [1, 2, 3],
+            "chinese-ink-mcq.ocr-chi_sim.txt": [1, 2, 3, 4],
+            "p1-picture-box.ocr.txt": [7, 8, 9, 10],
+            "p4-maths.ocr.txt": [12, 13, 15, 16, 17],
+        }
+        for name, numbers in expected.items():
+            with self.subTest(name):
+                self.assertEqual(printed_numbers(fixture(name)), numbers)
+
+    def test_choice_numbers_are_not_question_numbers(self):
+        self.assertEqual(printed_numbers("1. Pick the word that fits here.\n(1) cat (2) dog\n(3) hen (4) cow"), [1])
 
 
 class ChildGuardTests(unittest.TestCase):

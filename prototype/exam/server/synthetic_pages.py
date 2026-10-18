@@ -89,7 +89,7 @@ class _Canvas:
     def box(self, rect):
         self.draw["print"].rectangle(rect, outline=255, width=2)
 
-    def hand(self, xy, word, size=34, layer="pen", tilt=None):
+    def hand(self, xy, word, size=34, layer="pen", tilt=None, fonts=None):
         """One handwritten word: italic letters with per-letter jitter and a tilted baseline."""
         self.hand_words.append(word)
         tilt = self.rng.uniform(-7, 7) if tilt is None else tilt
@@ -99,7 +99,7 @@ class _Canvas:
         x = pad
         for char in word:
             letter_size = int(size * self.rng.uniform(0.85, 1.15))
-            font = _font(_HAND, letter_size)
+            font = _font(fonts or _HAND, letter_size)
             draw.text((x, size + self.rng.randint(-4, 4)), char, fill=255, font=font)
             x += int(draw.textlength(char, font=font) * self.rng.uniform(0.95, 1.2))
         patch = patch.rotate(tilt, resample=Image.Resampling.BICUBIC, expand=True)
@@ -260,7 +260,42 @@ def chinese_mcq(seed: int = 13) -> Page:
     return canvas.render("chinese-mcq", seed)
 
 
-ALL = [blue_ink_mcq, clean_blue_url, pencil_mcq, cloze_passage, chinese_mcq]
+_CHINESE_INK = [
+    ("小华", "和妈妈去公园玩。", ["昨天", "明天", "每天", "今天"], "昨天"),
+    ("弟弟", "地吃着苹果。", ["开心", "白云", "红色", "大声"], "开心"),
+    ("天", "了，我们回家吧。", ["黑", "白", "红", "绿"], "黑"),
+    ("这本书", "好看。", ["很", "太", "都", "也"], "很"),
+]
+
+
+def chinese_ink_mcq(seed: int = 17) -> Page:
+    """A Chinese fill-in page with blue answers in the blanks and brackets, and red marks."""
+    canvas = _Canvas(seed)
+    font = _font(_HAN, 34)
+    canvas.text((90, 70), "华文 练习 三", font=_font(_HAN, 40))
+    canvas.text((90, 140), "选出正确的答案，把号码写在括号里。", font=font)
+    y = 240
+    for number, (before, after, choices, answer) in enumerate(_CHINESE_INK, start=1):
+        canvas.text((90, y), f"{number}.", font=font)
+        canvas.text((140, y), before, font=font)
+        width = int(canvas.draw["print"].textlength(before, font=font))
+        blank_x = 140 + width + 12
+        canvas.blank(blank_x, y + 40, 140)
+        canvas.text((blank_x + 152, y), after, font=font)
+        canvas.text((1010, y), "（     ）", font=font)
+        for index, choice in enumerate(choices, start=1):
+            canvas.text((150 + (index - 1) * 230, y + 70), f"({index}) {choice}", font=font)
+        canvas.hand((blank_x + 20, y + 4), answer, size=34, fonts=_HAN)
+        canvas.hand((1068, y + 4), str(choices.index(answer) + 1), size=36, tilt=0)
+        if number % 2:
+            canvas.tick(1150, y + 40)
+        else:
+            canvas.cross(1150, y + 10)
+        y += 190
+    return canvas.render("chinese-ink-mcq", seed)
+
+
+ALL = [blue_ink_mcq, clean_blue_url, pencil_mcq, cloze_passage, chinese_mcq, chinese_ink_mcq]
 
 
 def main(out_dir: str) -> None:

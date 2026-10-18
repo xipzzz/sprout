@@ -214,15 +214,20 @@ _EDITING_RE = re.compile(r"\b(mistake|error|spelling|underlined|correct the)\b",
 def normalize_text(text: str) -> str:
     """Full-width punctuation to ASCII, circled numbers to (1), and no spaces between Han characters."""
     text = (text or "").replace("\r", "").translate(_FULL_WIDTH)
+    text = re.sub("(?<=[A-Za-z])[\u2460-\u2468]", lambda m: f" {ord(m.group(0)) - 0x2460 + 1}", text)
     text = re.sub("[\u2460-\u2468]", lambda m: f" ({ord(m.group(0)) - 0x2460 + 1}) ", text)
     text = re.sub(rf"(?<=[{_HAN}])[ \t]+(?=[{_HAN}。，！？、；：])", "", text)
-    return re.sub(r"(?m)^(\s*\d{1,2})、", r"\1.", text)
+    text = re.sub(rf"(?<=[。，！？、；：])[ \t]+(?=[{_HAN}])", "", text)
+    text = re.sub(rf"(?m)(?<=[。？！])[ \t]+\S{{1,2}}[ \t]*$", "", text)
+    return re.sub(rf"(?m)^(\s*\d{{1,2}})(?:、|，|,(?=\s*[{_HAN}]))", r"\1.", text)
 
 
 def normalize_markers(line: str) -> str:
     """Repair choice and question markers that OCR noise broke: '{3)', '(L)', '(2)-on', '\\ 1) nurse', ': 9.'."""
     text = re.sub(r"^\(\s*[lLI|]\s*\)\s*", "(1) ", line)
     text = re.sub(r"^\(([1-9])[MJlI|](?=\s)", r"(\1)", text)
+    text = re.sub(r"\(([1-9])\)\s*\1\)", r"(\1)", text)
+    text = re.sub(r"\((\d{1,2})\)[._]+(?=\s|$)", r"(\1)", text)
     text = re.sub(r"(?<=\s)\(\s*[lLI|]\s*\)(?=\s|$)", "(1)", text)
     text = re.sub(rf"(?:(?<=\s)|^){_OPEN}\s?([1-9])\s?{_CLOSE}", r"(\1)", text)
     text = re.sub(r"(\([1-9]\))[-–—~:=]+\s*", r"\1 ", text)
@@ -258,6 +263,7 @@ def strip_junk(line: str) -> str:
             continue
         break
     text = re.sub(rf"{_BLANK}\s+(?=[.,!?;:])", _BLANK, text)
+    text = re.sub(rf"(?<=[{_HAN}])\s+(?={_BLANK})|(?<={_BLANK})\s+(?=[{_HAN}。，])", "", text)
     return re.sub(r"\s{2,}", " ", text).strip()
 
 
@@ -626,6 +632,17 @@ def _inline_chain(lines: list[str]) -> list[tuple[int, int, int]]:
     return max(best, key=len) if best else []
 
 
+def _chain_is_prose(lines: list[str], chain: list[tuple[int, int, int]]) -> bool:
+    """Markers sit in running text (a passage), not in a row of short choices."""
+    joined, starts = "", []
+    for line in lines:
+        starts.append(len(joined))
+        joined += line + " "
+    positions = [starts[line] + offset for line, offset, _ in chain]
+    gaps = [len(re.findall(r"[A-Za-z]+|[\u3400-\u9fff]", joined[a:b])) - 1 for a, b in zip(positions, positions[1:])]
+    return bool(gaps) and sum(gaps) / len(gaps) >= 3
+
+
 def _is_cloze(lines: list[str], drafts: list[_Draft]) -> list[tuple[int, int, int]]:
     chain = _inline_chain(lines)
     if len(chain) < 3:
@@ -633,14 +650,7 @@ def _is_cloze(lines: list[str], drafts: list[_Draft]) -> list[tuple[int, int, in
     with_choices = sum(1 for draft in drafts if len(_split_body(draft.stem_parts)[1]) >= 2)
     blanks = sum(1 for line, offset, _ in chain if lines[line][offset:].split(")", 1)[1].lstrip().startswith(_BLANK))
     mid_line = sum(1 for line, offset, _ in chain if offset > 0)
-    joined, starts = "", []
-    for line in lines:
-        starts.append(len(joined))
-        joined += line + " "
-    positions = [starts[line] + offset for line, offset, _ in chain]
-    gaps = [len(re.findall(r"[A-Za-z]+|[\u3400-\u9fff]", joined[a:b])) - 1 for a, b in zip(positions, positions[1:])]
-    prose = sum(gaps) / len(gaps) >= 3
-    if not prose:
+    if not _chain_is_prose(lines, chain):
         return []
     if len(chain) >= 5 and with_choices <= len(chain) // 3:
         return chain
@@ -742,6 +752,8 @@ def parse_worksheet_text(text: str) -> ParsedSheet:
                 choice_changes.extend(changes)
         if len(choices) < 2:
             choices, choice_changes = [], []
+        elif sum(choice.islower() for choice in choices) >= len(choices) - 1:
+            choices = [c.lower() if c.isupper() and len(c) <= 4 and _known(c) else c for c in choices]
         questions.append(ParsedQuestion(draft.number, stem, choices, stem_changes, choice_changes, removed, set_aside))
     title = next(
         (
@@ -753,3 +765,27 @@ def parse_worksheet_text(text: str) -> ParsedSheet:
         "",
     )
     return ParsedSheet(title=title, questions=questions)
+
+
+_PRINTED_RE = re.compile(rf"^[^\w(]{{0,3}}(?:Q\s*)?(\d{{1,2}})(?:\s*[\.\)、]\s*|\s+)(?P<rest>[A-Za-z{_HAN}\"“].*)$")
+
+
+def printed_numbers(text: str) -> list[int]:
+    """Question numbers printed at the start of stem-like lines, or the inline (n) blanks of a passage.
+
+    A cross-check for the parser: it does not use the parser's backbone.
+    """
+    lines = [normalize_markers(line.strip()) for line in normalize_text(text).split("\n")]
+    lines = [line for line in lines if line and not is_footer(line)]
+    found = set()
+    for line in lines:
+        match = _PRINTED_RE.match(line)
+        if not match:
+            continue
+        rest = match.group("rest")
+        if len(re.findall(r"[A-Za-z']+|\d+", rest)) >= 3 or len(_HAN_RE.findall(rest)) >= 5:
+            found.add(int(match.group(1)))
+    chain = _inline_chain(lines)
+    if len(chain) >= 3 and len(chain) > len(found) and _chain_is_prose(lines, chain):
+        return sorted({number for _, _, number in chain})
+    return sorted(found)
