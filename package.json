@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "exam": "bash scripts/exam-dev.sh",
+    "test:exam": "bash scripts/exam-test.sh"
   },
   "dependencies": {
     "html2canvas": "^1.4.1",

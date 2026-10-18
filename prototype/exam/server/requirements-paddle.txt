@@ -1,0 +1,7 @@
+# Optional local OCR: PaddleOCR PP-OCRv5 on the CPU. No account, no key.
+# Needs Python 3.11 to 3.13 (paddlepaddle 3.3.1 has no wheel for 3.14 yet).
+# Wheels exist for macOS arm64 (Apple Silicon), Linux x86_64 and Windows.
+# Models (about 13 MB) download once into ~/.paddlex on the first Paddle read.
+-r requirements.txt
+paddlepaddle==3.3.1
+paddleocr==3.7.0

@@ -11,5 +11,8 @@ export default defineConfig(({ command }) => ({
     host: true,        // listen on all network interfaces, so the phone can reach it
     port: 5173,
     strictPort: true,  // fail loudly instead of silently picking another port
+    proxy: {
+      '/api': { target: 'http://127.0.0.1:8787', changeOrigin: true },
+    },
   },
 }))

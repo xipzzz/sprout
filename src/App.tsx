@@ -20,6 +20,7 @@ import SettingsScreen from './screens/SettingsScreen';
 import OnboardingSplash from './screens/OnboardingSplash';
 import ComebackScreen from './screens/ComebackScreen';
 import ScanHomeworkScreen from './screens/ScanHomeworkScreen';
+import ExamPrototypeScreen from './screens/ExamPrototypeScreen';
 import type { WordPickQuestion } from './lib/homeworkParse';
 import Modal from './components/Modal';
 import Pip from './components/Pip';
@@ -28,6 +29,13 @@ import { recordPractice } from './state/practice';
 import { markTodayDone } from './state/today';
 import { firstUnlockedUnit, getLesson, hud, sectionCompletedByUnit } from './data/course';
 import { playSproutFeedback } from './utils/feedback';
+
+function isExamPrototype() {
+  if (typeof window === 'undefined') return false;
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('exam') === '1') return true;
+  return window.location.pathname.replace(/\/+$/, '').endsWith('/exam');
+}
 
 export default function App() {
   const [tab, setTab] = useState<TabKey>('learn');
@@ -111,6 +119,14 @@ export default function App() {
       setShowDailyGoal(true);
       setDailyGoalShown(true);
     }
+  }
+
+  if (isExamPrototype()) {
+    return (
+      <div className="app">
+        <ExamPrototypeScreen onExit={() => window.location.assign(import.meta.env.BASE_URL)} />
+      </div>
+    );
   }
 
   if (!onboarded) {

@@ -21,6 +21,95 @@ npx tsc -b         # type-check
 The dev server listens on all interfaces, so a phone on the same network (or Tailscale)
 can open it too — handy for on-device review.
 
+## Exam scan prototype
+
+A separate route reads **one worksheet photo** into clean questions for a parent, then
+practice for the child. The existing Scan homework button is unchanged.
+
+```bash
+npm install          # once
+npm run exam         # Vite on :5173 and the local saver on :8787
+```
+
+Open http://localhost:5173/?exam=1 and tap **Try the sample photo**. That path needs no API key.
+Add `?exam=1&demo=1` to open the sample immediately.
+
+A real photo is turned upright from its camera EXIF orientation, then straightened, and its
+blue and red ink is lifted. Free Tesseract.js in
+the browser (or a local `tesseract` binary if one is installed) then reads that cleaned page,
+never the raw photo. No Zhipu key. Guessed text is flagged on the parent screen.
+The text is split into questions by `prototype/exam/server/worksheet_text.py`. It reads
+numbers like `1.`, `1)`, `1` or `Q1`, choices like `A.`, `a)`, `(1)` or `1)`, a title line,
+and blanks, and it tolerates OCR noise such as `{3)`, `(2)-on`, `k 3`, `\ 1)` or `: 9.`.
+Passages with inline `(1)` blanks (cloze, editing) become one question per blank, with that
+blank's sentence as the stem. Footer and URL lines are dropped. Words Tesseract ran together
+are re-split from a small wordlist and flagged. The parent question also keeps choice
+labels, question type, working steps, right or wrong, the teacher's comment, marks, and
+sub-questions when the reader finds them; the child still gets only id, stem and choices.
+
+Pick **Chinese** as the subject, or let an English read that comes out garbled retry once,
+and the page is read with Tesseract `chi_sim` (open-source language data from the
+tesseract.js CDN, no sign-in). If that finds no Chinese either, the page is reported as not
+supported. Pencil is not lifted yet; a page with likely pencil marks gets a parent-only flag.
+`ZHIPU_API_KEY` is optional, and only turns on a Zhipu GLM-4.6V vision read. Put it in
+`.env` (see `.env.example`, gitignored) or, on a Mac, in Keychain:
+
+```bash
+security add-generic-password -s sprout -a ZHIPU_API_KEY -w
+```
+
+### Optional: PaddleOCR on this computer
+
+PaddleOCR (PP-OCRv5 mobile, CPU) reads blanks and Chinese far better than Tesseract. It
+is optional, so the default install stays light. No account and no key; its public models
+(about 13 MB) download once into `~/.paddlex` on the first Paddle read. It needs Python
+3.11 to 3.13 (paddlepaddle 3.3.1 has no 3.14 wheel yet) and has wheels for macOS arm64.
+
+```bash
+prototype/exam/.venv/bin/pip install -r prototype/exam/server/requirements-paddle.txt
+SPROUT_OCR=paddle npm run exam      # every photo goes through Paddle
+```
+
+Or keep the default (`SPROUT_OCR=tesseract`) and open `?exam=1&ocr=paddle` to choose Paddle
+for one session. Paddle reads the same straightened, ink-lifted page, and its text goes
+through the same parser, cleanup and parent flags. One model reads both English and
+Chinese, so there is no language retry. If Paddle is not installed, the app says so and
+names the install command.
+
+### Batch run over a folder of photos
+
+```bash
+prototype/exam/.venv/bin/python -m prototype.exam.server.batch --ocr paddle ~/pages --out ~/sprout-results/paddle.csv
+prototype/exam/.venv/bin/python -m prototype.exam.server.batch --ocr tesseract ~/pages --out ~/sprout-results/tesseract.csv
+```
+
+One CSV row per photo: status, language, layout, question count, printed numbers vs
+detected numbers (`split_check`), questions with parsed choices, page flags, the child
+payload guard (sentinel answers must not reach the child shape), and prepare/OCR/total
+seconds. It saves no notes and refuses an `--out` path inside the repo. The Tesseract run
+uses a local `tesseract` binary if there is one, else Tesseract.js through Node.
+
+The child screen receives a different data shape with no handwritten answer, teacher's mark, or correct answer.
+
+The saver writes one Obsidian note per scan, named like `2026-10-17-english.md`, to
+`SPROUT_VAULT_DIR` (default `/Users/ml/Documents/10_Obsidian/Xip/Sprout/`). If that folder
+cannot be created, the note falls back to `./sprout-notes/` (gitignored). Set
+`SPROUT_SAVE_DIR` to also keep a copy in another local folder.
+
+```bash
+npm run test:exam    # child-view leak test, saver tests, real-photo parser test, synthetic pages,
+                     # OCR switch and batch CLI (real Paddle reads run only when it is installed)
+```
+
+Real P1-P4 pages stay private. `prototype/exam/server/synthetic_pages.py` draws synthetic
+pages that reproduce their patterns (blue answers over print, a blue printed URL, pencil, a
+cloze passage, a Chinese page), with ground-truth layers for the ink-lift tests. Their
+Tesseract.js text lives in `prototype/exam/fixtures/synthetic/`; regenerate one with
+`node prototype/exam/ocr_fixture.mjs IMAGE [eng|chi_sim]`.
+
+License: [prototype/exam/LICENSE-NOTE.md](prototype/exam/LICENSE-NOTE.md). Goppai/exam was
+not copied in; the note says why.
+
 ## How it's organized
 
 ```
