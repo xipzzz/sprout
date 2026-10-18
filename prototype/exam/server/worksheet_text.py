@@ -418,7 +418,7 @@ def _sentence_line(line: str) -> bool:
     return len(line.split()) >= 4 and line[:1].isupper() and line.rstrip().endswith((".", "!", "?"))
 
 
-def _split_body(parts: list[str]) -> tuple[list[str], list[str], list[str]]:
+def _split_body(parts: list[str], labels: list[str] | None = None) -> tuple[list[str], list[str], list[str]]:
     """Split a question's lines into stem text, choices, and trailing lines that belong to neither."""
     hits = _hits(parts)
     chain = _best_chain(hits, {"num", "letter"})
@@ -459,6 +459,8 @@ def _split_body(parts: list[str]) -> tuple[list[str], list[str], list[str]]:
                 pieces.append(parts[nxt.part][: nxt.start])
             value = " ".join(pieces)
         choices.append(value)
+        if labels is not None:
+            labels.append(str(hit.key) if hit.family == "num" else chr(ord("A") + hit.key - 1))
     return [piece for piece in stem if piece.strip()], choices, trailing
 
 
@@ -477,6 +479,7 @@ class ParsedQuestion:
     choice_changes: list[str]
     removed: list[str] = field(default_factory=list)
     set_aside: list[str] = field(default_factory=list)
+    choice_letters: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -729,20 +732,23 @@ def parse_worksheet_text(text: str) -> ParsedSheet:
 
     questions = []
     for draft in drafts:
-        stem_parts, raw_choices, set_aside = _split_body(draft.stem_parts)
+        raw_letters: list[str] = []
+        stem_parts, raw_choices, set_aside = _split_body(draft.stem_parts, raw_letters)
         joined = re.sub(r"\s{2,}", " ", " ".join(stem_parts)).strip()
         stem, stem_changes = resplit_glued(joined, names)
         stem, removed = clean_stem(stem)
         choices: list[str] = []
         choice_changes: list[str] = []
-        for value in raw_choices:
+        choice_letters: list[str] = []
+        for letter, value in zip(raw_letters, raw_choices):
             cleaned, changes = resplit_glued(clean_choice(value), names)
             if cleaned:
                 choices.append(cleaned)
+                choice_letters.append(letter)
                 choice_changes.extend(changes)
         if len(choices) < 2:
-            choices, choice_changes = [], []
-        questions.append(ParsedQuestion(draft.number, stem, choices, stem_changes, choice_changes, removed, set_aside))
+            choices, choice_changes, choice_letters = [], [], []
+        questions.append(ParsedQuestion(draft.number, stem, choices, stem_changes, choice_changes, removed, set_aside, choice_letters))
     title = next(
         (
             line

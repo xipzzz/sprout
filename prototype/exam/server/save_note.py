@@ -6,6 +6,7 @@ Also writes SPROUT_SAVE_DIR when that folder is different.
 
 from __future__ import annotations
 
+import json
 import os
 import re
 from datetime import date, datetime
@@ -130,6 +131,11 @@ def render_markdown(scan: dict, when: date | None = None) -> str:
                 "",
             ]
         )
+        details = {key: question[key] for key in (
+            "choice_letters", "working", "is_correct", "teacher_comment", "marks", "question_type", "sub_questions"
+        ) if key in question}
+        if details:
+            parent.extend(["Parsed details (parent only):", "", "```json", json.dumps(details, ensure_ascii=False, indent=2), "```", ""])
         if question.get("stem_edited"):
             parent.extend(["Stem edited by parent before practice.", ""])
         explanation = question.get("explanation") or "an explanation appears once an answer is picked."

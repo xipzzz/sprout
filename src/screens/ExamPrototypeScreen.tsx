@@ -60,6 +60,39 @@ function FlagTape({ flags }: { flags: ReconstructionFlag[] }) {
   );
 }
 
+function ParentDetails({ question }: { question: ParentQuestion }) {
+  const details = {
+    'Choice labels': question.choice_letters?.join(', '),
+    'Question type': question.question_type,
+    'Teacher comment': question.teacher_comment,
+    'Teacher result': question.is_correct == null ? '' : question.is_correct ? 'Correct' : 'Incorrect',
+    'Working': question.working?.map((step) => [step.expression, ...step.steps, step.result].filter(Boolean).join(' → ')).join('\n'),
+    'Selected labels': question.marks?.selected.join(', '),
+    'Crossed out': question.marks?.crossed ? 'Yes' : '',
+    'Other marks': question.marks?.note,
+    'Teacher symbols': question.marks?.symbols.join(' '),
+    'Score': question.marks?.score,
+  };
+  const entries = Object.entries(details).filter(([, value]) => value);
+  if (!entries.length && !question.sub_questions?.length) return null;
+  return (
+    <details className="exam-proto__parent-details">
+      <summary>More from the scan</summary>
+      <dl className="exam-proto__facts">
+        {entries.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}
+      </dl>
+      {question.sub_questions?.map((part) => (
+        <section key={part.id}>
+          <h3>Part {part.id}: {part.stem}</h3>
+          <p>Handwritten answer: {part.student_answer || 'Blank'}</p>
+          <p>Teacher’s mark: {part.teacher_mark || 'None'}</p>
+          <ParentDetails question={part} />
+        </section>
+      ))}
+    </details>
+  );
+}
+
 function StemEditor({
   question,
   original,
@@ -528,6 +561,7 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
                           </dd>
                         </div>
                       </dl>
+                      <ParentDetails question={question} />
                       <p className="exam-proto__explain">
                         <span className="exam-proto__explain-label">For you</span>
                         {explained?.explanation || 'Pick the right answer and a short explanation appears here.'}

@@ -1,7 +1,7 @@
 /* Build the child practice payload from a parent scan.
    Answers stay in the parent object. This function is the only bridge. */
 
-import type { ChildView, ParentScan } from './types.ts';
+import type { ChildView, ParentQuestion, ParentScan } from './types.ts';
 
 const FORBIDDEN_KEYS = new Set([
   'student_answer',
@@ -18,6 +18,7 @@ const FORBIDDEN_KEYS = new Set([
   'review',
   'stem_edited',
   'page_flags',
+  'choice_letters', 'working', 'is_correct', 'teacher_comment', 'marks', 'question_type', 'sub_questions',
 ]);
 
 export function toChildView(scan: ParentScan): ChildView {
@@ -41,6 +42,10 @@ function walkKeys(value: unknown, found: string[]) {
     if (FORBIDDEN_KEYS.has(key)) found.push(key);
     walkKeys(inner, found);
   }
+}
+
+function parentQuestions(questions: ParentQuestion[]): ParentQuestion[] {
+  return questions.flatMap((question) => [question, ...parentQuestions(question.sub_questions ?? [])]);
 }
 
 function containsToken(text: string, secret: string): boolean {
@@ -68,12 +73,18 @@ export function assertChildViewSafe(parent: ParentScan, child: ChildView): void 
       visible.push({ text: choice, printedChoice: original.choices.includes(choice) });
     }
   }
-  for (const question of parent.questions) {
+  for (const question of parentQuestions(parent.questions)) {
     const secrets: [string, string, boolean][] = [
       ['explanation', question.explanation, false],
       ['teacher mark', question.teacher_mark, false],
       ['handwritten answer', question.student_answer, true],
       ['correct answer', question.correct_answer, true],
+      ['teacher comment', question.teacher_comment ?? '', false],
+      ['mark note', question.marks?.note ?? '', false],
+      ['score', question.marks?.score ?? '', false],
+      ...(question.working ?? []).flatMap((step): [string, string, boolean][] =>
+        [step.expression, step.result, ...step.steps].map((text) => ['working', text, false])),
+      ...(question.marks?.symbols ?? []).map((text): [string, string, boolean] => ['teacher symbol', text, false]),
       ...question.flags.map((flag): [string, string, boolean] => ['reconstruction note', flag.note, false]),
     ];
     for (const [label, secret, allowChoice] of secrets) {

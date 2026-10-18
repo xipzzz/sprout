@@ -75,6 +75,42 @@ class SchemaTests(unittest.TestCase):
         with self.assertRaises(AssertionError):
             assert_child_view_safe(scan, to_child_view(scan))
 
+    def test_keeps_reader_details_for_parent_and_saved_note_only(self):
+        raw = {
+            "id": "4", "stem": "Pick a flower.", "options": {"B": "rose", "D": "lily"},
+            "student_answer": {"final": "D", "steps": [{"expression": "private-work", "result": "private-result", "steps": ["private-step"]}]},
+            "student_marks": {"checked_options": ["D"], "crossed": True, "other_marks": "private-mark"},
+            "teacher_feedback": {"is_correct": False, "score": "private-score", "comment": "private-comment", "symbols": ["×"]},
+            "type": "single choice",
+            "sub_questions": [{"id": "4a", "stem": "Name it.", "student_answer": "private-sub-answer"}],
+        }
+        question = map_question(raw, 4)
+        self.assertEqual(question["choice_letters"], ["B", "D"])
+        self.assertEqual(question["working"], raw["student_answer"]["steps"])
+        self.assertIs(question["is_correct"], False)
+        self.assertEqual(question["teacher_comment"], "private-comment")
+        self.assertEqual(question["marks"], {"selected": ["D"], "crossed": True, "note": "private-mark", "score": "private-score", "symbols": ["×"]})
+        self.assertEqual(question["question_type"], "single choice")
+        self.assertEqual(question["sub_questions"][0]["student_answer"], "private-sub-answer")
+        self.assertEqual(map_question(question, 4), question)
+        scan = {"subject": "english", "questions": [question]}
+        child = to_child_view(scan)
+        assert_child_view_safe(scan, child)
+        self.assertEqual(set(child["questions"][0]), {"id", "stem", "choices"})
+        parent, practice = render_markdown(scan).split("## Practice prompts")
+        for secret in ("private-work", "private-result", "private-step", "private-mark", "private-score", "private-comment", "private-sub-answer"):
+            self.assertIn(secret, parent)
+            self.assertNotIn(secret, practice)
+            leaked = to_child_view(scan)
+            leaked["questions"][0]["stem"] = secret
+            with self.subTest(secret=secret), self.assertRaises(AssertionError):
+                assert_child_view_safe(scan, leaked)
+
+    def test_ocr_preserves_choice_labels(self):
+        question = questions_from_ocr("1. Pick a flower.\nA) rose\nC) lily\n")[0]
+        self.assertEqual(question["choice_letters"], ["A", "C"])
+        self.assertEqual(question["choices"], ["rose", "lily"])
+
     def test_model_fence_and_ocr_flags(self):
         data = parse_model_payload('```json\n{"questions":[{"stem":"Hi?","choices":["a","b"]}]}\n```')
         self.assertEqual(data["questions"][0]["stem"], "Hi?")

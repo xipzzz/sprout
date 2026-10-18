@@ -38,6 +38,13 @@ Return only JSON, no markdown, with this shape:
       "id": "1",
       "stem": "printed question with handwriting left out of the sentence",
       "choices": ["printed choice"],
+      "choice_letters": ["printed label for that choice"],
+      "working": [{"expression": "written calculation", "result": "written result", "steps": []}],
+      "is_correct": null,
+      "teacher_comment": "visible teacher note, or empty",
+      "marks": {"selected": [], "crossed": false, "note": "", "symbols": [], "score": ""},
+      "question_type": "format of this question, or empty",
+      "sub_questions": [],
       "student_answer": "what the child wrote, or empty",
       "teacher_mark": "the teacher's check, cross, or score, or empty",
       "correct_answer": "the answer to use for practice",
@@ -54,7 +61,8 @@ Rules:
 - If you guess text that was hidden, smudged, or covered, add a flags entry for that field.
 - Use kind reconstructed for guessed page text, and kind generated for the explanation.
 - Always flag the explanation as generated.
-- If you are unsure, still give your best practice answer and flag correct_answer.
+- Leave correct_answer empty when it cannot be checked. Never invent a teacher comment or a score.
+- Keep visible working and sub-questions in the parent fields. Use the same question shape for each sub-question.
 """
 
 
@@ -176,6 +184,7 @@ def read_sheet(text: str, ocr_lang: str = "eng") -> tuple[ParsedSheet, list[dict
             "id": str(parsed.number),
             "stem": stem or "Question from the photo",
             "choices": choices,
+            "choice_letters": parsed.choice_letters,
             "student_answer": "",
             "teacher_mark": "",
             "correct_answer": "",

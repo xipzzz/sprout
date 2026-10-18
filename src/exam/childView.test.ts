@@ -90,3 +90,20 @@ const crossQuestion = { ...numeric, questions: [
 let rejectedCrossQuestion = false;
 try { assertChildViewSafe(crossQuestion, toChildView(crossQuestion)); } catch { rejectedCrossQuestion = true; }
 if (!rejectedCrossQuestion) throw new Error('Another question’s choice hid an answer in the stem');
+
+
+const detailed = { ...scan, questions: [{ ...scan.questions[0],
+  choice_letters: ['B', 'D'],
+  working: [{ expression: 'private-work', result: 'private-result', steps: ['private-step'] }],
+  is_correct: false, teacher_comment: 'private-comment', question_type: 'single choice',
+  marks: { selected: ['D'], crossed: true, note: 'private-mark', score: 'private-score', symbols: ['×'] },
+  sub_questions: [{ ...scan.questions[2], id: '1a', student_answer: 'private-sub-answer' }],
+}] } satisfies ParentScan;
+const detailedChild = toChildView(detailed);
+assertChildViewSafe(detailed, detailedChild);
+if (Object.keys(detailedChild.questions[0]).sort().join(',') !== 'choices,id,stem') throw new Error('Parent details reached child');
+for (const secret of ['private-work', 'private-result', 'private-step', 'private-comment', 'private-mark', 'private-score', 'private-sub-answer']) {
+  let rejected = false;
+  try { assertChildViewSafe(detailed, { ...detailedChild, questions: [{ ...detailedChild.questions[0], stem: secret }] }); } catch { rejected = true; }
+  if (!rejected) throw new Error(`Parent detail was allowed in child text: ${secret}`);
+}

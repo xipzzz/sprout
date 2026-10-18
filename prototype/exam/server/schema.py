@@ -20,6 +20,7 @@ FORBIDDEN_CHILD_KEYS = {
     "review",
     "stem_edited",
     "page_flags",
+    "choice_letters", "working", "is_correct", "teacher_comment", "marks", "question_type", "sub_questions",
 }
 
 PRACTICE_REVIEWS = {"picked", "read_aloud"}
@@ -101,6 +102,50 @@ def _flags(raw: dict) -> list[dict]:
     return flags
 
 
+def _text_list(value: Any) -> list[str]:
+    values = value if isinstance(value, list) else [value]
+    return [text for item in values if (text := _as_text(item))]
+
+
+def _parent_details(raw: dict) -> dict:
+    answer = raw.get("student_answer")
+    feedback = raw.get("teacher_feedback")
+    feedback = feedback if isinstance(feedback, dict) else {}
+    marks = raw.get("marks") or raw.get("student_marks") or {}
+    marks = marks if isinstance(marks, dict) else {}
+    steps = raw.get("working", answer.get("steps", []) if isinstance(answer, dict) else [])
+    working = []
+    for step in steps if isinstance(steps, list) else [steps]:
+        if isinstance(step, dict):
+            working.append({"expression": _as_text(step.get("expression")),
+                            "result": _as_text(step.get("result")), "steps": _text_list(step.get("steps"))})
+        elif _as_text(step):
+            working.append({"expression": _as_text(step), "result": "", "steps": []})
+    options = raw.get("options")
+    if isinstance(options, dict) and not raw.get("choices"):
+        letters = [str(key) for key, value in options.items() if _as_text(value)]
+    else:
+        letters = _text_list(raw.get("choice_letters"))
+    correct = raw.get("is_correct", feedback.get("is_correct"))
+    children = raw.get("sub_questions") or []
+    return {
+        "choice_letters": letters,
+        "working": working,
+        "is_correct": correct if isinstance(correct, bool) else None,
+        "teacher_comment": _as_text(raw.get("teacher_comment", feedback.get("comment"))),
+        "marks": {
+            "selected": _text_list(marks.get("selected", marks.get("checked_options"))),
+            "crossed": marks.get("crossed") is True,
+            "note": _as_text(marks.get("note", marks.get("other_marks"))),
+            "symbols": _text_list(marks.get("symbols", feedback.get("symbols"))),
+            "score": _as_text(marks.get("score", feedback.get("score"))),
+        },
+        "question_type": _as_text(raw.get("question_type", raw.get("type"))),
+        "sub_questions": [map_question(item, index + 1) for index, item in enumerate(children) if isinstance(item, dict)]
+                         if isinstance(children, list) else [],
+    }
+
+
 def map_question(raw: dict, index: int) -> dict:
     explanation = _as_text(raw.get("explanation"))
     flags = _flags(raw)
@@ -121,6 +166,7 @@ def map_question(raw: dict, index: int) -> dict:
         "correct_answer": _as_text(raw.get("correct_answer") or raw.get("answer")),
         "explanation": explanation,
         "flags": flags,
+        **_parent_details(raw),
     }
 
 
@@ -163,6 +209,12 @@ def _walk_keys(value: Any, found: list[str]) -> None:
             _walk_keys(inner, found)
 
 
+def _parent_questions(questions: list[dict]):
+    for question in questions:
+        yield question
+        yield from _parent_questions(question.get("sub_questions") or [])
+
+
 def assert_child_view_safe(parent: dict, child: dict) -> None:
     leaked: list[str] = []
     _walk_keys(child, leaked)
@@ -181,13 +233,19 @@ def assert_child_view_safe(parent: dict, child: dict) -> None:
             raise AssertionError(f"Unknown child question: {question['id']}")
         visible.append((question["stem"], False))
         visible.extend((choice, choice in original.get("choices", [])) for choice in question["choices"])
-    for question in parent.get("questions") or []:
+    for question in _parent_questions(parent.get("questions") or []):
         secrets = [
             ("explanation", question.get("explanation"), False),
             ("teacher mark", question.get("teacher_mark"), False),
             ("handwritten answer", question.get("student_answer"), True),
             ("correct answer", question.get("correct_answer"), True),
         ]
+        secrets.append(("teacher comment", question.get("teacher_comment"), False))
+        marks = question.get("marks") or {}
+        secrets.extend((label, marks.get(key), False) for label, key in (("mark note", "note"), ("score", "score")))
+        secrets.extend(("teacher symbol", symbol, False) for symbol in marks.get("symbols") or [])
+        for step in question.get("working") or []:
+            secrets.extend(("working", text, False) for text in [step["expression"], step["result"], *step["steps"]])
         secrets.extend(("flag note", flag.get("note"), False) for flag in question.get("flags") or [])
         for label, secret, allow_choice in secrets:
             if not secret:

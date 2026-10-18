@@ -18,6 +18,13 @@ export type ParentQuestion = {
   correct_answer: string;
   explanation: string;
   flags: ReconstructionFlag[];
+  choice_letters?: string[];
+  working?: { expression: string; result: string; steps: string[] }[];
+  is_correct?: boolean | null;
+  teacher_comment?: string;
+  marks?: { selected: string[]; crossed: boolean; note: string; symbols: string[]; score: string };
+  question_type?: string;
+  sub_questions?: ParentQuestion[];
   review?: ReviewStatus;
   stem_edited?: boolean;
 };
