@@ -9,37 +9,39 @@ from __future__ import annotations
 import io
 
 import numpy as np
-from PIL import Image, ImageOps
+from PIL import Image
 from scipy import ndimage
 
-EXIF_ORIENTATION = 0x0112
-# How the stored pixels were turned to stand the page upright, by EXIF orientation value.
-UPRIGHT_TURN = {
-    2: "mirrored",
-    3: "turned 180°",
-    4: "flipped",
-    5: "turned and mirrored",
-    6: "turned 90° clockwise",
-    7: "turned and mirrored",
-    8: "turned 90° anticlockwise",
+ORIENTATION_TAG = 274
+T = Image.Transpose
+# EXIF orientation value -> (what the parent is told, the transpose that stands the page up).
+ORIENTATIONS = {
+    2: ("mirrored", T.FLIP_LEFT_RIGHT),
+    3: ("turned 180°", T.ROTATE_180),
+    4: ("flipped", T.FLIP_TOP_BOTTOM),
+    5: ("turned and mirrored", T.TRANSPOSE),
+    6: ("turned 90° clockwise", T.ROTATE_270),
+    7: ("turned and mirrored", T.TRANSVERSE),
+    8: ("turned 90° anticlockwise", T.ROTATE_90),
 }
+UPRIGHT_TURN = {value: label for value, (label, _) in ORIENTATIONS.items()}
 
 
 def load_rgb(image_bytes: bytes, max_edge: int = 1600) -> tuple[Image.Image, int]:
     """Decode a photo upright: phones store sideways pixels plus an EXIF orientation tag.
 
-    Returns the image and the EXIF orientation it had (1 when none).
+    Returns the image and the EXIF orientation it had (1 when none or unknown).
     """
-    image = Image.open(io.BytesIO(image_bytes))
-    orientation = int(image.getexif().get(EXIF_ORIENTATION, 1) or 1)
-    image = ImageOps.exif_transpose(image).convert("RGB")
-    scale = min(1.0, max_edge / max(image.size))
-    if scale < 1:
-        image = image.resize(
-            (max(1, int(image.width * scale)), max(1, int(image.height * scale))),
-            Image.Resampling.LANCZOS,
-        )
-    return image, orientation if orientation in UPRIGHT_TURN else 1
+    with Image.open(io.BytesIO(image_bytes)) as photo:
+        tag = photo.getexif().get(ORIENTATION_TAG)
+        page = photo.convert("RGB")
+    orientation = tag if tag in ORIENTATIONS else 1
+    if orientation != 1:
+        page = page.transpose(ORIENTATIONS[orientation][1])
+    ratio = max_edge / max(page.size)
+    if ratio < 1:
+        page = page.resize(tuple(max(1, int(side * ratio)) for side in page.size), Image.Resampling.LANCZOS)
+    return page, orientation
 
 
 def _page_corners(rgb: np.ndarray) -> np.ndarray | None:
