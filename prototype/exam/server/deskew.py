@@ -190,10 +190,10 @@ def printed_rows(mask: np.ndarray) -> np.ndarray:
     for index, box in enumerate(boxes, start=1):
         if box is None:
             continue
-        height = box[0].stop - box[0].start
-        width = box[1].stop - box[1].start
-        if 6 <= height <= 80 and width <= 3 * height:
-            glyphs.append((box[0].start, box[0].stop, box[1].start, box[1].stop, index))
+        for top, bottom, left, right in _split_touching(labels[box] == index, box):
+            height = bottom - top
+            if 6 <= height <= 80 and right - left <= 3 * height:
+                glyphs.append((top, bottom, left, right, index))
     glyphs.sort(key=lambda glyph: (glyph[0] + glyph[1]) / 2)
     rows: list[list[tuple]] = []
     for glyph in glyphs:
@@ -224,6 +224,29 @@ def printed_rows(mask: np.ndarray) -> np.ndarray:
             for glyph in run:
                 keep |= labels == glyph[4]
     return keep
+
+
+def _split_touching(blob: np.ndarray, box: tuple) -> list[tuple[int, int, int, int]]:
+    """Boxes for the letters inside one component. Printed letters that touch after blur
+    or JPEG (like "www") join at thin columns, so cut a wide blob at those low points."""
+    top, left = box[0].start, box[1].start
+    height, width = blob.shape
+    if width <= 1.5 * height:
+        return [(top, top + height, left, left + width)]
+    columns = blob.sum(axis=0)
+    thin = max(2.0, 0.45 * float(np.median(columns[columns > 0])))
+    cuts = [0]
+    for x in range(1, width - 1):
+        low = columns[x] <= thin and columns[x] <= columns[x - 1] and columns[x] <= columns[x + 1]
+        if low and x - cuts[-1] >= 0.3 * height:
+            cuts.append(x)
+    cuts.append(width)
+    parts = []
+    for start, stop in zip(cuts, cuts[1:]):
+        rows = np.where(blob[:, start:stop].any(axis=1))[0]
+        if rows.size:
+            parts.append((top + int(rows[0]), top + int(rows[-1]) + 1, left + start, left + stop))
+    return parts
 
 
 def _horizontal_runs(row: list[tuple]) -> list[list[tuple]]:
