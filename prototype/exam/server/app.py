@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from extract import extract_scan, vision_api_key
+from notebook_note import save_notebook, save_review
 from save_note import save_scan
 import os
 
@@ -59,3 +60,13 @@ def save_api(payload: dict = Body(...)):
     replace = payload.get("replace") if isinstance(payload.get("replace"), list) else []
     paths = save_scan(scan, replace)
     return {"ok": True, "paths": paths["paths"], "skipped": paths["skipped"]}
+
+
+@app.post("/api/notebook")
+def notebook_api(payload: dict = Body(...)):
+    return {"ok": True, **save_notebook(payload)}
+
+
+@app.post("/api/review")
+def review_api(payload: dict = Body(...)):
+    return {"ok": True, **save_review(payload)}
