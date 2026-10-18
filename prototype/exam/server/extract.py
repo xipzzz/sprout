@@ -207,7 +207,7 @@ def _engine_text(rgb, lang: str, engine: str) -> str:
     return paddle_text(rgb, lang) if engine == "paddle" else _tesseract_text(rgb, lang)
 
 
-def page_flags(pencil: dict, layout: str, ocr_lang: str) -> list[dict]:
+def page_flags(pencil: dict, layout: str, ocr_lang: str, engine: str = "tesseract") -> list[dict]:
     flags = []
     if pencil.get("likely"):
         flags.append(
@@ -224,7 +224,8 @@ def page_flags(pencil: dict, layout: str, ocr_lang: str) -> list[dict]:
     if layout == "editing":
         flags.append({"kind": "editing", "note": "Editing passage. Each numbered word became its own question."})
     if ocr_lang == "chi_sim":
-        flags.append({"kind": "chinese", "note": "Chinese page, read with Tesseract chi_sim. Check characters closely."})
+        reader = "local PaddleOCR (ch)" if engine == "paddle" else "Tesseract chi_sim"
+        flags.append({"kind": "chinese", "note": f"Chinese page, read with {reader}. Check characters closely."})
     return flags
 
 
@@ -359,7 +360,7 @@ def _tesseract_scan(
         ),
         "questions": questions,
         "ocr_lang": lang,
-        "page_flags": page_flags(page["pencil"], sheet.layout, lang),
+        "page_flags": page_flags(page["pencil"], sheet.layout, lang, engine),
     }
     return {"ok": True, "scan": scan}
 
