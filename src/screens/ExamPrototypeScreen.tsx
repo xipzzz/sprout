@@ -504,12 +504,14 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
                 {flagRowList.map((row) => (
                   <li key={row.id} className="exam-proto__flag-row">
                     <span className="exam-proto__flag-row-id">Q{row.id}</span>
-                    {row.chips.map((chip) => (
-                      <span key={chip.kind} className="exam-proto__flag-chip">
-                        {chip.label}
-                        <span className="exam-proto__flag-chip-fields"> · {chip.fields.join(', ')}</span>
-                      </span>
-                    ))}
+                    <span className="exam-proto__flag-row-chips">
+                      {row.chips.map((chip) => (
+                        <span key={chip.kind} className="exam-proto__flag-chip">
+                          {chip.label}
+                          <span className="exam-proto__flag-chip-fields"> · {chip.fields.join(', ')}</span>
+                        </span>
+                      ))}
+                    </span>
                   </li>
                 ))}
               </ul>

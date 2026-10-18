@@ -2542,13 +2542,16 @@ body.calm-motion *, body.calm-motion *::before, body.calm-motion *::after { anim
   list-style: none;
 }
 .exam-proto__flag-row {
+  display: grid;
+  grid-template-columns: 2.2em 1fr;
+  align-items: baseline;
+}
+.exam-proto__flag-row-chips {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
   gap: 6px;
 }
 .exam-proto__flag-row-id {
-  min-width: 2.2em;
   font-size: 0.72rem;
   font-weight: 800;
   color: var(--ink-muted);
