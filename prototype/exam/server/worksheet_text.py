@@ -424,8 +424,12 @@ def _sentence_line(line: str) -> bool:
     return len(line.split()) >= 4 and line[:1].isupper() and line.rstrip().endswith((".", "!", "?"))
 
 
-def _split_body(parts: list[str]) -> tuple[list[str], list[str], list[str]]:
-    """Split a question's lines into stem text, choices, and trailing lines that belong to neither."""
+def _label(hit: _Hit) -> str:
+    return str(hit.key) if hit.family == "num" else chr(ord("A") + hit.key - 1)
+
+
+def _split_body(parts: list[str]) -> tuple[list[str], list[str], list[str], list[str]]:
+    """Split a question's lines into stem text, choices, trailing lines that belong to neither, and choice labels."""
     hits = _hits(parts)
     chain = _best_chain(hits, {"num", "letter"})
     if len(chain) < 2:
@@ -435,7 +439,7 @@ def _split_body(parts: list[str]) -> tuple[list[str], list[str], list[str]]:
     if len(chain) == 1 and (chain[0].start != 0 or not chain[0].strong):
         chain = []
     if not chain:
-        return parts, [], []
+        return parts, [], [], []
     chain = _fill_gaps(parts, chain)
     chosen = {(hit.part, hit.start) for hit in chain}
     stray_lines = {
@@ -465,7 +469,7 @@ def _split_body(parts: list[str]) -> tuple[list[str], list[str], list[str]]:
                 pieces.append(parts[nxt.part][: nxt.start])
             value = " ".join(pieces)
         choices.append(value)
-    return [piece for piece in stem if piece.strip()], choices, trailing
+    return [piece for piece in stem if piece.strip()], choices, trailing, [_label(hit) for hit in chain]
 
 
 @dataclass
@@ -483,6 +487,7 @@ class ParsedQuestion:
     choice_changes: list[str]
     removed: list[str] = field(default_factory=list)
     set_aside: list[str] = field(default_factory=list)
+    choice_labels: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -739,22 +744,26 @@ def parse_worksheet_text(text: str) -> ParsedSheet:
 
     questions = []
     for draft in drafts:
-        stem_parts, raw_choices, set_aside = _split_body(draft.stem_parts)
+        stem_parts, raw_choices, set_aside, raw_labels = _split_body(draft.stem_parts)
         joined = re.sub(r"\s{2,}", " ", " ".join(stem_parts)).strip()
         stem, stem_changes = resplit_glued(joined, names)
         stem, removed = clean_stem(stem)
         choices: list[str] = []
+        labels: list[str] = []
         choice_changes: list[str] = []
-        for value in raw_choices:
+        for value, label in zip(raw_choices, raw_labels):
             cleaned, changes = resplit_glued(clean_choice(value), names)
             if cleaned:
                 choices.append(cleaned)
+                labels.append(label)
                 choice_changes.extend(changes)
         if len(choices) < 2:
-            choices, choice_changes = [], []
+            choices, labels, choice_changes = [], [], []
         elif sum(choice.islower() for choice in choices) >= len(choices) - 1:
             choices = [c.lower() if c.isupper() and len(c) <= 4 and _known(c) else c for c in choices]
-        questions.append(ParsedQuestion(draft.number, stem, choices, stem_changes, choice_changes, removed, set_aside))
+        questions.append(
+            ParsedQuestion(draft.number, stem, choices, stem_changes, choice_changes, removed, set_aside, labels)
+        )
     title = next(
         (
             line

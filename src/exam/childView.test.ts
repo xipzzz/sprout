@@ -49,14 +49,78 @@ const scan: ParentScan = {
         { field: 'correct_answer', kind: 'reconstructed', note: 'Guessed hidden-key.' },
       ],
     },
+    {
+      id: '5',
+      stem: 'Sam has 3 bags of 6 apples. How many apples?',
+      choices: [],
+      choice_labels: [],
+      question_type: 'open',
+      student_answer: '18 apples',
+      working_steps: ['secret-step 3 x 6 = 18'],
+      teacher_mark: '✓',
+      is_correct: true,
+      teacher_comment: 'secret-comment Well done',
+      student_marks: '2/2',
+      correct_answer: '18',
+      explanation: '',
+      sub_questions: [
+        {
+          label: 'a',
+          stem: 'How many bags?',
+          student_answer: 'secret-sub-answer',
+          teacher_mark: '✗',
+          correct_answer: 'secret-sub-key',
+          is_correct: false,
+          working_steps: ['secret-sub-step'],
+        },
+      ],
+      flags: [],
+    },
   ],
 };
 
 const child = toChildView(scan);
 assertChildViewSafe(scan, child);
 
+const leaky = { ...scan, questions: scan.questions.map((q) => ({ ...q })) };
+const leakyChild = toChildView(leaky);
+leakyChild.questions[3] = { ...leakyChild.questions[3], stem: `${leaky.questions[3].stem} secret-comment Well done` };
+let caught = false;
+try {
+  assertChildViewSafe(leaky, leakyChild);
+} catch {
+  caught = true;
+}
+if (!caught) throw new Error('A teacher comment pasted into a child stem was not caught');
+for (const key of ['working_steps', 'sub_questions', 'teacher_comment', 'is_correct', 'question_type', 'choice_labels']) {
+  caught = false;
+  try {
+    assertChildViewSafe(scan, {
+      ...child,
+      questions: [{ ...child.questions[0], [key]: 'x' } as (typeof child.questions)[number]],
+    });
+  } catch {
+    caught = true;
+  }
+  if (!caught) throw new Error(`Child guard missed the parent-only key ${key}`);
+}
+
 const blob = JSON.stringify(child);
-const banned = ['secret-handwriting', 'hidden-key', '2分', '✓', '×', 'watr', 'Parent-only note', 'The answer is hidden-key'];
+const banned = [
+  'secret-handwriting',
+  'hidden-key',
+  '2分',
+  '✓',
+  '×',
+  'watr',
+  'Parent-only note',
+  'The answer is hidden-key',
+  'secret-step',
+  'secret-comment',
+  'secret-sub',
+  '2/2',
+  'open',
+];
 for (const secret of banned) {
   if (blob.includes(secret)) {
     throw new Error(`Child JSON still contains ${secret}: ${blob}`);

@@ -32,6 +32,68 @@ class SchemaTests(unittest.TestCase):
         self.assertEqual(question["teacher_mark"], "√ 2分")
         self.assertEqual(question["correct_answer"], "30")
         self.assertTrue(any(flag["field"] == "explanation" for flag in question["flags"]))
+        self.assertEqual(question["choice_labels"], ["A", "B"])
+        self.assertEqual(question["question_type"], "multiple_choice")
+        self.assertIs(question["is_correct"], True)
+        self.assertEqual(question["student_marks"], "2分")
+
+    def test_extra_page_fields_stay_parent_side(self):
+        raw = {
+            "id": "4",
+            "stem": "Sam has 3 bags of 6 apples.",
+            "type": "word problem",
+            "student_answer": "18",
+            "working": "3 x 6 = 18\n18 apples",
+            "teacher_feedback": {"comment": ["Neat working,", "well done"], "score": "2/2"},
+            "teacher_mark": "✓",
+            "correct_answer": "18",
+            "sub_questions": [
+                {"label": "a", "stem": "How many bags?", "student_answer": "3", "teacher_mark": "✓", "answer": "3"},
+                {"stem": "How many apples in each bag?", "student_answer": "sub-wrote-five", "teacher_mark": "×",
+                 "correct_answer": "sub-key-six", "working_steps": ["sub-step counted"]},
+            ],
+            "flags": [{"field": "teacher_comment", "kind": "reconstructed", "note": "Faint red pen."}],
+        }
+        question = map_question(raw, 4)
+        self.assertEqual(question["question_type"], "open")
+        self.assertEqual(question["working_steps"], ["3 x 6 = 18", "18 apples"])
+        self.assertEqual(question["teacher_comment"], "Neat working, well done")
+        self.assertEqual(question["student_marks"], "2/2")
+        self.assertIs(question["is_correct"], True)
+        self.assertEqual([sub["label"] for sub in question["sub_questions"]], ["a", "b"])
+        self.assertEqual(question["sub_questions"][0]["correct_answer"], "3")
+        self.assertIs(question["sub_questions"][1]["is_correct"], False)
+        self.assertEqual(question["flags"][0]["field"], "teacher_comment")
+
+        scan = {"subject": "math", "questions": [question]}
+        child = to_child_view(scan)
+        assert_child_view_safe(scan, child)
+        self.assertEqual(set(child["questions"][0]), {"id", "stem", "choices"})
+        blob = __import__("json").dumps(child, ensure_ascii=False)
+        for secret in ("Neat working", "18 apples", "2/2", "sub-wrote-five", "sub-key-six", "sub-step", "open"):
+            self.assertNotIn(secret, blob)
+
+        leaked = {"subject": "math", "questions": [{**child["questions"][0], "stem": "Neat working, well done"}]}
+        with self.assertRaises(AssertionError):
+            assert_child_view_safe(scan, leaked)
+        for key in ("working_steps", "sub_questions", "teacher_comment", "is_correct", "question_type", "choice_labels"):
+            with self.subTest(key), self.assertRaises(AssertionError):
+                assert_child_view_safe(scan, {"questions": [{**child["questions"][0], key: "x"}]})
+
+        note = render_markdown(scan)
+        parent_copy, practice = note.split("## Practice prompts")
+        for shown in ("Question type: open", "Marked: right", "Marks: 2/2", "Teacher's comment: Neat working",
+                      "Working: 3 x 6 = 18 / 18 apples", "(b) How many apples in each bag?", "sub-key-six"):
+            self.assertIn(shown, parent_copy)
+        for secret in ("Neat working", "sub-key-six", "Marks:"):
+            self.assertNotIn(secret, practice)
+
+    def test_question_type_and_mark_fallbacks(self):
+        self.assertEqual(map_question({"stem": "She ____ a bag.", "teacher_mark": "x"}, 1)["question_type"], "fill_blank")
+        self.assertIs(map_question({"stem": "Hi", "teacher_mark": "x"}, 1)["is_correct"], False)
+        self.assertIsNone(map_question({"stem": "Hi", "teacher_mark": "✓ ×"}, 1)["is_correct"])
+        self.assertEqual(map_question({"stem": "Hi", "choices": ["a", "b"], "choice_labels": ["A"]}, 1)["choice_labels"], [])
+        self.assertEqual(map_question({"stem": "Hi", "type": "填空题"}, 1)["question_type"], "fill_blank")
 
     def test_child_view_drops_answers(self):
         scan = stub_scan("sample-exam-english.png")

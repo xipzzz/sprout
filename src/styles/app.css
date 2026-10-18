@@ -2550,6 +2550,9 @@ body.calm-motion *, body.calm-motion *::before, body.calm-motion *::after { anim
   font-size: 0.72rem;
   font-weight: 800;
 }
+.exam-proto__flag-chip-fields { font-weight: 700; }
+.exam-proto__subs { margin: 4px 0 0; padding-left: 1.1em; font-weight: 700; }
+.exam-proto__subs li + li { margin-top: 4px; }
 .exam-proto__flag {
   margin: 0;
   padding: 8px 10px;
@@ -2678,6 +2681,7 @@ body.calm-motion *, body.calm-motion *::before, body.calm-motion *::after { anim
   font-weight: 800;
 }
 .exam-proto__answer-pick--on { border-color: var(--green); background: var(--pip-green-tint); color: var(--green-deep); }
+.exam-proto__answer-label-tag { margin-right: 6px; color: var(--ink-muted); font-weight: 700; }
 .exam-proto__gate {
   display: flex;
   flex-direction: column;

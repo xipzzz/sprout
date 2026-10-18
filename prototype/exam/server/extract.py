@@ -41,10 +41,19 @@ Return only JSON, no markdown, with this shape:
       "id": "1",
       "stem": "printed question with handwriting left out of the sentence",
       "choices": ["printed choice"],
+      "choice_labels": ["the printed letter or number before each choice, like A or 1"],
+      "question_type": "multiple_choice, fill_blank, cloze, editing, or open",
       "student_answer": "what the child wrote, or empty",
+      "working_steps": ["each line of working the child wrote, or none"],
       "teacher_mark": "the teacher's check, cross, or score, or empty",
+      "is_correct": "true or false from the teacher's mark, or null",
+      "teacher_comment": "words the teacher wrote, or empty",
+      "student_marks": "marks given, like 1/2, or empty",
       "correct_answer": "the answer to use for practice",
       "explanation": "one or two plain sentences a parent can read",
+      "sub_questions": [
+        {"label": "a", "stem": "", "student_answer": "", "teacher_mark": "", "correct_answer": ""}
+      ],
       "flags": [
         {"field": "stem", "kind": "reconstructed", "note": "why this was guessed"}
       ]
@@ -105,7 +114,7 @@ def stub_scan(filename: str) -> dict:
             "The page was still straightened and colored ink was lifted. "
             "A real photo is read with free Tesseract. ZHIPU_API_KEY is optional, for a Zhipu vision read."
         ),
-        "questions": fixture["questions"],
+        "questions": [map_question(item, index + 1) for index, item in enumerate(fixture["questions"])],
     }
 
 
@@ -186,6 +195,8 @@ def read_sheet(text: str, ocr_lang: str = "eng", engine: str = "tesseract") -> t
             "id": str(parsed.number),
             "stem": stem or "Question from the photo",
             "choices": choices,
+            "choice_labels": parsed.choice_labels,
+            "question_type": sheet.layout if sheet.layout in {"cloze", "editing"} else "",
             "student_answer": "",
             "teacher_mark": "",
             "correct_answer": "",

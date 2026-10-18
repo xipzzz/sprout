@@ -71,6 +71,39 @@ def _practice_line(question: dict) -> str:
     return f"Practice answer (hidden from the child): {answer or '(unknown)'}"
 
 
+MARKED = {True: "right", False: "wrong", None: ""}
+
+
+def _labelled_choices(question: dict) -> list[str]:
+    choices = question.get("choices") or []
+    labels = question.get("choice_labels") or []
+    if len(labels) != len(choices):
+        return list(choices)
+    return [f"{label}. {choice}" for label, choice in zip(labels, choices)]
+
+
+def _page_detail_lines(question: dict) -> list[str]:
+    """What else the page showed for this question. Parent copy only."""
+    lines = []
+    if question.get("question_type"):
+        lines.append(f"Question type: {question['question_type'].replace('_', ' ')}")
+    if MARKED.get(question.get("is_correct")):
+        lines.append(f"Marked: {MARKED[question['is_correct']]}")
+    if question.get("student_marks"):
+        lines.append(f"Marks: {question['student_marks']}")
+    if question.get("teacher_comment"):
+        lines.append(f"Teacher's comment: {question['teacher_comment']}")
+    if question.get("working_steps"):
+        lines.append("Working: " + " / ".join(question["working_steps"]))
+    for sub in question.get("sub_questions") or []:
+        mark = MARKED.get(sub.get("is_correct")) or sub.get("teacher_mark") or "not marked"
+        lines.append(
+            f"({sub.get('label')}) {sub.get('stem') or ''} Child wrote: {sub.get('student_answer') or '(blank)'}; "
+            f"answer: {sub.get('correct_answer') or '(none)'}; {mark}"
+        )
+    return [part for line in lines for part in (line, "")]
+
+
 def render_markdown(scan: dict, when: date | None = None) -> str:
     when = when or date.today()
     questions = scan.get("questions") or []
@@ -120,12 +153,13 @@ def render_markdown(scan: dict, when: date | None = None) -> str:
             [
                 f"### {question.get('id')}. {question.get('stem') or ''}",
                 "",
-                "Choices: " + (", ".join(question.get("choices") or []) or "(none)"),
+                "Choices: " + (", ".join(_labelled_choices(question)) or "(none)"),
                 "",
                 f"Child's handwritten answer: {question.get('student_answer') or '(blank)'}",
                 "",
                 f"Teacher's mark: {question.get('teacher_mark') or '(none)'}",
                 "",
+                *_page_detail_lines(question),
                 _practice_line(question),
                 "",
             ]

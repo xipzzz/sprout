@@ -18,7 +18,16 @@ const FORBIDDEN_KEYS = new Set([
   'review',
   'stem_edited',
   'page_flags',
+  'choice_labels',
+  'question_type',
+  'working_steps',
+  'is_correct',
+  'teacher_comment',
+  'sub_questions',
 ]);
+
+/** Shorter parent-only text (a step like "6") can sit in a printed stem by chance; the key check still applies. */
+const MIN_LEAK_TEXT = 6;
 
 export function toChildView(scan: ParentScan): ChildView {
   return {
@@ -87,6 +96,23 @@ export function assertChildViewSafe(parent: ParentScan, child: ChildView): void 
     for (const flag of question.flags) {
       if (flag.note && blob.includes(flag.note)) {
         throw new Error(`Child view leaked a reconstruction note for question ${question.id}`);
+      }
+    }
+    const comment = question.teacher_comment ?? '';
+    if (comment.length >= MIN_LEAK_TEXT && blob.includes(comment)) {
+      throw new Error(`Child view leaked the teacher comment for question ${question.id}`);
+    }
+    const parentOnly = [
+      ...(question.working_steps ?? []),
+      ...(question.sub_questions ?? []).flatMap((sub) => [
+        sub.student_answer,
+        sub.correct_answer,
+        ...sub.working_steps,
+      ]),
+    ];
+    for (const text of parentOnly) {
+      if (text.length >= MIN_LEAK_TEXT && !choiceText.has(text) && blob.includes(text)) {
+        throw new Error(`Child view leaked parent-only work for question ${question.id}`);
       }
     }
   }

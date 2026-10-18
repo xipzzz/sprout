@@ -340,6 +340,18 @@ class ChineseTests(unittest.TestCase):
         self.assertEqual([len(q["choices"]) for q in scan["questions"]], [4, 4, 4, 4])
         child_safe(scan)
 
+    def test_parser_keeps_choice_labels_and_question_type(self):
+        chinese = tesseract_scan(fixture("chinese-mcq.ocr-chi_sim.txt"), "chi_sim")["scan"]["questions"][0]
+        self.assertEqual(chinese["choice_labels"], ["A", "B", "C", "D"])
+        self.assertEqual(chinese["question_type"], "multiple_choice")
+        _, english = read_sheet(fixture("blue-ink-mcq.ocr-clean.txt"))
+        self.assertTrue(all(len(q["choice_labels"]) == len(q["choices"]) == 3 for q in english))
+        self.assertEqual(english[0]["choice_labels"], ["1", "2", "3"])
+        _, cloze = read_sheet(fixture("cloze-passage.ocr-clean.txt"))
+        self.assertEqual({q["question_type"] for q in cloze}, {"cloze"})
+        _, editing = read_sheet(fixture("editing-passage.ocr.txt"))
+        self.assertEqual({q["question_type"] for q in editing}, {"editing"})
+
     def test_chi_sim_that_finds_no_chinese_is_unsupported(self):
         result = tesseract_scan(fixture("chinese-mcq.ocr-eng.txt"), "chi_sim")
         self.assertFalse(result["ok"])

@@ -2,7 +2,7 @@
    Open with ?exam=1. The sample photo runs without an API key.
    Practice stays locked until the parent picks or drops every question. */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { extractExam, saveExam, UnsupportedPageError } from '../exam/api';
 import { ocrEngineFromQuery, SUBJECTS, type SubjectChoice } from '../exam/ocr';
 import {
@@ -58,6 +58,51 @@ function FlagTape({ flags }: { flags: ReconstructionFlag[] }) {
       ))}
     </div>
   );
+}
+
+const MARKED = { true: 'Right', false: 'Wrong' } as const;
+
+/** Everything else the page showed for this question. Parent screen only. */
+function PageDetails({ question }: { question: ParentQuestion }) {
+  const rows: { field: ReconstructionFlag['field']; term: string; value: ReactNode }[] = [];
+  if (typeof question.is_correct === 'boolean') {
+    rows.push({ field: 'is_correct', term: 'Marked', value: MARKED[`${question.is_correct}`] });
+  }
+  if (question.student_marks) rows.push({ field: 'student_marks', term: 'Marks', value: question.student_marks });
+  if (question.teacher_comment) {
+    rows.push({ field: 'teacher_comment', term: 'Teacher’s comment', value: question.teacher_comment });
+  }
+  if (question.working_steps?.length) {
+    rows.push({ field: 'working_steps', term: 'Working', value: question.working_steps.join(' / ') });
+  }
+  if (question.sub_questions?.length) {
+    rows.push({
+      field: 'sub_questions',
+      term: 'Parts',
+      value: (
+        <ul className="exam-proto__subs">
+          {question.sub_questions.map((sub) => (
+            <li key={sub.label}>
+              ({sub.label}) {sub.stem} Wrote: {sub.student_answer || 'blank'}. Answer: {sub.correct_answer || 'none'}.
+              {typeof sub.is_correct === 'boolean' && ` ${MARKED[`${sub.is_correct}`]}.`}
+            </li>
+          ))}
+        </ul>
+      ),
+    });
+  }
+  if (question.question_type && question.question_type !== 'multiple_choice') {
+    rows.push({ field: 'question_type', term: 'Type', value: question.question_type.replaceAll('_', ' ') });
+  }
+  return rows.map((row) => (
+    <div key={row.field}>
+      <dt>{row.term}</dt>
+      <dd>
+        {row.value}
+        <FlagTape flags={flagsFor(question, row.field)} />
+      </dd>
+    </div>
+  ));
 }
 
 function StemEditor({
@@ -197,8 +242,9 @@ function AnswerPicker({
         Pick the right answer, hidden from the child
       </p>
       <div className="exam-proto__answer-choices" role="radiogroup" aria-labelledby={`answer-${question.id}`}>
-        {question.choices.map((choice) => {
+        {question.choices.map((choice, index) => {
           const on = entry.status === 'picked' && entry.answer === choice;
+          const label = question.choice_labels?.[index];
           return (
             <button
               key={choice}
@@ -208,6 +254,7 @@ function AnswerPicker({
               className={`exam-proto__answer-pick${on ? ' exam-proto__answer-pick--on' : ''}`}
               onClick={() => onReview({ status: 'picked', answer: choice })}
             >
+              {label && <span className="exam-proto__answer-label-tag">{label}</span>}
               {choice}
             </button>
           );
@@ -531,6 +578,7 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
                             <FlagTape flags={flagsFor(question, 'teacher_mark')} />
                           </dd>
                         </div>
+                        <PageDetails question={question} />
                       </dl>
                       <p className="exam-proto__explain">
                         <span className="exam-proto__explain-label">For you</span>
