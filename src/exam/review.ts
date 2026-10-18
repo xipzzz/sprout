@@ -4,7 +4,7 @@
 
 import { assertChildViewSafe, toChildView } from './childView.ts';
 import { BLANK, EXPLAIN_FLAG_NOTE, explainPick } from './explain.ts';
-import type { ChildView, ParentQuestion, ParentScan, ReviewStatus } from './types.ts';
+import type { ChildView, ParentQuestion, ParentScan, ReconstructionFlag, ReviewStatus } from './types.ts';
 
 export type QuestionReview =
   | { status: 'open' }
@@ -134,4 +134,31 @@ export function blankInstead(stem: string, index: number): string {
   const match = /^([^\p{L}\p{N}]*)(.*?)([^\p{L}\p{N}]*)$/u.exec(words[index] ?? '');
   words[index] = `${match?.[1] ?? ''}${BLANK}${match?.[3] ?? ''}`;
   return joinWords(words);
+}
+
+export type FlagChip = { kind: ReconstructionFlag['kind']; label: string; fields: string[] };
+export type FlagRow = { id: string; chips: FlagChip[] };
+
+const FLAG_LABEL: Record<ReconstructionFlag['kind'], string> = {
+  reconstructed: 'AI filled this in',
+  generated: 'AI wrote this',
+};
+
+/** One summary row per flagged question, with one chip per kind listing each field once. */
+export function flagRows(questions: ParentQuestion[]): FlagRow[] {
+  const rows: FlagRow[] = [];
+  for (const question of questions) {
+    const chips: FlagChip[] = [];
+    for (const flag of question.flags) {
+      const field = flag.field.replaceAll('_', ' ');
+      let chip = chips.find((item) => item.kind === flag.kind);
+      if (!chip) {
+        chip = { kind: flag.kind, label: FLAG_LABEL[flag.kind], fields: [] };
+        chips.push(chip);
+      }
+      if (!chip.fields.includes(field)) chip.fields.push(field);
+    }
+    if (chips.length) rows.push({ id: question.id, chips });
+  }
+  return rows;
 }

@@ -7,6 +7,7 @@ import {
   blankBefore,
   blankInstead,
   buildPractice,
+  flagRows,
   initialReview,
   parentCopy,
   reviewProgress,
@@ -14,7 +15,7 @@ import {
   type ReviewState,
 } from './review.ts';
 import { EXPLAIN_FLAG_NOTE, explainPick } from './explain.ts';
-import type { ParentQuestion, ParentScan } from './types.ts';
+import type { ParentQuestion, ParentScan, ReconstructionFlag } from './types.ts';
 
 function fail(message: string): never {
   throw new Error(message);
@@ -225,6 +226,34 @@ const tesseract: ParentScan = {
   const childBlob = JSON.stringify(unlocked ?? fail('practice should open'));
   assert.ok(!childBlob.includes('He is having fun'), 'The filled-in sentence stays with the parent');
   assert.ok(!childBlob.includes('stands for'), 'The explanation stays with the parent');
+}
+
+{
+  const flag = (field: ReconstructionFlag['field'], kind: ReconstructionFlag['kind'], note: string) => ({ field, kind, note });
+  const rows = flagRows([
+    {
+      ...tesseract.questions[0],
+      id: '1',
+      flags: [
+        flag('stem', 'reconstructed', 'Read by Tesseract.'),
+        flag('stem', 'reconstructed', 'Spaces were added.'),
+        flag('choices', 'reconstructed', 'Stray handwriting.'),
+        flag('explanation', 'generated', 'Written for the parent.'),
+      ],
+    },
+    { ...tesseract.questions[1], id: '2', flags: [] },
+    { ...tesseract.questions[2], id: '3', flags: [flag('correct_answer', 'reconstructed', 'Guessed.')] },
+  ]);
+  assert.deepEqual(rows, [
+    {
+      id: '1',
+      chips: [
+        { kind: 'reconstructed', label: 'AI filled this in', fields: ['stem', 'choices'] },
+        { kind: 'generated', label: 'AI wrote this', fields: ['explanation'] },
+      ],
+    },
+    { id: '3', chips: [{ kind: 'reconstructed', label: 'AI filled this in', fields: ['correct answer'] }] },
+  ], 'One row per flagged question, each field once per kind');
 }
 
 console.log('review gate test passed');

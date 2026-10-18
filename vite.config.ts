@@ -12,7 +12,8 @@ export default defineConfig(({ command }) => ({
     port: 5173,
     strictPort: true,  // fail loudly instead of silently picking another port
     proxy: {
-      '/api': { target: 'http://127.0.0.1:8787', changeOrigin: true },
+      // SPROUT_EXAM_API points the proxy at another port when 8787 is taken.
+      '/api': { target: process.env.SPROUT_EXAM_API || 'http://127.0.0.1:8787', changeOrigin: true },
     },
   },
 }))

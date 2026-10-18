@@ -2535,14 +2535,25 @@ body.calm-motion *, body.calm-motion *::before, body.calm-motion *::after { anim
   color: var(--green-deep);
 }
 .exam-proto__flag-summary {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
   gap: 6px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
-.exam-proto__flag-summary li {
+.exam-proto__flag-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.exam-proto__flag-qid {
+  min-width: 2.4em;
+  font-size: 0.78rem;
+  font-weight: 900;
+  color: var(--ink);
+}
+.exam-proto__flag-chip {
   padding: 4px 8px;
   border-radius: var(--r-pill);
   background: var(--gold-tint);

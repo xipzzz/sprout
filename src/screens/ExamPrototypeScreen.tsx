@@ -10,6 +10,7 @@ import {
   blankBefore,
   blankInstead,
   buildPractice,
+  flagRows,
   initialReview,
   parentCopy,
   reviewProgress,
@@ -42,6 +43,22 @@ function listIds(ids: string[]) {
   const labels = ids.map((id) => `Q${id}`);
   if (labels.length < 2) return labels.join('');
   return `${labels.slice(0, -1).join(', ')} and ${labels[labels.length - 1]}`;
+}
+
+/** Extra fields read from the page. Parent page only. */
+function pageDetails(question: ParentQuestion): [string, string][] {
+  const rows: [string, string][] = [];
+  if (question.choice_labels?.length) rows.push(['Choice labels', question.choice_labels.join(', ')]);
+  if (question.question_type) rows.push(['Question type', question.question_type]);
+  if (question.working?.length) rows.push(['Working', question.working.join(' / ')]);
+  if (typeof question.is_correct === 'boolean') rows.push(['Teacher marked', question.is_correct ? 'Right' : 'Wrong']);
+  if (question.marks) rows.push(['Marks', question.marks]);
+  if (question.teacher_comment) rows.push(['Teacher’s comment', question.teacher_comment]);
+  for (const sub of question.sub_questions ?? []) {
+    const answer = sub.student_answer ? ` (child wrote: ${sub.student_answer})` : '';
+    rows.push([`Part ${sub.id}`, `${sub.stem}${answer}`]);
+  }
+  return rows;
 }
 
 function FlagTape({ flags }: { flags: ReconstructionFlag[] }) {
@@ -358,7 +375,8 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
     <div className="screen exam-proto" data-screen={phase === 'parent' ? 'parent-review' : 'exam-pick'}>
       <header className="exam-proto__top">
         <button type="button" className="lesson__close" onClick={onExit} aria-label="Close exam scan">
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor"
+               strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M6 6l12 12M18 6L6 18" />
           </svg>
         </button>
@@ -446,21 +464,16 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
               {saveError && <>Could not save the note. {saveError}</>}
               {!saved.length && !skipped.length && !saveError && 'Saving the note…'}
             </p>
-            {copy?.questions.some((question) => question.flags.length > 0) && (
-              <ul className="exam-proto__flag-summary">
-                {[
-                  ...new Map(
-                    copy.questions.flatMap((question) =>
-                      question.flags.map((flag) => [
-                        `${question.id}|${flag.field}|${flag.kind}`,
-                        { id: question.id, field: flag.field, kind: flag.kind },
-                      ]),
-                    ),
-                  ),
-                ].map(([key, chip]) => (
-                  <li key={key}>
-                    {chip.kind === 'generated' ? 'AI wrote this' : 'AI filled this in'}
-                    {' · '}Q{chip.id} {chip.field.replaceAll('_', ' ')}
+            {copy && flagRows(copy.questions).length > 0 && (
+              <ul className="exam-proto__flag-summary" aria-label="AI parts by question">
+                {flagRows(copy.questions).map((row) => (
+                  <li key={row.id} className="exam-proto__flag-row">
+                    <span className="exam-proto__flag-qid">Q{row.id}</span>
+                    {row.chips.map((chip) => (
+                      <span key={chip.kind} className="exam-proto__flag-chip" data-kind={chip.kind}>
+                        {chip.label} · {chip.fields.join(', ')}
+                      </span>
+                    ))}
                   </li>
                 ))}
               </ul>
@@ -527,6 +540,12 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
                             <FlagTape flags={flagsFor(question, 'teacher_mark')} />
                           </dd>
                         </div>
+                        {pageDetails(question).map(([label, value]) => (
+                          <div key={label}>
+                            <dt>{label}</dt>
+                            <dd>{value}</dd>
+                          </div>
+                        ))}
                       </dl>
                       <p className="exam-proto__explain">
                         <span className="exam-proto__explain-label">For you</span>
