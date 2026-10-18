@@ -13,24 +13,24 @@ from schema import assert_child_view_safe, map_question, to_child_view
 
 
 class SchemaTests(unittest.TestCase):
-    def test_maps_goppai_shaped_question(self):
+    def test_maps_nested_reader_fields(self):
         question = map_question(
             {
                 "id": "19",
-                "stem": "客厅面积有____平方米",
-                "options": {"A": "30", "B": "15"},
-                "student_answer": {"final": "30, 15"},
+                "stem": "花瓶里有____朵花。",
+                "options": {"A": "7", "B": "9"},
+                "student_answer": {"final": "9"},
                 "teacher_feedback": {"is_correct": True, "score": "2分", "symbols": ["√"]},
-                "correct_answer": "30",
-                "explanation": "四分之一乘以一百二十是三十。",
+                "correct_answer": "7",
+                "explanation": "三朵加四朵是七朵。",
             },
             1,
         )
-        self.assertEqual(question["stem"], "客厅面积有____平方米")
-        self.assertEqual(question["choices"], ["30", "15"])
-        self.assertEqual(question["student_answer"], "30, 15")
+        self.assertEqual(question["stem"], "花瓶里有____朵花。")
+        self.assertEqual(question["choices"], ["7", "9"])
+        self.assertEqual(question["student_answer"], "9")
         self.assertEqual(question["teacher_mark"], "√ 2分")
-        self.assertEqual(question["correct_answer"], "30")
+        self.assertEqual(question["correct_answer"], "7")
         self.assertTrue(any(flag["field"] == "explanation" for flag in question["flags"]))
 
     def test_child_view_drops_answers(self):

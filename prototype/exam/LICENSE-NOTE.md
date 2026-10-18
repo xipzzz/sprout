@@ -1,22 +1,49 @@
-# License note: Goppai/exam was not vendored
+# Source comparison: Goppai/exam
 
-Checked 2026-10-17 by cloning https://github.com/Goppai/exam (default branch `main`).
+Audit date: 2026-10-18. Sprout baseline: `3b09509` on `compare/96-codex`.
+Reference: https://github.com/Goppai/exam, `main` at
+`128445471c564a5ad3659819c1bdff7fcee98633`.
 
-The repository has **no LICENSE, COPYING, or NOTICE file**. The only license text is the README section:
+The reference has no LICENSE, COPYING or NOTICE file. Its README limits use to
+learning and competition display and asks commercial users to contact its author.
+Sprout treats this as unavailable for copying. No reference code, prompts, CSS,
+comments or assets may be imported into Sprout.
 
-> 本项目仅用于学习与比赛展示，如需商业化请联系作者。
->
-> This project is only for learning and competition display. Contact the author for commercial use.
+## Scope and method
 
-That is not a grant to copy or redistribute the code. Sprout therefore **does not vendor** Goppai's source, prompts, images, or model client. This prototype adapts the idea only:
+Compared all reference backend and frontend source, four prompt files, output
+examples and image assets with `prototype/exam/`, `src/exam/`, `src/screens/Exam*`,
+`src/styles/app.css` and `public/sample-exam-english.png`. Read the implementations
+side by side. Checked exact source lines, normalized 20-token windows and file
+hashes. The reference clone stayed outside this repository and was never executed.
 
-- one photo in
-- one JSON object per question
-- fields for the printed stem, choices, the child's handwritten answer, and the teacher's mark
-- a short parent-facing explanation
+Reproduce the exact-line and file-hash checks after cloning that reference commit:
 
-Field names in Sprout (`stem`, `choices`, `student_answer`, `teacher_mark`) match that idea. A small mapper also accepts the public output shape (`options`, `student_answer.final`, `teacher_feedback.symbols` / `score`) so a later live read can land in the same parent object.
+```bash
+python3 prototype/exam/audit_source.py /path/to/reference-clone
+```
 
-## Extraction attempt
+The script is a review aid. It cannot establish originality or detect all
+paraphrases. The result below includes manual comparison.
 
-Goppai's own `POST /api/extract` was run on their sample `inputs/english1.png` (subject `english`). The call reached Zhipu **GLM-4.6V** and the API returned HTTP 429, error code 1113: insufficient balance or no resource package (`余额不足或无可用资源包,请充值。`). Sprout stays on free Tesseract. `ZHIPU_API_KEY` is optional and unused unless you set it. Nothing from that clone, including any `.env`, was copied into Sprout.
+## Findings and changes
+
+- Replaced a close paraphrase of the room-area question in reference
+  `outputs/456*.json`. Sprout's schema test now uses an original flower-count
+  question. Only the test inputs changed.
+- No copied implementation or close prompt paraphrase was found in the remaining
+  scope. Sprout uses its own worksheet text parser, page warp, ink processing,
+  local explanation rules, review gate and child payload builder. The reference
+  uses model prompts and Ant Design question cards.
+- No matching regex, CSS block, substantive comment or application-specific
+  constant table was found. Model names, the provider endpoint and API field
+  names are protocol identifiers. Nested field aliases remain for interoperability.
+- Shared source fragments are FastAPI imports and CORS setup, standard JSON HTTP
+  requests and the model provider's message envelope. They do not contain the
+  reference's extraction, caching, retry or explanation logic.
+- No byte-identical image or fixture asset was found. Sprout's sample page and
+  synthetic worksheets have local drawing scripts and different question content.
+
+This review covers the named reference commit and current source. It does not
+certify earlier Git history or unknown sources. The removed test text remains in
+prior commits; this change does not rewrite history. Keep future work independent.
