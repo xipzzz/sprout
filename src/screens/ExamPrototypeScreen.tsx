@@ -3,7 +3,7 @@
    Practice stays locked until the parent picks or drops every question. */
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import { readPhoto, saveExam, UnsupportedPageError } from '../exam/api';
+import { readPhoto, samplePhoto, saveExam, UnsupportedPageError } from '../exam/api';
 import { flagRows } from '../exam/flags';
 import { ocrEngineFromQuery, SUBJECTS, type SubjectChoice } from '../exam/ocr';
 import {
@@ -308,6 +308,15 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
     }
   }, []);
 
+  const onSample = useCallback(async () => {
+    try {
+      await runFile(await samplePhoto(), true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not load the sample photo.');
+      setPhase('error');
+    }
+  }, [runFile]);
+
   useEffect(() => {
     if (!scan || phase !== 'parent') return;
     const token = scanToken.current;
@@ -336,21 +345,14 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
     const params = new URLSearchParams(window.location.search);
     if (params.get('demo') !== '1') return;
     started.current = true;
-    void runSample();
-    async function runSample() {
-      const response = await fetch('/sample-exam-english.png');
-      const blob = await response.blob();
-      const file = new File([blob], 'sample-exam-english.png', { type: 'image/png' });
-      await runFile(file, true);
-    }
+    samplePhoto().then(
+      (file) => runFile(file, true),
+      (err: unknown) => {
+        setError(err instanceof Error ? err.message : 'Could not load the sample photo.');
+        setPhase('error');
+      },
+    );
   }, [runFile]);
-
-  async function onSample() {
-    const response = await fetch('/sample-exam-english.png');
-    const blob = await response.blob();
-    const file = new File([blob], 'sample-exam-english.png', { type: 'image/png' });
-    await runFile(file, true);
-  }
 
   function onPicked(file: File | undefined) {
     if (!file) return;

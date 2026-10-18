@@ -33,6 +33,15 @@ async function recognizeCleanPage(image: string, lang: OcrLang): Promise<string>
 
 export class UnsupportedPageError extends Error {}
 
+const SAMPLE_NAME = 'sample-exam-english.png';
+
+/** The bundled sample page, handed over as if the parent had picked it. The name tells the server to use the stub. */
+export async function samplePhoto(): Promise<File> {
+  const res = await fetch(`${import.meta.env.BASE_URL}${SAMPLE_NAME}`);
+  if (!res.ok) throw new Error('The sample photo is missing from public/.');
+  return new File([await res.arrayBuffer()], SAMPLE_NAME, { type: 'image/png' });
+}
+
 export async function readPhoto(
   file: File,
   demo: boolean,
