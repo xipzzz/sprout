@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw
 
-from deskew import prepare_page
+from deskew import load_rgb, prepare_page
 from extract import load_fixture, parse_model_payload, questions_from_ocr, stub_scan
 from save_note import render_markdown, save_scan
 from schema import assert_child_view_safe, map_question, to_child_view
@@ -87,6 +87,24 @@ class SchemaTests(unittest.TestCase):
 
 
 class DeskewTests(unittest.TestCase):
+    def test_camera_exif_fixture_is_upright_before_deskew_and_ocr(self):
+        photo = (Path(__file__).resolve().parents[1] / "fixtures" / "exif-rotate-6.jpg").read_bytes()
+        upright = load_rgb(photo)
+        self.assertEqual(upright.size, (360, 520))
+        self.assertLess(np.asarray(upright)[30:60, 30:60].mean(), 10)
+        prepared = prepare_page(photo)
+        # The OCR input and both previews must use the same upright coordinate system.
+        images = [prepared["clean_rgb"]]
+        for key in ("deskew_jpeg", "clean_jpeg", "ocr_jpeg"):
+            data = __import__("base64").b64decode(prepared[key].split(",", 1)[1])
+            preview = Image.open(__import__("io").BytesIO(data))
+            self.assertNotIn(274, preview.getexif())
+            images.append(np.asarray(preview))
+        for image in images:
+            self.assertGreater(image.shape[0], image.shape[1])
+            self.assertLess(image[30:60, 30:60].mean(), 10)
+            self.assertGreater(image[-70:-30, -70:-30].mean(), 240)
+
     def test_rotated_page_is_straightened(self):
         page = Image.new("RGB", (420, 560), "white")
         draw = ImageDraw.Draw(page)

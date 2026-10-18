@@ -9,12 +9,13 @@ from __future__ import annotations
 import io
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageOps
 from scipy import ndimage
 
 
 def load_rgb(image_bytes: bytes, max_edge: int = 1600) -> Image.Image:
-    image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+    with Image.open(io.BytesIO(image_bytes)) as source:
+        image = ImageOps.exif_transpose(source).convert("RGB")
     scale = min(1.0, max_edge / max(image.size))
     if scale < 1:
         image = image.resize(
