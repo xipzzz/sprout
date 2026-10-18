@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import json
+import re
 from typing import Any
 
 FORBIDDEN_CHILD_KEYS = {
@@ -171,26 +171,28 @@ def assert_child_view_safe(parent: dict, child: dict) -> None:
     for question in child.get("questions") or []:
         if set(question.keys()) != {"id", "stem", "choices"}:
             raise AssertionError(f"Child question has unexpected fields: {sorted(question.keys())}")
-    blob = json.dumps(child, ensure_ascii=False)
-    choice_text = {
-        choice
-        for question in parent.get("questions") or []
-        for choice in (question.get("choices") or [])
-    }
+    if set(child) != {"subject", "questions"}:
+        raise AssertionError("Child view has unexpected fields")
+    originals = {q["id"]: q for q in parent.get("questions") or []}
+    visible = [(child.get("subject") or "", False)]
+    for question in child.get("questions") or []:
+        original = originals.get(question["id"])
+        if original is None:
+            raise AssertionError(f"Unknown child question: {question['id']}")
+        visible.append((question["stem"], False))
+        visible.extend((choice, choice in original.get("choices", [])) for choice in question["choices"])
     for question in parent.get("questions") or []:
-        explanation = question.get("explanation") or ""
-        if explanation and explanation in blob:
-            raise AssertionError(f"Child view leaked the explanation for {question.get('id')}")
-        mark = question.get("teacher_mark") or ""
-        if mark and mark not in choice_text and mark in blob:
-            raise AssertionError(f"Child view leaked the teacher mark for {question.get('id')}")
-        written = question.get("student_answer") or ""
-        if written and written not in choice_text and written in blob:
-            raise AssertionError(f"Child view leaked the handwritten answer for {question.get('id')}")
-        correct = question.get("correct_answer") or ""
-        if correct and correct not in choice_text and correct in blob:
-            raise AssertionError(f"Child view leaked the correct answer for {question.get('id')}")
-        for flag in question.get("flags") or []:
-            note = (flag or {}).get("note") or ""
-            if note and note in blob:
-                raise AssertionError(f"Child view leaked a flag note for {question.get('id')}")
+        secrets = [
+            ("explanation", question.get("explanation"), False),
+            ("teacher mark", question.get("teacher_mark"), False),
+            ("handwritten answer", question.get("student_answer"), True),
+            ("correct answer", question.get("correct_answer"), True),
+        ]
+        secrets.extend(("flag note", flag.get("note"), False) for flag in question.get("flags") or [])
+        for label, secret, allow_choice in secrets:
+            if not secret:
+                continue
+            token = re.compile(r"(?<!\w)" + re.escape(secret) + r"(?!\w)")
+            if any(not (allow_choice and printed and text == secret) and token.search(text)
+                   for text, printed in visible):
+                raise AssertionError(f"Child view leaked the {label} for {question.get('id')}")

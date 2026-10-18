@@ -43,50 +43,43 @@ function walkKeys(value: unknown, found: string[]) {
   }
 }
 
+function containsToken(text: string, secret: string): boolean {
+  if (!secret) return false;
+  const escaped = secret.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`(?<![\\p{L}\\p{M}\\p{N}_])${escaped}(?![\\p{L}\\p{M}\\p{N}_])`, 'u').test(text);
+}
+
 /** Throws when the child payload still carries an answer, mark, or explanation. */
 export function assertChildViewSafe(parent: ParentScan, child: ChildView): void {
   const leakedKeys: string[] = [];
   walkKeys(child, leakedKeys);
-  if (leakedKeys.length) {
-    throw new Error(`Child view leaked keys: ${leakedKeys.join(', ')}`);
+  if (leakedKeys.length) throw new Error(`Child view leaked keys: ${leakedKeys.join(', ')}`);
+  if (Object.keys(child).sort().join(',') !== 'questions,subject') {
+    throw new Error('Child view has unexpected fields');
   }
+  const visible = [{ text: child.subject, printedChoice: false }];
   for (const question of child.questions) {
     const keys = Object.keys(question).sort().join(',');
-    if (keys !== 'choices,id,stem') {
-      throw new Error(`Child question has unexpected fields: ${keys}`);
+    if (keys !== 'choices,id,stem') throw new Error(`Child question has unexpected fields: ${keys}`);
+    const original = parent.questions.find((item) => item.id === question.id);
+    if (!original) throw new Error(`Unknown child question: ${question.id}`);
+    visible.push({ text: question.stem, printedChoice: false });
+    for (const choice of question.choices) {
+      visible.push({ text: choice, printedChoice: original.choices.includes(choice) });
     }
   }
-
-  const blob = JSON.stringify(child);
-  const choiceText = new Set(parent.questions.flatMap((q) => q.choices));
   for (const question of parent.questions) {
-    if (question.explanation && blob.includes(question.explanation)) {
-      throw new Error(`Child view leaked the explanation for question ${question.id}`);
-    }
-    if (
-      question.teacher_mark &&
-      !choiceText.has(question.teacher_mark) &&
-      blob.includes(question.teacher_mark)
-    ) {
-      throw new Error(`Child view leaked the teacher's mark for question ${question.id}`);
-    }
-    if (
-      question.student_answer &&
-      !choiceText.has(question.student_answer) &&
-      blob.includes(question.student_answer)
-    ) {
-      throw new Error(`Child view leaked the handwritten answer for question ${question.id}`);
-    }
-    if (
-      question.correct_answer &&
-      !choiceText.has(question.correct_answer) &&
-      blob.includes(question.correct_answer)
-    ) {
-      throw new Error(`Child view leaked the correct answer for question ${question.id}`);
-    }
-    for (const flag of question.flags) {
-      if (flag.note && blob.includes(flag.note)) {
-        throw new Error(`Child view leaked a reconstruction note for question ${question.id}`);
+    const secrets: [string, string, boolean][] = [
+      ['explanation', question.explanation, false],
+      ['teacher mark', question.teacher_mark, false],
+      ['handwritten answer', question.student_answer, true],
+      ['correct answer', question.correct_answer, true],
+      ...question.flags.map((flag): [string, string, boolean] => ['reconstruction note', flag.note, false]),
+    ];
+    for (const [label, secret, allowChoice] of secrets) {
+      if (visible.some(({ text, printedChoice }) =>
+        !(allowChoice && printedChoice && text === secret) && containsToken(text, secret))) {
+        throw new Error(`Child view leaked the ${label} for question ${question.id}`);
       }
     }
   }

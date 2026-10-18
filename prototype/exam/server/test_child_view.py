@@ -56,6 +56,25 @@ class SchemaTests(unittest.TestCase):
         for secret in ("watr", "secret-handwriting", "hidden-key", "2分", "✓", "×", "Guessed hidden-key"):
             self.assertNotIn(secret, blob)
 
+    def test_answer_tokens_not_numeric_substrings_or_ids(self):
+        for answer, stem in (("8", "Count 58 seeds."), ("seed", "Count seedlings.")):
+            scan = {"subject": "math", "questions": [map_question({"id": "8", "stem": stem, "correct_answer": answer}, 8)]}
+            assert_child_view_safe(scan, to_child_view(scan))
+
+    def test_whole_answer_token_is_rejected(self):
+        for stem in ("Count 8 seeds.", "Count (8).", "Answer: 8!"):
+            scan = {"questions": [map_question({"id": "1", "stem": stem, "correct_answer": "8"}, 1)]}
+            with self.subTest(stem=stem), self.assertRaises(AssertionError):
+                assert_child_view_safe(scan, to_child_view(scan))
+
+    def test_other_question_choice_does_not_hide_answer_in_stem(self):
+        scan = {"questions": [
+            map_question({"stem": "Answer: 8.", "correct_answer": "8"}, 1),
+            map_question({"stem": "Pick a number.", "choices": ["8", "9"]}, 2),
+        ]}
+        with self.assertRaises(AssertionError):
+            assert_child_view_safe(scan, to_child_view(scan))
+
     def test_model_fence_and_ocr_flags(self):
         data = parse_model_payload('```json\n{"questions":[{"stem":"Hi?","choices":["a","b"]}]}\n```')
         self.assertEqual(data["questions"][0]["stem"], "Hi?")

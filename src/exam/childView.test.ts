@@ -69,3 +69,24 @@ if (child.questions.some((q) => 'correct_answer' in q || 'student_answer' in q |
 
 console.log('child view test passed');
 console.log(blob);
+
+// Numeric secrets are tokens. Question IDs and longer numbers are not answer text.
+const numeric = { ...scan, questions: [{ ...scan.questions[0], id: '8', stem: 'Count 58 seeds.', choices: [], student_answer: '', teacher_mark: '', correct_answer: '8', explanation: '', flags: [] }] } satisfies ParentScan;
+assertChildViewSafe(numeric, toChildView(numeric));
+for (const stem of ['Count 8 seeds.', 'Count (8).', 'Answer: 8!']) {
+  const leaked = { ...numeric, questions: [{ ...numeric.questions[0], stem }] };
+  let rejected = false;
+  try { assertChildViewSafe(leaked, toChildView(leaked)); } catch { rejected = true; }
+  if (!rejected) throw new Error(`Whole answer token was allowed: ${stem}`);
+}
+for (const answer of ['8', 'seed']) {
+  const longer = { ...numeric, questions: [{ ...numeric.questions[0], stem: 'Count 58 seedlings.', correct_answer: answer }] };
+  assertChildViewSafe(longer, toChildView(longer));
+}
+const crossQuestion = { ...numeric, questions: [
+  { ...numeric.questions[0], stem: 'Answer: 8.' },
+  { ...numeric.questions[0], id: '2', stem: 'Pick a number.', choices: ['8', '9'], correct_answer: '' },
+] };
+let rejectedCrossQuestion = false;
+try { assertChildViewSafe(crossQuestion, toChildView(crossQuestion)); } catch { rejectedCrossQuestion = true; }
+if (!rejectedCrossQuestion) throw new Error('Another question’s choice hid an answer in the stem');
