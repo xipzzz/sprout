@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 from typing import Any
 
 FORBIDDEN_CHILD_KEYS = {
@@ -209,6 +210,18 @@ def _walk_keys(value: Any, found: list[str]) -> None:
             _walk_keys(inner, found)
 
 
+def _contains_token(text: str, secret: str) -> bool:
+    def token_char(char: str) -> bool:
+        return char == "_" or unicodedata.category(char)[0] in {"L", "M", "N"}
+
+    for match in re.finditer(re.escape(secret), text):
+        before = match.start() > 0 and token_char(text[match.start() - 1])
+        after = match.end() < len(text) and token_char(text[match.end()])
+        if not before and not after:
+            return True
+    return False
+
+
 def _parent_questions(questions: list[dict]):
     for question in questions:
         yield question
@@ -226,31 +239,35 @@ def assert_child_view_safe(parent: dict, child: dict) -> None:
     if set(child) != {"subject", "questions"}:
         raise AssertionError("Child view has unexpected fields")
     originals = {q["id"]: q for q in parent.get("questions") or []}
-    visible = [(child.get("subject") or "", False)]
+    visible_by_id = {}
     for question in child.get("questions") or []:
         original = originals.get(question["id"])
         if original is None:
             raise AssertionError(f"Unknown child question: {question['id']}")
-        visible.append((question["stem"], False))
+        visible = [(question["stem"], False)]
         visible.extend((choice, choice in original.get("choices", [])) for choice in question["choices"])
-    for question in _parent_questions(parent.get("questions") or []):
-        secrets = [
-            ("explanation", question.get("explanation"), False),
-            ("teacher mark", question.get("teacher_mark"), False),
-            ("handwritten answer", question.get("student_answer"), True),
-            ("correct answer", question.get("correct_answer"), True),
-        ]
-        secrets.append(("teacher comment", question.get("teacher_comment"), False))
-        marks = question.get("marks") or {}
-        secrets.extend((label, marks.get(key), False) for label, key in (("mark note", "note"), ("score", "score")))
-        secrets.extend(("teacher symbol", symbol, False) for symbol in marks.get("symbols") or [])
-        for step in question.get("working") or []:
-            secrets.extend(("working", text, False) for text in [step["expression"], step["result"], *step["steps"]])
-        secrets.extend(("flag note", flag.get("note"), False) for flag in question.get("flags") or [])
-        for label, secret, allow_choice in secrets:
-            if not secret:
-                continue
-            token = re.compile(r"(?<!\w)" + re.escape(secret) + r"(?!\w)")
-            if any(not (allow_choice and printed and text == secret) and token.search(text)
-                   for text, printed in visible):
-                raise AssertionError(f"Child view leaked the {label} for {question.get('id')}")
+        if question["id"] in visible_by_id:
+            raise AssertionError(f"Duplicate child question: {question['id']}")
+        visible_by_id[question["id"]] = visible
+    for root in parent.get("questions") or []:
+        visible = [(child.get("subject") or "", False), *visible_by_id.get(root["id"], [])]
+        for question in _parent_questions([root]):
+            secrets = [
+                ("explanation", question.get("explanation"), False),
+                ("teacher mark", question.get("teacher_mark"), False),
+                ("handwritten answer", question.get("student_answer"), True),
+                ("correct answer", question.get("correct_answer"), True),
+            ]
+            secrets.append(("teacher comment", question.get("teacher_comment"), False))
+            marks = question.get("marks") or {}
+            secrets.extend((label, marks.get(key), False) for label, key in (("mark note", "note"), ("score", "score")))
+            secrets.extend(("teacher symbol", symbol, False) for symbol in marks.get("symbols") or [])
+            for step in question.get("working") or []:
+                secrets.extend(("working", text, False) for text in [step["expression"], step["result"], *step["steps"]])
+            secrets.extend(("flag note", flag.get("note"), False) for flag in question.get("flags") or [])
+            for label, secret, allow_choice in secrets:
+                if not secret:
+                    continue
+                if any(not (allow_choice and printed and text == secret) and _contains_token(text, secret)
+                       for text, printed in visible):
+                    raise AssertionError(f"Child view leaked the {label} for {question.get('id')}")

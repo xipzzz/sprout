@@ -62,35 +62,41 @@ export function assertChildViewSafe(parent: ParentScan, child: ChildView): void 
   if (Object.keys(child).sort().join(',') !== 'questions,subject') {
     throw new Error('Child view has unexpected fields');
   }
-  const visible = [{ text: child.subject, printedChoice: false }];
+  const visibleById = new Map<string, { text: string; printedChoice: boolean }[]>();
   for (const question of child.questions) {
     const keys = Object.keys(question).sort().join(',');
     if (keys !== 'choices,id,stem') throw new Error(`Child question has unexpected fields: ${keys}`);
     const original = parent.questions.find((item) => item.id === question.id);
     if (!original) throw new Error(`Unknown child question: ${question.id}`);
-    visible.push({ text: question.stem, printedChoice: false });
+    const visible = [{ text: question.stem, printedChoice: false }];
     for (const choice of question.choices) {
       visible.push({ text: choice, printedChoice: original.choices.includes(choice) });
     }
+    if (visibleById.has(question.id)) throw new Error(`Duplicate child question: ${question.id}`);
+    visibleById.set(question.id, visible);
   }
-  for (const question of parentQuestions(parent.questions)) {
-    const secrets: [string, string, boolean][] = [
-      ['explanation', question.explanation, false],
-      ['teacher mark', question.teacher_mark, false],
-      ['handwritten answer', question.student_answer, true],
-      ['correct answer', question.correct_answer, true],
-      ['teacher comment', question.teacher_comment ?? '', false],
-      ['mark note', question.marks?.note ?? '', false],
-      ['score', question.marks?.score ?? '', false],
-      ...(question.working ?? []).flatMap((step): [string, string, boolean][] =>
-        [step.expression, step.result, ...step.steps].map((text) => ['working', text, false])),
-      ...(question.marks?.symbols ?? []).map((text): [string, string, boolean] => ['teacher symbol', text, false]),
-      ...question.flags.map((flag): [string, string, boolean] => ['reconstruction note', flag.note, false]),
-    ];
-    for (const [label, secret, allowChoice] of secrets) {
-      if (visible.some(({ text, printedChoice }) =>
-        !(allowChoice && printedChoice && text === secret) && containsToken(text, secret))) {
-        throw new Error(`Child view leaked the ${label} for question ${question.id}`);
+  // Repeated words in other questions are printed context, not this question’s answer.
+  for (const root of parent.questions) {
+    const visible = [{ text: child.subject, printedChoice: false }, ...(visibleById.get(root.id) ?? [])];
+    for (const question of parentQuestions([root])) {
+      const secrets: [string, string, boolean][] = [
+        ['explanation', question.explanation, false],
+        ['teacher mark', question.teacher_mark, false],
+        ['handwritten answer', question.student_answer, true],
+        ['correct answer', question.correct_answer, true],
+        ['teacher comment', question.teacher_comment ?? '', false],
+        ['mark note', question.marks?.note ?? '', false],
+        ['score', question.marks?.score ?? '', false],
+        ...(question.working ?? []).flatMap((step): [string, string, boolean][] =>
+          [step.expression, step.result, ...step.steps].map((text) => ['working', text, false])),
+        ...(question.marks?.symbols ?? []).map((text): [string, string, boolean] => ['teacher symbol', text, false]),
+        ...question.flags.map((flag): [string, string, boolean] => ['reconstruction note', flag.note, false]),
+      ];
+      for (const [label, secret, allowChoice] of secrets) {
+        if (visible.some(({ text, printedChoice }) =>
+          !(allowChoice && printedChoice && text === secret) && containsToken(text, secret))) {
+          throw new Error(`Child view leaked the ${label} for question ${question.id}`);
+        }
       }
     }
   }

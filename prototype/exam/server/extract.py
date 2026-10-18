@@ -158,7 +158,10 @@ def read_sheet(text: str, ocr_lang: str = "eng", engine: str = "tesseract") -> t
     for parsed in sheet.questions:
         stem = parsed.stem
         choices = parsed.choices
-        flags = [_flag("stem", OCR_NOTE.get(ocr_lang, OCR_NOTE["eng"]) if engine == "tesseract" else "Read by local PaddleOCR from the cleaned page. Check the printed text; pencil was not lifted.")]
+        source_note = OCR_NOTE.get(ocr_lang, OCR_NOTE["eng"]) if engine == "tesseract" else (
+            "Read by local PaddleOCR from the cleaned page. Check the printed text; pencil was not lifted."
+        )
+        flags = [_flag("stem", source_note)]
         if choices:
             flags.append(_flag("choices", "Choices came from the text scan and may include stray handwriting."))
         if sheet.layout == "cloze":
@@ -376,6 +379,7 @@ def local_scan(image_bytes: bytes, filename: str, backend: str, subject: str = "
 
 
 def selected_ocr(requested: str = "") -> str:
+    load_local_env()
     choice = (requested or os.environ.get("SPROUT_OCR", "")).strip().lower()
     if choice not in {"", "paddle", "tesseract"}:
         raise ValueError("Choose OCR paddle or tesseract.")

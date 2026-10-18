@@ -162,7 +162,8 @@ def printed_rows(mask: np.ndarray) -> np.ndarray:
             continue
         height = box[0].stop - box[0].start
         width = box[1].stop - box[1].start
-        if 6 <= height <= 80 and width <= 3 * height:
+        # Adjacent printed letters can share pixels, such as Arial’s "www".
+        if 6 <= height <= 80 and width <= 4 * height:
             glyphs.append((box[0].start, box[0].stop, box[1].start, box[1].stop, index))
     glyphs.sort(key=lambda glyph: (glyph[0] + glyph[1]) / 2)
     rows: list[list[tuple]] = []
@@ -178,7 +179,9 @@ def printed_rows(mask: np.ndarray) -> np.ndarray:
         rows.append([glyph])
     for row in rows:
         for run in _horizontal_runs(row):
-            if len(run) < 6:
+            # Connected print can form several letters in one component.
+            letter_count = sum(max(1, (g[3] - g[2]) // (g[1] - g[0])) for g in run)
+            if len(run) < 4 or letter_count < 6:
                 continue
             heights = np.array([g[1] - g[0] for g in run], float)
             median_height = float(np.median(heights))

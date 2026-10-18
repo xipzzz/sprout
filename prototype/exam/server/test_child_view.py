@@ -57,9 +57,23 @@ class SchemaTests(unittest.TestCase):
             self.assertNotIn(secret, blob)
 
     def test_answer_tokens_not_numeric_substrings_or_ids(self):
-        for answer, stem in (("8", "Count 58 seeds."), ("seed", "Count seedlings.")):
+        for answer, stem in (("8", "Count 58 seeds."), ("seed", "Count seedlings."), ("e", "Read é."), ("水", "开水")):
             scan = {"subject": "math", "questions": [map_question({"id": "8", "stem": stem, "correct_answer": answer}, 8)]}
             assert_child_view_safe(scan, to_child_view(scan))
+
+    def test_another_question_can_use_the_same_word_in_its_printed_stem(self):
+        scan = {"subject": "english", "questions": [
+            map_question({"stem": "Ali is playing.", "choices": ["He", "She"], "correct_answer": "He"}, 1),
+            map_question({"stem": "The cat ____ sleeping.", "choices": ["is", "are"], "correct_answer": "is"}, 2),
+        ]}
+        assert_child_view_safe(scan, to_child_view(scan))
+
+    def test_duplicate_question_id_cannot_hide_an_answer(self):
+        scan = {"subject": "math", "questions": [map_question({"stem": "Count 58 seeds.", "correct_answer": "8"}, 1)]}
+        child = to_child_view(scan)
+        child["questions"].insert(0, {**child["questions"][0], "stem": "Answer: 8."})
+        with self.assertRaises(AssertionError):
+            assert_child_view_safe(scan, child)
 
     def test_whole_answer_token_is_rejected(self):
         for stem in ("Count 8 seeds.", "Count (8).", "Answer: 8!"):
@@ -105,6 +119,19 @@ class SchemaTests(unittest.TestCase):
             leaked["questions"][0]["stem"] = secret
             with self.subTest(secret=secret), self.assertRaises(AssertionError):
                 assert_child_view_safe(scan, leaked)
+
+    def test_child_refuses_parent_fields_even_without_an_answer_value(self):
+        scan = {"subject": "english", "questions": [map_question({"stem": "Pick a flower."}, 1)]}
+        for field in ("choice_letters", "working", "is_correct", "teacher_comment", "marks", "question_type", "sub_questions"):
+            child = to_child_view(scan)
+            child["questions"][0][field] = "private-detail"
+            with self.subTest(field=field), self.assertRaises(AssertionError):
+                assert_child_view_safe(scan, child)
+
+    def test_saved_practice_refuses_an_answer_token_in_the_stem(self):
+        scan = {"subject": "math", "questions": [map_question({"stem": "Answer: 8.", "correct_answer": "8"}, 1)]}
+        with self.assertRaises(AssertionError):
+            render_markdown(scan)
 
     def test_ocr_preserves_choice_labels(self):
         question = questions_from_ocr("1. Pick a flower.\nA) rose\nC) lily\n")[0]

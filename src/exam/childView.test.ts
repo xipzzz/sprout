@@ -67,9 +67,6 @@ if (child.questions.some((q) => 'correct_answer' in q || 'student_answer' in q |
   throw new Error('Child questions still have answer fields');
 }
 
-console.log('child view test passed');
-console.log(blob);
-
 // Numeric secrets are tokens. Question IDs and longer numbers are not answer text.
 const numeric = { ...scan, questions: [{ ...scan.questions[0], id: '8', stem: 'Count 58 seeds.', choices: [], student_answer: '', teacher_mark: '', correct_answer: '8', explanation: '', flags: [] }] } satisfies ParentScan;
 assertChildViewSafe(numeric, toChildView(numeric));
@@ -91,7 +88,6 @@ let rejectedCrossQuestion = false;
 try { assertChildViewSafe(crossQuestion, toChildView(crossQuestion)); } catch { rejectedCrossQuestion = true; }
 if (!rejectedCrossQuestion) throw new Error('Another question’s choice hid an answer in the stem');
 
-
 const detailed = { ...scan, questions: [{ ...scan.questions[0],
   choice_letters: ['B', 'D'],
   working: [{ expression: 'private-work', result: 'private-result', steps: ['private-step'] }],
@@ -107,3 +103,29 @@ for (const secret of ['private-work', 'private-result', 'private-step', 'private
   try { assertChildViewSafe(detailed, { ...detailedChild, questions: [{ ...detailedChild.questions[0], stem: secret }] }); } catch { rejected = true; }
   if (!rejected) throw new Error(`Parent detail was allowed in child text: ${secret}`);
 }
+
+for (const [answer, stem] of [['e', 'Read é.'], ['水', '开水'], ['C++', 'Try C++17.']]) {
+  const unicode = { ...numeric, questions: [{ ...numeric.questions[0], stem, correct_answer: answer }] };
+  assertChildViewSafe(unicode, toChildView(unicode));
+}
+
+const separateContexts = { ...numeric, subject: 'english', questions: [
+  { ...numeric.questions[0], id: '1', stem: 'Ali is playing.', choices: ['He', 'She'], correct_answer: 'He' },
+  { ...numeric.questions[0], id: '2', stem: 'The cat ____ sleeping.', choices: ['is', 'are'], correct_answer: 'is' },
+] };
+assertChildViewSafe(separateContexts, toChildView(separateContexts));
+
+for (const field of ['choice_letters', 'working', 'is_correct', 'teacher_comment', 'marks', 'question_type', 'sub_questions']) {
+  const invalid = { ...detailedChild, questions: [{ ...detailedChild.questions[0], [field]: 'private-detail' }] };
+  let rejected = false;
+  try { assertChildViewSafe(detailed, invalid); } catch { rejected = true; }
+  if (!rejected) throw new Error(`Child accepted parent field: ${field}`);
+}
+const duplicatedChild = { ...toChildView(numeric), questions: [
+  { ...toChildView(numeric).questions[0], stem: 'Answer: 8.' },
+  toChildView(numeric).questions[0],
+] };
+let rejectedDuplicate = false;
+try { assertChildViewSafe(numeric, duplicatedChild); } catch { rejectedDuplicate = true; }
+if (!rejectedDuplicate) throw new Error('A duplicate question ID hid a leaked answer');
+console.log('child view test passed');

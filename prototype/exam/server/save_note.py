@@ -1,6 +1,6 @@
 """Write one Obsidian Markdown note per scan.
 
-Default vault: /Users/ml/Documents/10_Obsidian/Xip/Sprout/
+Default vault: ~/Documents/10_Obsidian/Xip/Codex/Scans/
 Also writes SPROUT_SAVE_DIR when that folder is different.
 """
 
@@ -12,9 +12,9 @@ import re
 from datetime import date, datetime
 from pathlib import Path
 
-from schema import subject_slug, to_child_view
+from schema import assert_child_view_safe, subject_slug, to_child_view
 
-DEFAULT_VAULT = "/Users/ml/Documents/10_Obsidian/Xip/Sprout"
+DEFAULT_VAULT = str(Path.home() / "Documents" / "10_Obsidian" / "Xip" / "Codex" / "Scans")
 FALLBACK_DIR = "sprout-notes"
 NOTE_NAME = re.compile(r"^\d{4}-\d{2}-\d{2}-[a-z0-9]+(?:-\d{4})?\.md$")
 
@@ -76,7 +76,10 @@ def render_markdown(scan: dict, when: date | None = None) -> str:
     when = when or date.today()
     questions = scan.get("questions") or []
     locked = any(question.get("review") == "open" for question in questions)
-    practice_questions = [] if locked else to_child_view(scan)["questions"]
+    child = to_child_view(scan)
+    if not locked:
+        assert_child_view_safe(scan, child)
+    practice_questions = [] if locked else child["questions"]
     flag_lines = []
     for question in questions:
         for flag in question.get("flags") or []:

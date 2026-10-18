@@ -58,7 +58,7 @@ security add-generic-password -s sprout -a ZHIPU_API_KEY -w
 The child screen receives a different data shape with no handwritten answer, teacher's mark, or correct answer.
 
 The saver writes one Obsidian note per scan, named like `2026-10-17-english.md`, to
-`SPROUT_VAULT_DIR` (default `/Users/ml/Documents/10_Obsidian/Xip/Sprout/`). If that folder
+`SPROUT_VAULT_DIR` (default `~/Documents/10_Obsidian/Xip/Codex/Scans/`). If that folder
 cannot be created, the note falls back to `./sprout-notes/` (gitignored). Set
 `SPROUT_SAVE_DIR` to also keep a copy in another local folder.
 
