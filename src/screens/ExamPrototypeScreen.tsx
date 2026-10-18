@@ -27,6 +27,8 @@ import ExamChildPractice from './ExamChildPractice';
 import { useExamReview } from '../exam/useExamReview';
 import ExamReviewControls from './ExamReviewControls';
 import { useMistakesFlow } from './useMistakesFlow';
+import ExamExplainStep from './ExamExplainStep';
+import * as extras from '../exam/extras/screenHooks';
 
 interface ExamPrototypeScreenProps {
   onExit: () => void;
@@ -230,11 +232,16 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
   const scanToken = useRef(0);
   const savedPaths = useRef<string[]>([]);
   const saveChain = useRef<Promise<void>>(Promise.resolve());
-  const [phase, setPhase] = useState<Phase>('pick');
+  const [phase, setPhase] = useState<Phase>(() => (extras.initialSample() ? 'parent' : 'pick'));
   const [error, setError] = useState('');
-  const [scan, setScan] = useState<ParentScan | null>(null);
-  const [review, setReview] = useState<ReviewState>({});
+  const [scan, setScan] = useState<ParentScan | null>(() => extras.initialSample());
+  const [review, setReview] = useState<ReviewState>(() => {
+    const sample = extras.initialSample();
+    return sample ? initialReview(sample) : {};
+  });
   const [practice, setPractice] = useState<Practice | null>(null);
+  const [explaining, setExplaining] = useState(false);
+  const [similar, setSimilar] = useState<extras.PracticeRun | null>(null);
   const [saved, setSaved] = useState<string[]>([]);
   const [skipped, setSkipped] = useState<string[]>([]);
   const [saveError, setSaveError] = useState('');
@@ -352,9 +359,41 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
 
   if (mistakes.screen) return mistakes.screen;
 
+  if (similar) {
+    return (
+      <ExamChildPractice
+        view={similar.view}
+        typed
+        onGrade={extras.practiceGrade(similar)}
+        onHint={extras.practiceChildHint(similar)}
+        onBack={() => setSimilar(null)}
+        onExit={onExit}
+      />
+    );
+  }
+
+  if (explaining && scan) {
+    return (
+      <ExamExplainStep
+        scan={scan}
+        onPick={(id, answer) => setScan(extras.applyParentPick(scan, id, answer))}
+        onPractice={setSimilar}
+        onBack={() => setExplaining(false)}
+        onExit={onExit}
+      />
+    );
+  }
+
   if (practice) {
     return (
-      <ExamChildPractice view={practice.view} onGrade={practice.grade} onBack={() => setPractice(null)} onExit={onExit} />
+      <ExamChildPractice
+        view={practice.view}
+        typed={scan?.subject === 'math'}
+        onHint={scan ? extras.childHint(scan) : undefined}
+        onGrade={practice.grade}
+        onBack={() => setPractice(null)}
+        onExit={onExit}
+      />
     );
   }
 
@@ -420,6 +459,19 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
             </label>
             <button type="button" className="exam-proto__secondary" onClick={() => mistakes.openNotebook()}>
               Mistake notebook
+            </button>
+            <button
+              type="button"
+              className="exam-proto__secondary"
+              onClick={() => {
+                const sample = extras.mathsSampleScan();
+                setOriginalStems(Object.fromEntries(sample.questions.map((question) => [question.id, question.stem])));
+                setScan(sample);
+                setReview(initialReview(sample));
+                setPhase('parent');
+              }}
+            >
+              Try a maths sample
             </button>
             <input
               ref={fileRef}
@@ -590,6 +642,9 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
                 {error}
               </p>
             )}
+            <button type="button" className="exam-proto__secondary" onClick={() => setExplaining(true)}>
+              Explain each question
+            </button>
             <div className={`exam-proto__gate${progress.unlocked ? '' : ' exam-proto__gate--locked'}`}>
               <p className="exam-proto__gate-note" role="status">
                 {progress.unlocked && `Ready. ${progress.ready} of ${total} questions go to practice.`}

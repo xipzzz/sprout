@@ -8,6 +8,7 @@ node --experimental-strip-types src/exam/ocr.test.ts
 node --import ./scripts/register-tsx.mjs src/parent/parent.test.ts
 node --import ./scripts/register-tsx.mjs src/print/print.test.tsx
 node --experimental-strip-types src/exam/mistakes.test.ts
+node --experimental-strip-types src/exam/extras/extras.test.ts
 VENV="$ROOT/prototype/exam/.venv"
 if [[ ! -x "$VENV/bin/python" ]]; then
   python3 -m venv "$VENV"

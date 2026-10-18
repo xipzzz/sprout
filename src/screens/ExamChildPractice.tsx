@@ -4,6 +4,7 @@
 import { useState } from 'react';
 import type { ChildView } from '../exam/types';
 import PrintChildButton from '../print/PrintChildButton';
+import { ExamAnswerBox, ExamHint } from './ExamChildHelpers';
 
 type Grade = 'nice' | 'almost';
 
@@ -12,12 +13,18 @@ interface ExamChildPracticeProps {
   onGrade: (questionId: string, choice: string) => Grade;
   onBack: () => void;
   onExit: () => void;
+  /** Hint text after a wrong try; the parent side decides what is safe to show. */
+  onHint?: (questionId: string, wrongTries: number) => string | null;
+  /** Show an answer box when a question has no choices. */
+  typed?: boolean;
 }
 
-export default function ExamChildPractice({ view, onGrade, onBack, onExit }: ExamChildPracticeProps) {
+export default function ExamChildPractice({ view, onGrade, onBack, onExit, onHint, typed }: ExamChildPracticeProps) {
   const [index, setIndex] = useState(0);
   const [picked, setPicked] = useState<string | null>(null);
   const [grade, setGrade] = useState<Grade | null>(null);
+  const [wrongTries, setWrongTries] = useState(0);
+  const [hint, setHint] = useState<string | null>(null);
   const question = view.questions[index];
   const total = view.questions.length;
 
@@ -31,12 +38,21 @@ export default function ExamChildPractice({ view, onGrade, onBack, onExit }: Exa
   function choose(choice: string) {
     if (!question) return;
     setPicked(choice);
-    setGrade(onGrade(question.id, choice));
+    const result = onGrade(question.id, choice);
+    setGrade(result);
+    if (result === 'almost') {
+      setWrongTries(wrongTries + 1);
+      setHint(onHint?.(question.id, wrongTries + 1) ?? null);
+    } else {
+      setHint(null);
+    }
   }
 
   function next() {
     setPicked(null);
     setGrade(null);
+    setWrongTries(0);
+    setHint(null);
     setIndex((value) => Math.min(total - 1, value + 1));
   }
 
@@ -90,13 +106,18 @@ export default function ExamChildPractice({ view, onGrade, onBack, onExit }: Exa
                 );
               })}
             </div>
+          ) : typed ? (
+            <ExamAnswerBox key={question.id} onCheck={choose} />
           ) : (
             <p className="exam-proto__read">Read this sentence out loud.</p>
           )}
           {grade === 'nice' && <p className="exam-proto__result exam-proto__result--nice">Nicely done.</p>}
           {grade === 'almost' && (
-            <p className="exam-proto__result exam-proto__result--almost">Almost. Try another word.</p>
+            <p className="exam-proto__result exam-proto__result--almost">
+              {typed || view.subject === 'math' ? 'Almost. Try again.' : 'Almost. Try another word.'}
+            </p>
           )}
+          {grade === 'almost' && hint && <ExamHint text={hint} />}
           {grade === 'nice' && index + 1 < total && (
             <button type="button" className="btn-primary exam-proto__cta" onClick={next}>
               Next question
