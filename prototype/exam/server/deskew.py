@@ -13,8 +13,39 @@ from PIL import Image
 from scipy import ndimage
 
 
+EXIF_ORIENTATION_TAG = 0x0112
+
+# How to turn the stored pixels so the page reads upright, for each EXIF orientation value.
+# Phones store the sensor image as shot and set this tag instead of rotating the pixels.
+UPRIGHT_STEPS: dict[int, list[Image.Transpose]] = {
+    1: [],
+    2: [Image.Transpose.FLIP_LEFT_RIGHT],
+    3: [Image.Transpose.ROTATE_180],
+    4: [Image.Transpose.FLIP_TOP_BOTTOM],
+    5: [Image.Transpose.TRANSPOSE],
+    6: [Image.Transpose.ROTATE_270],
+    7: [Image.Transpose.TRANSVERSE],
+    8: [Image.Transpose.ROTATE_90],
+}
+
+
+def exif_orientation(image: Image.Image) -> int:
+    try:
+        value = int(image.getexif().get(EXIF_ORIENTATION_TAG, 1))
+    except (TypeError, ValueError):
+        return 1
+    return value if value in UPRIGHT_STEPS else 1
+
+
+def upright(image: Image.Image) -> Image.Image:
+    """Apply the camera's EXIF orientation to the pixels, before deskew and OCR."""
+    for step in UPRIGHT_STEPS[exif_orientation(image)]:
+        image = image.transpose(step)
+    return image
+
+
 def load_rgb(image_bytes: bytes, max_edge: int = 1600) -> Image.Image:
-    image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+    image = upright(Image.open(io.BytesIO(image_bytes))).convert("RGB")
     scale = min(1.0, max_edge / max(image.size))
     if scale < 1:
         image = image.resize(
@@ -277,6 +308,7 @@ def jpeg_data_url(rgb: np.ndarray, quality: int = 70) -> str:
 
 
 def prepare_page(image_bytes: bytes) -> dict:
+    orientation = exif_orientation(Image.open(io.BytesIO(image_bytes)))
     image = load_rgb(image_bytes)
     rgb = np.asarray(image)
     corners = _page_corners(rgb)
@@ -292,7 +324,7 @@ def prepare_page(image_bytes: bytes) -> dict:
             flat = rgb
     clean, lifted = lift_colored_ink(flat)
     return {
-        "deskew": {"applied": applied, "corners": corner_list},
+        "deskew": {"applied": applied, "corners": corner_list, "exif_orientation": orientation},
         "ink_pixels_lifted": lifted,
         "pencil": pencil_score(clean),
         "deskew_jpeg": jpeg_data_url(flat),

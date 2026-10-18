@@ -44,7 +44,7 @@ Checked and kept, with the reason:
 - JSON field names (`paper_title`, `stem`, `options`, `student_answer.final`, `teacher_feedback.symbols`, `score`). These are interface facts, not expression. `schema.py` reads them so a Goppai-shaped reply maps into Sprout.
 - FastAPI CORS setup, `JSONResponse` error handler, the Vite proxy and `// https://vite.dev/config/`. These are framework template lines that Goppai also copied from the FastAPI and Vite docs.
 - The Zhipu chat message shape (`role`, `content`, `image_url`). This is the vendor API format. Sprout calls it with `httpx` in its own function. Goppai uses the `zai` SDK.
-- EXIF orientation. Goppai calls `ImageOps.exif_transpose` in `utils/image.py`. Sprout had no EXIF step at audit time.
+- EXIF orientation. Goppai calls `ImageOps.exif_transpose` in `utils/image.py`. Sprout had no EXIF step at audit time. The later fix in `deskew.py` (`UPRIGHT_STEPS`, `upright`) is Sprout's own table of the 8 EXIF cases.
 - CSS. No branch class name matches a Goppai class name. The only shared lines are single generic declarations such as `align-items: center;`.
 - Images. `public/sample-exam-english.png` is drawn by `make_sample.py`. The synthetic pages come from `synthetic_pages.py`. `01-local-worksheet1.jpg` is a local SG worksheet. No hash or size matches Goppai's `inputs/`.
 - Regexes, constants, comments. Goppai has no parsing regexes. Its comments are Chinese and none appear in Sprout. Deskew, ink lift, the worksheet parser and the child view check have no Goppai counterpart.
