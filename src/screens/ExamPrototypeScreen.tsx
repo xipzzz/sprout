@@ -4,6 +4,7 @@
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { extractExam, saveExam, UnsupportedPageError } from '../exam/api';
+import { flagRows } from '../exam/flags';
 import { ocrEngineFromQuery, SUBJECTS, type SubjectChoice } from '../exam/ocr';
 import {
   BLANK,
@@ -394,6 +395,7 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
 
   const progress = scan ? reviewProgress(scan, review) : null;
   const copy = scan ? parentCopy(scan, review) : null;
+  const flagRowList = flagRows(copy?.questions ?? []);
   const copyById = new Map(
     (copy?.questions ?? [])
       .filter((question) => question.explanation)
@@ -496,21 +498,17 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
               {saveError && <>Could not save the note. {saveError}</>}
               {!saved.length && !skipped.length && !saveError && 'Saving the note…'}
             </p>
-            {copy?.questions.some((question) => question.flags.length > 0) && (
-              <ul className="exam-proto__flag-summary">
-                {[
-                  ...new Map(
-                    copy.questions.flatMap((question) =>
-                      question.flags.map((flag) => [
-                        `${question.id}|${flag.field}|${flag.kind}`,
-                        { id: question.id, field: flag.field, kind: flag.kind },
-                      ]),
-                    ),
-                  ),
-                ].map(([key, chip]) => (
-                  <li key={key}>
-                    {chip.kind === 'generated' ? 'AI wrote this' : 'AI filled this in'}
-                    {' · '}Q{chip.id} {chip.field.replaceAll('_', ' ')}
+            {flagRowList.length > 0 && (
+              <ul className="exam-proto__flag-summary" aria-label="What the reader filled in, by question">
+                {flagRowList.map((row) => (
+                  <li key={row.id} className="exam-proto__flag-row">
+                    <span className="exam-proto__flag-row-id">Q{row.id}</span>
+                    {row.chips.map((chip) => (
+                      <span key={chip.kind} className="exam-proto__flag-chip">
+                        {chip.label}
+                        <span className="exam-proto__flag-chip-fields"> · {chip.fields.join(', ')}</span>
+                      </span>
+                    ))}
                   </li>
                 ))}
               </ul>
