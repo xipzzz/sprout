@@ -93,6 +93,51 @@ class InkLiftTests(unittest.TestCase):
         self.assertGreater((_luma(out) < 120)[page.print_mask].mean(), 0.97)
 
 
+class ExifOrientationTests(unittest.TestCase):
+    """Phones save sideways pixels plus an orientation tag; the page must be turned upright before deskew and OCR."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.upright = prepare_page(sp.blue_ink_mcq().jpeg)
+
+    def assert_matches_upright(self, prepared: dict):
+        self.assertEqual(prepared["clean_rgb"].shape, self.upright["clean_rgb"].shape)
+        diff = np.abs(prepared["clean_rgb"].astype(int) - self.upright["clean_rgb"].astype(int))
+        self.assertLess(diff.mean(), 4)
+        self.assertEqual(decode(prepared["ocr_jpeg"]).shape, decode(self.upright["ocr_jpeg"]).shape)
+
+    def test_rotated_camera_fixture(self):
+        data = (SYNTH / "blue-ink-mcq-exif6.jpg").read_bytes()
+        stored = Image.open(io.BytesIO(data))
+        self.assertGreater(stored.width, stored.height)
+        self.assertEqual(stored.getexif().get(0x0112), 6)
+        prepared = prepare_page(data)
+        self.assertEqual(prepared["deskew"]["exif_orientation"], 6)
+        self.assertEqual(prepared["deskew"]["upright_turn"], "turned 90° clockwise")
+        self.assert_matches_upright(prepared)
+
+    def test_other_camera_turns(self):
+        for orientation in (3, 8):
+            with self.subTest(orientation):
+                prepared = prepare_page(sp.camera_jpeg(sp.blue_ink_mcq().jpeg, orientation))
+                self.assertEqual(prepared["deskew"]["exif_orientation"], orientation)
+                self.assert_matches_upright(prepared)
+
+    def test_upright_photo_reports_no_turn(self):
+        self.assertEqual(self.upright["deskew"]["exif_orientation"], 1)
+        self.assertEqual(self.upright["deskew"]["upright_turn"], "")
+
+    def test_rotated_photo_reaches_the_parent_as_upright(self):
+        data = (SYNTH / "blue-ink-mcq-exif6.jpg").read_bytes()
+        result = run(extract_scan(data, "page.jpg", False, fixture("blue-ink-mcq.ocr-clean.txt"), "auto", "eng", "tesseract"))
+        self.assertEqual(result["scan"]["deskew"]["upright_turn"], "turned 90° clockwise")
+        self.assertEqual(len(result["scan"]["questions"]), 5)
+        preview = decode(result["scan"]["previews"]["deskew_jpeg"])
+        self.assertGreater(preview.shape[0], preview.shape[1])
+        child = child_safe(result["scan"])
+        self.assertNotIn("deskew", child)
+
+
 class PencilTests(unittest.TestCase):
     """Pattern 6: pencil is not removed, but the page is flagged."""
 

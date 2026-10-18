@@ -201,6 +201,11 @@ class RealPaddleTests(unittest.TestCase):
         self.assertEqual(scan["questions"][0]["stem"], "小华____和妈妈去公园玩。")
         self.assertTrue(all("____" in q["stem"] for q in scan["questions"]))
 
+    def test_sideways_camera_photo_is_read_upright(self):
+        scan = self.read("exif6", (SYNTH / "blue-ink-mcq-exif6.jpg").read_bytes())
+        self.assertEqual([len(q["choices"]) for q in scan["questions"]], [3, 3, 3, 3, 3])
+        self.assertEqual(scan["questions"][1]["stem"], "Samad and Ali ____ cleaning the whiteboard.")
+
     def test_real_photo(self):
         questions = self.read("real", REAL.read_bytes())["questions"]
         self.assertEqual([len(q["choices"]) for q in questions], [3, 3, 3, 3, 3])

@@ -9,19 +9,37 @@ from __future__ import annotations
 import io
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageOps
 from scipy import ndimage
 
+EXIF_ORIENTATION = 0x0112
+# How the stored pixels were turned to stand the page upright, by EXIF orientation value.
+UPRIGHT_TURN = {
+    2: "mirrored",
+    3: "turned 180°",
+    4: "flipped",
+    5: "turned and mirrored",
+    6: "turned 90° clockwise",
+    7: "turned and mirrored",
+    8: "turned 90° anticlockwise",
+}
 
-def load_rgb(image_bytes: bytes, max_edge: int = 1600) -> Image.Image:
-    image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+
+def load_rgb(image_bytes: bytes, max_edge: int = 1600) -> tuple[Image.Image, int]:
+    """Decode a photo upright: phones store sideways pixels plus an EXIF orientation tag.
+
+    Returns the image and the EXIF orientation it had (1 when none).
+    """
+    image = Image.open(io.BytesIO(image_bytes))
+    orientation = int(image.getexif().get(EXIF_ORIENTATION, 1) or 1)
+    image = ImageOps.exif_transpose(image).convert("RGB")
     scale = min(1.0, max_edge / max(image.size))
     if scale < 1:
         image = image.resize(
             (max(1, int(image.width * scale)), max(1, int(image.height * scale))),
             Image.Resampling.LANCZOS,
         )
-    return image
+    return image, orientation if orientation in UPRIGHT_TURN else 1
 
 
 def _page_corners(rgb: np.ndarray) -> np.ndarray | None:
@@ -277,7 +295,7 @@ def jpeg_data_url(rgb: np.ndarray, quality: int = 70) -> str:
 
 
 def prepare_page(image_bytes: bytes) -> dict:
-    image = load_rgb(image_bytes)
+    image, orientation = load_rgb(image_bytes)
     rgb = np.asarray(image)
     corners = _page_corners(rgb)
     applied = False
@@ -292,7 +310,12 @@ def prepare_page(image_bytes: bytes) -> dict:
             flat = rgb
     clean, lifted = lift_colored_ink(flat)
     return {
-        "deskew": {"applied": applied, "corners": corner_list},
+        "deskew": {
+            "applied": applied,
+            "corners": corner_list,
+            "exif_orientation": orientation,
+            "upright_turn": UPRIGHT_TURN.get(orientation, ""),
+        },
         "ink_pixels_lifted": lifted,
         "pencil": pencil_score(clean),
         "deskew_jpeg": jpeg_data_url(flat),

@@ -473,6 +473,7 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
                 <figure>
                   <img src={scan.previews.deskew_jpeg} alt="Page straightened from the photo" />
                   <figcaption>
+                    {scan.deskew.upright_turn ? `Photo ${scan.deskew.upright_turn} · ` : ''}
                     Straightened{scan.deskew.applied ? '' : ' (page corners not found)'}
                   </figcaption>
                 </figure>

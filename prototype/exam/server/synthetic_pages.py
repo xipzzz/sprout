@@ -297,6 +297,19 @@ def chinese_ink_mcq(seed: int = 17) -> Page:
 
 ALL = [blue_ink_mcq, clean_blue_url, pencil_mcq, cloze_passage, chinese_mcq, chinese_ink_mcq]
 
+# Pixel turn that, undone by the EXIF tag, shows the page upright again.
+_STORED_TURN = {3: Image.Transpose.ROTATE_180, 6: Image.Transpose.ROTATE_90, 8: Image.Transpose.ROTATE_270}
+
+
+def camera_jpeg(jpeg: bytes, orientation: int) -> bytes:
+    """Store an upright page the way a phone does: sideways pixels plus an EXIF orientation tag."""
+    stored = Image.open(io.BytesIO(jpeg)).convert("RGB").transpose(_STORED_TURN[orientation])
+    exif = Image.Exif()
+    exif[0x0112] = orientation
+    buffer = io.BytesIO()
+    stored.save(buffer, format="JPEG", quality=88, exif=exif)
+    return buffer.getvalue()
+
 
 def main(out_dir: str) -> None:
     out = Path(out_dir)
@@ -305,6 +318,9 @@ def main(out_dir: str) -> None:
         page = build()
         (out / f"{page.name}.jpg").write_bytes(page.jpeg)
         print(out / f"{page.name}.jpg")
+    rotated = out / "blue-ink-mcq-exif6.jpg"
+    rotated.write_bytes(camera_jpeg(blue_ink_mcq().jpeg, 6))
+    print(rotated)
 
 
 if __name__ == "__main__":

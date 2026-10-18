@@ -28,7 +28,13 @@ export type ParentScan = {
   paper_title: string;
   source_photo: string;
   note: string;
-  deskew: { applied: boolean; corners: number[][] };
+  deskew: {
+    applied: boolean;
+    corners: number[][];
+    /** Camera EXIF orientation the photo carried (1 = already upright). */
+    exif_orientation?: number;
+    upright_turn?: string;
+  };
   ink_pixels_lifted: number;
   questions: ParentQuestion[];
   /** Whole-page notes for the parent: pencil seen, passage blanks, Chinese read. */
