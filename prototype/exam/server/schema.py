@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import json
+import unicodedata
 from typing import Any
 
 FORBIDDEN_CHILD_KEYS = {
@@ -163,6 +163,38 @@ def _walk_keys(value: Any, found: list[str]) -> None:
             _walk_keys(inner, found)
 
 
+def _is_word_char(char: str) -> bool:
+    """A letter or digit that joins its neighbours into one word. Each Han character is a token on its own."""
+    return bool(char) and char.isalnum() and not unicodedata.name(char, "").startswith("CJK")
+
+
+def contains_token(text: str, needle: str) -> bool:
+    """True when needle sits in text as whole tokens, ignoring case. "8" is in "Add 8 more" but not in "58"."""
+    hay = text.lower()
+    target = needle.strip().lower()
+    if not target:
+        return False
+    guard_start = _is_word_char(target[0])
+    guard_end = _is_word_char(target[-1])
+    at = hay.find(target)
+    while at != -1:
+        before = hay[at - 1] if at > 0 else ""
+        after = hay[at + len(target)] if at + len(target) < len(hay) else ""
+        if not (guard_start and _is_word_char(before)) and not (guard_end and _is_word_char(after)):
+            return True
+        at = hay.find(target, at + 1)
+    return False
+
+
+def _child_text(child: dict) -> str:
+    """Only the text the child can read: subject, stems and choices. Ids are question numbers, not answers."""
+    parts = [str(child.get("subject") or "")]
+    for question in child.get("questions") or []:
+        parts.append(str(question.get("stem") or ""))
+        parts.extend(str(choice) for choice in question.get("choices") or [])
+    return "\n".join(parts)
+
+
 def assert_child_view_safe(parent: dict, child: dict) -> None:
     leaked: list[str] = []
     _walk_keys(child, leaked)
@@ -171,7 +203,7 @@ def assert_child_view_safe(parent: dict, child: dict) -> None:
     for question in child.get("questions") or []:
         if set(question.keys()) != {"id", "stem", "choices"}:
             raise AssertionError(f"Child question has unexpected fields: {sorted(question.keys())}")
-    blob = json.dumps(child, ensure_ascii=False)
+    blob = _child_text(child)
     choice_text = {
         choice
         for question in parent.get("questions") or []
@@ -179,18 +211,18 @@ def assert_child_view_safe(parent: dict, child: dict) -> None:
     }
     for question in parent.get("questions") or []:
         explanation = question.get("explanation") or ""
-        if explanation and explanation in blob:
+        if explanation and contains_token(blob, explanation):
             raise AssertionError(f"Child view leaked the explanation for {question.get('id')}")
         mark = question.get("teacher_mark") or ""
-        if mark and mark not in choice_text and mark in blob:
+        if mark and mark not in choice_text and contains_token(blob, mark):
             raise AssertionError(f"Child view leaked the teacher mark for {question.get('id')}")
         written = question.get("student_answer") or ""
-        if written and written not in choice_text and written in blob:
+        if written and written not in choice_text and contains_token(blob, written):
             raise AssertionError(f"Child view leaked the handwritten answer for {question.get('id')}")
         correct = question.get("correct_answer") or ""
-        if correct and correct not in choice_text and correct in blob:
+        if correct and correct not in choice_text and contains_token(blob, correct):
             raise AssertionError(f"Child view leaked the correct answer for {question.get('id')}")
         for flag in question.get("flags") or []:
             note = (flag or {}).get("note") or ""
-            if note and note in blob:
+            if note and contains_token(blob, note):
                 raise AssertionError(f"Child view leaked a flag note for {question.get('id')}")

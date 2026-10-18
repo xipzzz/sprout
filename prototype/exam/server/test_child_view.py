@@ -9,7 +9,7 @@ from PIL import Image, ImageDraw
 from deskew import prepare_page
 from extract import load_fixture, parse_model_payload, questions_from_ocr, stub_scan
 from save_note import render_markdown, save_scan
-from schema import assert_child_view_safe, map_question, to_child_view
+from schema import assert_child_view_safe, contains_token, map_question, to_child_view
 
 
 class SchemaTests(unittest.TestCase):
@@ -66,6 +66,36 @@ class SchemaTests(unittest.TestCase):
         self.assertNotIn("explanation", fields)
         self.assertEqual(questions[0]["correct_answer"], "")
         self.assertEqual(questions[0]["explanation"], "")
+
+
+class WholeTokenTests(unittest.TestCase):
+    def _scan(self, stem):
+        return {
+            "subject": "math",
+            "questions": [map_question({"id": "8", "stem": stem, "correct_answer": "8"}, 1)],
+        }
+
+    def test_answer_inside_a_longer_number_is_not_a_leak(self):
+        scan = self._scan("There are 58 apples. How many are red?")
+        assert_child_view_safe(scan, to_child_view(scan))
+
+    def test_lone_answer_in_the_stem_is_a_leak(self):
+        scan = self._scan("Add 8 more apples. How many now?")
+        with self.assertRaises(AssertionError):
+            assert_child_view_safe(scan, to_child_view(scan))
+
+    def test_token_rules(self):
+        cases = [
+            ("There are 58 apples.", "8", False),
+            ("Add 8.", "8", True),
+            ("8个苹果", "8", True),
+            ("Waterfall", "water", False),
+            ("Water is wet.", "water", True),
+            ("小明喝水", "水", True),
+            ("Ticked ✓ here", "✓", True),
+        ]
+        for text, needle, expected in cases:
+            self.assertEqual(contains_token(text, needle), expected, (text, needle))
 
 
 class DeskewTests(unittest.TestCase):
