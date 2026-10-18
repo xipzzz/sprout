@@ -3,7 +3,7 @@
    Practice stays locked until the parent picks or drops every question. */
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import { extractExam, saveExam, UnsupportedPageError } from '../exam/api';
+import { readPhoto, saveExam, UnsupportedPageError } from '../exam/api';
 import { flagRows } from '../exam/flags';
 import { ocrEngineFromQuery, SUBJECTS, type SubjectChoice } from '../exam/ocr';
 import {
@@ -66,26 +66,26 @@ const MARKED = { true: 'Right', false: 'Wrong' } as const;
 /** Everything else the page showed for this question. Parent screen only. */
 function PageDetails({ question }: { question: ParentQuestion }) {
   const rows: { field: ReconstructionFlag['field']; term: string; value: ReactNode }[] = [];
-  if (typeof question.is_correct === 'boolean') {
-    rows.push({ field: 'is_correct', term: 'Marked', value: MARKED[`${question.is_correct}`] });
+  if (typeof question.marked_right === 'boolean') {
+    rows.push({ field: 'marked_right', term: 'Marked', value: MARKED[`${question.marked_right}`] });
   }
-  if (question.student_marks) rows.push({ field: 'student_marks', term: 'Marks', value: question.student_marks });
+  if (question.marks_awarded) rows.push({ field: 'marks_awarded', term: 'Marks', value: question.marks_awarded });
   if (question.teacher_comment) {
     rows.push({ field: 'teacher_comment', term: 'Teacher’s comment', value: question.teacher_comment });
   }
   if (question.working_steps?.length) {
     rows.push({ field: 'working_steps', term: 'Working', value: question.working_steps.join(' / ') });
   }
-  if (question.sub_questions?.length) {
+  if (question.parts?.length) {
     rows.push({
-      field: 'sub_questions',
+      field: 'parts',
       term: 'Parts',
       value: (
         <ul className="exam-proto__subs">
-          {question.sub_questions.map((sub) => (
+          {question.parts.map((sub) => (
             <li key={sub.label}>
               ({sub.label}) {sub.stem} Wrote: {sub.student_answer || 'blank'}. Answer: {sub.correct_answer || 'none'}.
-              {typeof sub.is_correct === 'boolean' && ` ${MARKED[`${sub.is_correct}`]}.`}
+              {typeof sub.marked_right === 'boolean' && ` ${MARKED[`${sub.marked_right}`]}.`}
             </li>
           ))}
         </ul>
@@ -296,7 +296,7 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
     setSkipped([]);
     setPractice(null);
     try {
-      const next = await extractExam(file, demo, subjectChoice, setStep, ocrEngineFromQuery(window.location.search));
+      const next = await readPhoto(file, demo, subjectChoice, setStep, ocrEngineFromQuery(window.location.search));
       setOriginalStems(Object.fromEntries(next.questions.map((question) => [question.id, question.stem])));
       setScan(next);
       setReview(initialReview(next));

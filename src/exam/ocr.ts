@@ -3,7 +3,7 @@
 
 import type { OcrEngine, OcrLang, ParentScan } from './types.ts';
 
-export type ExtractResponse = {
+export type ReadResponse = {
   ok: boolean;
   need_ocr?: boolean;
   unsupported?: boolean;
@@ -18,7 +18,7 @@ export type OcrPass = { image: string; lang: OcrLang };
 const LANGS: OcrLang[] = ['eng', 'chi_sim'];
 
 /** The next pass the server asked for, or null. At most one pass per language, so the loop ends. */
-export function nextOcrPass(response: ExtractResponse, tried: OcrLang[]): OcrPass | null {
+export function nextOcrPass(response: ReadResponse, tried: OcrLang[]): OcrPass | null {
   if (!response.need_ocr) return null;
   const lang = response.ocr_lang && LANGS.includes(response.ocr_lang) ? response.ocr_lang : 'eng';
   if (tried.includes(lang)) return null;

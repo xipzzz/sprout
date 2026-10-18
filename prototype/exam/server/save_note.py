@@ -87,16 +87,16 @@ def _page_detail_lines(question: dict) -> list[str]:
     lines = []
     if question.get("question_type"):
         lines.append(f"Question type: {question['question_type'].replace('_', ' ')}")
-    if MARKED.get(question.get("is_correct")):
-        lines.append(f"Marked: {MARKED[question['is_correct']]}")
-    if question.get("student_marks"):
-        lines.append(f"Marks: {question['student_marks']}")
+    if MARKED.get(question.get("marked_right")):
+        lines.append(f"Marked: {MARKED[question['marked_right']]}")
+    if question.get("marks_awarded"):
+        lines.append(f"Marks: {question['marks_awarded']}")
     if question.get("teacher_comment"):
         lines.append(f"Teacher's comment: {question['teacher_comment']}")
     if question.get("working_steps"):
         lines.append("Working: " + " / ".join(question["working_steps"]))
-    for sub in question.get("sub_questions") or []:
-        mark = MARKED.get(sub.get("is_correct")) or sub.get("teacher_mark") or "not marked"
+    for sub in question.get("parts") or []:
+        mark = MARKED.get(sub.get("marked_right")) or sub.get("teacher_mark") or "not marked"
         lines.append(
             f"({sub.get('label')}) {sub.get('stem') or ''} Child wrote: {sub.get('student_answer') or '(blank)'}; "
             f"answer: {sub.get('correct_answer') or '(none)'}; {mark}"
@@ -137,7 +137,7 @@ def render_markdown(scan: dict, when: date | None = None) -> str:
 
     parent = [
         "",
-        f"# {scan.get('paper_title') or 'Homework'} · {when.isoformat()}",
+        f"# {scan.get('sheet_title') or 'Homework'} · {when.isoformat()}",
         "",
         "## Parent copy",
         "",

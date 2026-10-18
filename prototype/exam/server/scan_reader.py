@@ -31,42 +31,28 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 FIXTURE_PATH = REPO_ROOT / "src" / "exam" / "fixture.json"
 ZHIPU_URL = "https://open.bigmodel.cn/api/paas/v4/chat/completions"
 
-PROMPT = """You turn one photo of a school worksheet into JSON.
-Return only JSON, no markdown, with this shape:
-{
-  "paper_title": "",
-  "subject": "english or math",
-  "questions": [
-    {
-      "id": "1",
-      "stem": "printed question with handwriting left out of the sentence",
-      "choices": ["printed choice"],
-      "choice_labels": ["the printed letter or number before each choice, like A or 1"],
-      "question_type": "multiple_choice, fill_blank, cloze, editing, or open",
-      "student_answer": "what the child wrote, or empty",
-      "working_steps": ["each line of working the child wrote, or none"],
-      "teacher_mark": "the teacher's check, cross, or score, or empty",
-      "is_correct": "true or false from the teacher's mark, or null",
-      "teacher_comment": "words the teacher wrote, or empty",
-      "student_marks": "marks given, like 1/2, or empty",
-      "correct_answer": "the answer to use for practice",
-      "explanation": "one or two plain sentences a parent can read",
-      "sub_questions": [
-        {"label": "a", "stem": "", "student_answer": "", "teacher_mark": "", "correct_answer": ""}
-      ],
-      "flags": [
-        {"field": "stem", "kind": "reconstructed", "note": "why this was guessed"}
-      ]
-    }
-  ]
-}
-Rules:
-- stem and choices are the printed question. Do not leave handwriting inside the stem.
-- student_answer is only what the child wrote. teacher_mark is only the teacher's mark.
-- If you guess text that was hidden, smudged, or covered, add a flags entry for that field.
-- Use kind reconstructed for guessed page text, and kind generated for the explanation.
-- Always flag the explanation as generated.
-- If you are unsure, still give your best practice answer and flag correct_answer.
+PROMPT = """This photo is a child's homework page, already straightened, with blue and red ink lifted.
+A parent will check what you send before the child practises, so say when you guessed.
+
+Reply with one JSON object and nothing else. Top level: sheet_title (the heading
+printed on the page), subject (english, math or chinese) and questions (a list).
+
+For each numbered question give:
+  id: the printed number, as text.
+  stem: the printed words only. Where the child wrote in a blank, put ____ instead.
+  choices: the printed options, in order. choice_labels: what was printed in front of
+    each (A, B, 1, 2), same length as choices.
+  question_type: multiple_choice, fill_blank, cloze, editing or open.
+  correct_answer: your best answer for practice, even when unsure.
+  explanation: one or two short sentences for the parent.
+  flags: a list of {field, kind, note}. kind is reconstructed when you filled in text
+    you could not see clearly, and generated for anything you wrote yourself. The
+    explanation is always generated.
+If any handwriting is still visible, you may also give student_answer, working_steps
+(a list of lines), teacher_mark, marked_right (true, false or null), teacher_comment
+and marks_awarded (like 1/2). Leave them out when there is nothing to read.
+For a question split into (a), (b), give parts: a list with label, stem, student_answer,
+teacher_mark and correct_answer.
 """
 
 
@@ -107,7 +93,7 @@ def stub_scan(filename: str) -> dict:
     return {
         "extraction": "stub",
         "subject": fixture["subject"],
-        "paper_title": fixture["paper_title"],
+        "sheet_title": fixture["sheet_title"],
         "source_photo": filename,
         "note": (
             "Sample demo. These questions are a labeled stub, not a live read of the photo. "
@@ -279,7 +265,7 @@ UNSUPPORTED = (
 )
 
 
-async def vision_extract(image_jpeg: bytes, api_key: str) -> dict:
+async def vision_read(image_jpeg: bytes, api_key: str) -> dict:
     model = os.environ.get("ZHIPU_MODEL", "glm-4.6v").strip() or "glm-4.6v"
     encoded = base64.b64encode(image_jpeg).decode("ascii")
     payload = {
@@ -294,7 +280,7 @@ async def vision_extract(image_jpeg: bytes, api_key: str) -> dict:
             }
         ],
     }
-    async with httpx.AsyncClient(timeout=120) as client:
+    async with httpx.AsyncClient(timeout=90) as client:
         response = await client.post(
             ZHIPU_URL,
             headers={"Authorization": f"Bearer {api_key}"},
@@ -308,7 +294,7 @@ async def vision_extract(image_jpeg: bytes, api_key: str) -> dict:
     return {
         "extraction": "zhipu",
         "subject": subject_slug(str(data.get("subject") or "english")),
-        "paper_title": str(data.get("paper_title") or "Homework"),
+        "sheet_title": str(data.get("sheet_title") or "Homework"),
         "note": f"Optional vision read with Zhipu {model}. Anything guessed is flagged on the question.",
         "questions": questions_from_model(data),
     }
@@ -349,7 +335,7 @@ def _ocr_scan(page: dict, filename: str, text: str, lang: str, subject: str, eng
     return {
         "extraction": engine,
         "subject": subject_name,
-        "paper_title": sheet.title or "Homework",
+        "sheet_title": sheet.title or "Homework",
         "source_photo": filename,
         "note": (
             f"Read with free {ENGINE_LABEL[engine]} from the cleaned page. "
@@ -396,7 +382,7 @@ async def _paddle_scan(page: dict, previews: dict, filename: str, subject: str) 
     return {"ok": True, "scan": _ocr_scan(page, filename, text, lang, subject, "paddle"), "ocr_text": text}
 
 
-async def extract_scan(
+async def read_photo(
     image_bytes: bytes,
     filename: str,
     demo: bool,
@@ -422,7 +408,7 @@ async def extract_scan(
         scan = stub_scan(filename)
         scan["page_flags"] = page_flags(page["pencil"], "questions", "eng")
     elif key:
-        scan = await vision_extract(_jpeg_bytes(page["clean_jpeg"]), key)
+        scan = await vision_read(_jpeg_bytes(page["clean_jpeg"]), key)
         scan["page_flags"] = page_flags(page["pencil"], "questions", "eng")
     else:
         if engine == "paddle":

@@ -3,7 +3,7 @@ import json
 import unittest
 from pathlib import Path
 
-from extract import extract_scan, sheet_from_ocr
+from scan_reader import read_photo, sheet_from_ocr
 from schema import assert_child_view_safe, to_child_view
 from worksheet_text import parse_worksheet_text, resplit_glued, strip_junk
 
@@ -79,11 +79,11 @@ class RealWorksheetTests(unittest.TestCase):
         self.assertEqual(blank_flagged(questions), ["1", "3"])
 
     def test_real_photo_through_extract_and_child_view(self):
-        result = asyncio.run(extract_scan(PHOTO.read_bytes(), "src-01.jpg", False, self.text))
+        result = asyncio.run(read_photo(PHOTO.read_bytes(), "src-01.jpg", False, self.text))
         self.assertTrue(result["ok"])
         scan = result["scan"]
         self.assertEqual(scan["extraction"], "tesseract")
-        self.assertEqual(scan["paper_title"], "Worksheet 2")
+        self.assertEqual(scan["sheet_title"], "Worksheet 2")
         self.assertEqual(len(scan["questions"]), 5)
         child = to_child_view(scan)
         assert_child_view_safe(scan, child)
@@ -94,7 +94,7 @@ class RealWorksheetTests(unittest.TestCase):
         self.assertNotIn("placeholder", blob)
 
     def test_real_photo_answers_wait_for_the_parent(self):
-        scan = asyncio.run(extract_scan(PHOTO.read_bytes(), "src-01.jpg", False, self.text))["scan"]
+        scan = asyncio.run(read_photo(PHOTO.read_bytes(), "src-01.jpg", False, self.text))["scan"]
         for question in scan["questions"]:
             self.assertEqual(question["correct_answer"], "", f"Q{question['id']} must not default to a choice")
             self.assertFalse(any(flag["field"] == "correct_answer" for flag in question["flags"]))

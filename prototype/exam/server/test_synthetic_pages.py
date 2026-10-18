@@ -16,10 +16,10 @@ from unittest import mock
 import numpy as np
 from PIL import Image
 
-import extract
+import scan_reader
 import synthetic_pages as sp
 from deskew import _ink_candidates, _luma, lift_colored_ink, pencil_score, prepare_page
-from extract import extract_scan, ocr_decision, read_sheet
+from scan_reader import read_photo, ocr_decision, read_sheet
 from save_note import render_markdown
 from schema import assert_child_view_safe, to_child_view
 from worksheet_text import parse_worksheet_text, printed_numbers, text_script
@@ -47,10 +47,10 @@ def child_safe(scan: dict) -> dict:
 
 def tesseract_scan(text: str, lang: str = "eng", subject: str = "auto") -> dict:
     page = sp.clean_blue_url()
-    with mock.patch.object(extract, "_tesseract_text", return_value=""), mock.patch.object(
-        extract, "vision_api_key", return_value=None
+    with mock.patch.object(scan_reader, "_tesseract_text", return_value=""), mock.patch.object(
+        scan_reader, "vision_api_key", return_value=None
     ):
-        return run(extract_scan(page.jpeg, "page.jpg", False, text, subject, lang))
+        return run(read_photo(page.jpeg, "page.jpg", False, text, subject, lang))
 
 
 class InkLiftTests(unittest.TestCase):
@@ -129,7 +129,7 @@ class ExifOrientationTests(unittest.TestCase):
 
     def test_rotated_photo_reaches_the_parent_as_upright(self):
         data = (SYNTH / "blue-ink-mcq-exif6.jpg").read_bytes()
-        result = run(extract_scan(data, "page.jpg", False, fixture("blue-ink-mcq.ocr-clean.txt"), "auto", "eng", "tesseract"))
+        result = run(read_photo(data, "page.jpg", False, fixture("blue-ink-mcq.ocr-clean.txt"), "auto", "eng", "tesseract"))
         self.assertEqual(result["scan"]["deskew"]["upright_turn"], "turned 90° clockwise")
         self.assertEqual(len(result["scan"]["questions"]), 5)
         preview = decode(result["scan"]["previews"]["deskew_jpeg"])
@@ -151,8 +151,8 @@ class PencilTests(unittest.TestCase):
     def test_pencil_flag_reaches_the_parent_and_not_the_child(self):
         page = sp.pencil_mcq()
         text = fixture("pencil-mcq.ocr-clean.txt")
-        with mock.patch.object(extract, "vision_api_key", return_value=None):
-            result = run(extract_scan(page.jpeg, "pencil.jpg", False, text, "english", "eng"))
+        with mock.patch.object(scan_reader, "vision_api_key", return_value=None):
+            result = run(read_photo(page.jpeg, "pencil.jpg", False, text, "english", "eng"))
         scan = result["scan"]
         self.assertEqual([flag["kind"] for flag in scan["page_flags"]], ["pencil"])
         self.assertIn("Pencil is not lifted", scan["page_flags"][0]["note"])
@@ -177,11 +177,11 @@ class CleanPageOcrTests(unittest.TestCase):
 
     def test_need_ocr_sends_the_cleaned_page_and_the_language(self):
         page = sp.blue_ink_mcq()
-        with mock.patch.object(extract, "_tesseract_text", return_value=""), mock.patch.object(
-            extract, "vision_api_key", return_value=None
+        with mock.patch.object(scan_reader, "_tesseract_text", return_value=""), mock.patch.object(
+            scan_reader, "vision_api_key", return_value=None
         ):
-            english = run(extract_scan(page.jpeg, "page.jpg", False, "", "auto"))
-            chinese = run(extract_scan(sp.chinese_mcq().jpeg, "page.jpg", False, "", "chinese"))
+            english = run(read_photo(page.jpeg, "page.jpg", False, "", "auto"))
+            chinese = run(read_photo(sp.chinese_mcq().jpeg, "page.jpg", False, "", "chinese"))
         self.assertTrue(english["need_ocr"])
         self.assertEqual(english["ocr_lang"], "eng")
         self.assertLess(_ink_candidates(decode(english["ocr_jpeg"])).mean(), 0.002)
@@ -320,7 +320,7 @@ class ChineseTests(unittest.TestCase):
         result = tesseract_scan(fixture("chinese-mcq.ocr-chi_sim.txt"), "chi_sim")
         scan = result["scan"]
         self.assertEqual(scan["subject"], "chinese")
-        self.assertEqual(scan["paper_title"], "华文练习二")
+        self.assertEqual(scan["sheet_title"], "华文练习二")
         self.assertEqual([q["stem"] for q in scan["questions"]], [
             "小明每天早上七点钟去学校。", "妈妈在厨房里做饭。", "我们要爱护公园里的花草。",
         ])

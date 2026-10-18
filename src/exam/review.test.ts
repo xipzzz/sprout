@@ -50,7 +50,7 @@ function ocrQuestion(id: string, stem: string, choices: string[]): ParentQuestio
 const tesseract: ParentScan = {
   extraction: 'tesseract',
   subject: 'english',
-  paper_title: 'Worksheet 2',
+  sheet_title: 'Worksheet 2',
   source_photo: 'src-01.jpg',
   note: 'Read with free Tesseract.',
   deskew: { applied: true, corners: [] },

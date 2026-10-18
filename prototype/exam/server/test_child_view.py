@@ -7,20 +7,22 @@ import numpy as np
 from PIL import Image, ImageDraw
 
 from deskew import prepare_page
-from extract import load_fixture, parse_model_payload, questions_from_ocr, stub_scan
+from scan_reader import load_fixture, parse_model_payload, questions_from_ocr, stub_scan
 from save_note import render_markdown, save_scan
 from schema import assert_child_view_safe, map_question, to_child_view
 
 
 class SchemaTests(unittest.TestCase):
-    def test_maps_goppai_shaped_question(self):
+    def test_maps_a_vision_read_question(self):
         question = map_question(
             {
                 "id": "19",
                 "stem": "客厅面积有____平方米",
-                "options": {"A": "30", "B": "15"},
-                "student_answer": {"final": "30, 15"},
-                "teacher_feedback": {"is_correct": True, "score": "2分", "symbols": ["√"]},
+                "choices": ["30", "15"],
+                "choice_labels": ["A", "B"],
+                "student_answer": "30, 15",
+                "teacher_mark": "√ 2分",
+                "marks_awarded": "2分",
                 "correct_answer": "30",
                 "explanation": "四分之一乘以一百二十是三十。",
             },
@@ -34,21 +36,27 @@ class SchemaTests(unittest.TestCase):
         self.assertTrue(any(flag["field"] == "explanation" for flag in question["flags"]))
         self.assertEqual(question["choice_labels"], ["A", "B"])
         self.assertEqual(question["question_type"], "multiple_choice")
-        self.assertIs(question["is_correct"], True)
-        self.assertEqual(question["student_marks"], "2分")
+        self.assertIs(question["marked_right"], True)
+        self.assertEqual(question["marks_awarded"], "2分")
+
+    def test_answer_objects_are_not_read_as_text(self):
+        question = map_question({"stem": "Hi", "student_answer": {"text": "cat"}, "correct_answer": True}, 1)
+        self.assertEqual(question["student_answer"], "")
+        self.assertEqual(question["correct_answer"], "")
 
     def test_extra_page_fields_stay_parent_side(self):
         raw = {
             "id": "4",
             "stem": "Sam has 3 bags of 6 apples.",
-            "type": "word problem",
+            "question_type": "word problem",
             "student_answer": "18",
-            "working": "3 x 6 = 18\n18 apples",
-            "teacher_feedback": {"comment": ["Neat working,", "well done"], "score": "2/2"},
+            "working_steps": "3 x 6 = 18\n18 apples",
+            "teacher_comment": ["Neat working,", "well done"],
+            "marks_awarded": "2/2",
             "teacher_mark": "✓",
             "correct_answer": "18",
-            "sub_questions": [
-                {"label": "a", "stem": "How many bags?", "student_answer": "3", "teacher_mark": "✓", "answer": "3"},
+            "parts": [
+                {"label": "a", "stem": "How many bags?", "student_answer": "3", "teacher_mark": "✓", "correct_answer": "3"},
                 {"stem": "How many apples in each bag?", "student_answer": "sub-wrote-five", "teacher_mark": "×",
                  "correct_answer": "sub-key-six", "working_steps": ["sub-step counted"]},
             ],
@@ -58,11 +66,11 @@ class SchemaTests(unittest.TestCase):
         self.assertEqual(question["question_type"], "open")
         self.assertEqual(question["working_steps"], ["3 x 6 = 18", "18 apples"])
         self.assertEqual(question["teacher_comment"], "Neat working, well done")
-        self.assertEqual(question["student_marks"], "2/2")
-        self.assertIs(question["is_correct"], True)
-        self.assertEqual([sub["label"] for sub in question["sub_questions"]], ["a", "b"])
-        self.assertEqual(question["sub_questions"][0]["correct_answer"], "3")
-        self.assertIs(question["sub_questions"][1]["is_correct"], False)
+        self.assertEqual(question["marks_awarded"], "2/2")
+        self.assertIs(question["marked_right"], True)
+        self.assertEqual([sub["label"] for sub in question["parts"]], ["a", "b"])
+        self.assertEqual(question["parts"][0]["correct_answer"], "3")
+        self.assertIs(question["parts"][1]["marked_right"], False)
         self.assertEqual(question["flags"][0]["field"], "teacher_comment")
 
         scan = {"subject": "math", "questions": [question]}
@@ -76,7 +84,7 @@ class SchemaTests(unittest.TestCase):
         leaked = {"subject": "math", "questions": [{**child["questions"][0], "stem": "Neat working, well done"}]}
         with self.assertRaises(AssertionError):
             assert_child_view_safe(scan, leaked)
-        for key in ("working_steps", "sub_questions", "teacher_comment", "is_correct", "question_type", "choice_labels"):
+        for key in ("working_steps", "parts", "teacher_comment", "marked_right", "question_type", "choice_labels"):
             with self.subTest(key), self.assertRaises(AssertionError):
                 assert_child_view_safe(scan, {"questions": [{**child["questions"][0], key: "x"}]})
 
@@ -90,10 +98,11 @@ class SchemaTests(unittest.TestCase):
 
     def test_question_type_and_mark_fallbacks(self):
         self.assertEqual(map_question({"stem": "She ____ a bag.", "teacher_mark": "x"}, 1)["question_type"], "fill_blank")
-        self.assertIs(map_question({"stem": "Hi", "teacher_mark": "x"}, 1)["is_correct"], False)
-        self.assertIsNone(map_question({"stem": "Hi", "teacher_mark": "✓ ×"}, 1)["is_correct"])
+        self.assertIs(map_question({"stem": "Hi", "teacher_mark": "x"}, 1)["marked_right"], False)
+        self.assertIsNone(map_question({"stem": "Hi", "teacher_mark": "✓ ×"}, 1)["marked_right"])
         self.assertEqual(map_question({"stem": "Hi", "choices": ["a", "b"], "choice_labels": ["A"]}, 1)["choice_labels"], [])
-        self.assertEqual(map_question({"stem": "Hi", "type": "填空题"}, 1)["question_type"], "fill_blank")
+        self.assertEqual(map_question({"stem": "Hi", "question_type": "MCQ"}, 1)["question_type"], "multiple_choice")
+        self.assertEqual(map_question({"stem": "Hi", "question_type": "Fill-in"}, 1)["question_type"], "fill_blank")
 
     def test_child_view_drops_answers(self):
         scan = stub_scan("sample-exam-english.png")
@@ -228,7 +237,7 @@ def reviewed_scan(statuses=("picked", "picked", "dropped")):
     return {
         "extraction": "tesseract",
         "subject": "english",
-        "paper_title": "Worksheet 2",
+        "sheet_title": "Worksheet 2",
         "source_photo": "src-01.jpg",
         "note": "",
         "deskew": {"applied": True, "corners": []},

@@ -1,5 +1,5 @@
 {
-  "paper_title": "English homework",
+  "sheet_title": "English homework",
   "subject": "english",
   "questions": [
     {
@@ -10,7 +10,7 @@
       "question_type": "multiple_choice",
       "student_answer": "seedling",
       "teacher_mark": "✓",
-      "student_marks": "1/1",
+      "marks_awarded": "1/1",
       "correct_answer": "seedling",
       "explanation": "A seedling is a baby plant that has just started to grow.",
       "flags": [
@@ -29,7 +29,7 @@
       "question_type": "multiple_choice",
       "student_answer": "has",
       "teacher_mark": "✓",
-      "student_marks": "1/1",
+      "marks_awarded": "1/1",
       "correct_answer": "has",
       "explanation": "She is one person, so the matching word is has. Have is for I, you, we, and they.",
       "flags": [
@@ -48,7 +48,7 @@
       "question_type": "multiple_choice",
       "student_answer": "watr",
       "teacher_mark": "×",
-      "student_marks": "0/1",
+      "marks_awarded": "0/1",
       "teacher_comment": "Check your spelling.",
       "correct_answer": "water",
       "explanation": "The missing word is water. The handwriting was hard to read, and the printed choices were smudged, so those parts were filled in.",

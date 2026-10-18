@@ -7,7 +7,7 @@ import type { ParentScan } from './types.ts';
 const scan: ParentScan = {
   extraction: 'stub',
   subject: 'english',
-  paper_title: 'English homework',
+  sheet_title: 'English homework',
   source_photo: 'sample-exam-english.png',
   note: 'stub',
   deskew: { applied: true, corners: [] },
@@ -58,19 +58,19 @@ const scan: ParentScan = {
       student_answer: '18 apples',
       working_steps: ['secret-step 3 x 6 = 18'],
       teacher_mark: '✓',
-      is_correct: true,
+      marked_right: true,
       teacher_comment: 'secret-comment Well done',
-      student_marks: '2/2',
+      marks_awarded: '2/2',
       correct_answer: '18',
       explanation: '',
-      sub_questions: [
+      parts: [
         {
           label: 'a',
           stem: 'How many bags?',
           student_answer: 'secret-sub-answer',
           teacher_mark: '✗',
           correct_answer: 'secret-sub-key',
-          is_correct: false,
+          marked_right: false,
           working_steps: ['secret-sub-step'],
         },
       ],
@@ -92,7 +92,7 @@ try {
   caught = true;
 }
 if (!caught) throw new Error('A teacher comment pasted into a child stem was not caught');
-for (const key of ['working_steps', 'sub_questions', 'teacher_comment', 'is_correct', 'question_type', 'choice_labels']) {
+for (const key of ['working_steps', 'parts', 'teacher_comment', 'marked_right', 'question_type', 'choice_labels']) {
   caught = false;
   try {
     assertChildViewSafe(scan, {

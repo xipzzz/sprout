@@ -9,8 +9,7 @@ const FORBIDDEN_KEYS = new Set([
   'correct_answer',
   'correct',
   'explanation',
-  'teacher_feedback',
-  'student_marks',
+  'marks_awarded',
   'score',
   'flags',
   'reconstructions',
@@ -21,9 +20,9 @@ const FORBIDDEN_KEYS = new Set([
   'choice_labels',
   'question_type',
   'working_steps',
-  'is_correct',
+  'marked_right',
   'teacher_comment',
-  'sub_questions',
+  'parts',
 ]);
 
 /** Shorter parent-only text (a step like "6") can sit in a printed stem by chance; the key check still applies. */
@@ -104,7 +103,7 @@ export function assertChildViewSafe(parent: ParentScan, child: ChildView): void 
     }
     const parentOnly = [
       ...(question.working_steps ?? []),
-      ...(question.sub_questions ?? []).flatMap((sub) => [
+      ...(question.parts ?? []).flatMap((sub) => [
         sub.student_answer,
         sub.correct_answer,
         ...sub.working_steps,

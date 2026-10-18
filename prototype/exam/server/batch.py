@@ -29,7 +29,7 @@ if str(SERVER) not in sys.path:
     sys.path.insert(0, str(SERVER))
 
 import paddle_ocr  # noqa: E402
-from extract import extract_scan  # noqa: E402
+from scan_reader import read_photo  # noqa: E402
 from schema import assert_child_view_safe, to_child_view  # noqa: E402
 from worksheet_text import printed_numbers  # noqa: E402
 
@@ -125,9 +125,9 @@ async def read_page(path: Path, engine: str, subject: str) -> dict:
     data = path.read_bytes()
     started = time.perf_counter()
     if engine == "paddle":
-        result = await extract_scan(data, path.name, False, "", subject, "", "paddle")
+        result = await read_photo(data, path.name, False, "", subject, "", "paddle")
     else:
-        result = await extract_scan(data, path.name, False, "", subject, "", "tesseract")
+        result = await read_photo(data, path.name, False, "", subject, "", "tesseract")
         tried = set()
         while result.get("need_ocr") and result.get("ocr_lang") not in tried:
             lang = result["ocr_lang"]
@@ -136,7 +136,7 @@ async def read_page(path: Path, engine: str, subject: str) -> dict:
             ocr_started = time.perf_counter()
             text = node_tesseract(jpeg, lang)
             node_s = time.perf_counter() - ocr_started
-            result = await extract_scan(data, path.name, False, text, subject, lang, "tesseract")
+            result = await read_photo(data, path.name, False, text, subject, lang, "tesseract")
             result.setdefault("timings", {})["ocr_s"] = round(result.get("timings", {}).get("ocr_s", 0) + node_s, 3)
     result["total_s"] = round(time.perf_counter() - started, 3)
     return result

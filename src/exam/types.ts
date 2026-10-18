@@ -10,11 +10,11 @@ export type ReconstructionFlag = {
     | 'correct_answer'
     | 'explanation'
     | 'working_steps'
-    | 'is_correct'
+    | 'marked_right'
     | 'teacher_comment'
-    | 'student_marks'
+    | 'marks_awarded'
     | 'question_type'
-    | 'sub_questions';
+    | 'parts';
   kind: 'reconstructed' | 'generated';
   note: string;
 };
@@ -24,13 +24,13 @@ export type ReviewStatus = 'open' | 'picked' | 'read_aloud' | 'dropped';
 export type QuestionType = 'multiple_choice' | 'fill_blank' | 'cloze' | 'editing' | 'open';
 
 /** A part like (a) or (b) under one numbered question. Parent-only, like the rest past choices. */
-export type SubQuestion = {
+export type QuestionPart = {
   label: string;
   stem: string;
   student_answer: string;
   teacher_mark: string;
   correct_answer: string;
-  is_correct: boolean | null;
+  marked_right: boolean | null;
   working_steps: string[];
 };
 
@@ -44,12 +44,12 @@ export type ParentQuestion = {
   student_answer: string;
   working_steps?: string[];
   teacher_mark: string;
-  is_correct?: boolean | null;
+  marked_right?: boolean | null;
   teacher_comment?: string;
-  student_marks?: string;
+  marks_awarded?: string;
   correct_answer: string;
   explanation: string;
-  sub_questions?: SubQuestion[];
+  parts?: QuestionPart[];
   flags: ReconstructionFlag[];
   review?: ReviewStatus;
   stem_edited?: boolean;
@@ -58,7 +58,7 @@ export type ParentQuestion = {
 export type ParentScan = {
   extraction: 'stub' | 'zhipu' | 'tesseract' | 'paddle';
   subject: string;
-  paper_title: string;
+  sheet_title: string;
   source_photo: string;
   note: string;
   deskew: {

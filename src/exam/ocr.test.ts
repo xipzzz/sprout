@@ -1,6 +1,6 @@
 /* Run: node --experimental-strip-types src/exam/ocr.test.ts */
 
-import { dataUrlToBlob, nextOcrPass, ocrEngineFromQuery, type ExtractResponse } from './ocr.ts';
+import { dataUrlToBlob, nextOcrPass, ocrEngineFromQuery, type ReadResponse } from './ocr.ts';
 
 function check(condition: unknown, message: string): void {
   if (!condition) throw new Error(message);
@@ -8,7 +8,7 @@ function check(condition: unknown, message: string): void {
 
 const CLEAN = 'data:image/jpeg;base64,/9j/AAAA';
 
-const first: ExtractResponse = { ok: false, need_ocr: true, ocr_lang: 'eng', ocr_jpeg: CLEAN };
+const first: ReadResponse = { ok: false, need_ocr: true, ocr_lang: 'eng', ocr_jpeg: CLEAN };
 const pass = nextOcrPass(first, []);
 check(pass?.image === CLEAN, 'OCR reads the cleaned page the server sent back');
 check(pass?.lang === 'eng', 'first pass is English unless the server asks for Chinese');

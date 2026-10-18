@@ -1,18 +1,27 @@
-"""Map an extracted page into Sprout's parent schema, and strip the child view."""
+"""Map a read page into Sprout's parent schema, and strip the child view."""
 
 from __future__ import annotations
 
 import json
 from typing import Any
 
-FORBIDDEN_CHILD_KEYS = {
+# Everything a reader may say about a question beyond id, stem and choices.
+PARENT_ONLY = (
+    "choice_labels",
+    "question_type",
     "student_answer",
+    "working_steps",
     "teacher_mark",
+    "marked_right",
+    "teacher_comment",
+    "marks_awarded",
     "correct_answer",
-    "correct",
     "explanation",
-    "teacher_feedback",
-    "student_marks",
+    "parts",
+)
+FORBIDDEN_CHILD_KEYS = {
+    *PARENT_ONLY,
+    "correct",
     "score",
     "flags",
     "reconstructions",
@@ -20,222 +29,112 @@ FORBIDDEN_CHILD_KEYS = {
     "review",
     "stem_edited",
     "page_flags",
-    "choice_labels",
-    "question_type",
-    "working_steps",
-    "is_correct",
-    "teacher_comment",
-    "sub_questions",
 }
+FLAG_FIELDS = {"stem", "choices", *PARENT_ONLY} - {"choice_labels"}
 
 PRACTICE_REVIEWS = {"picked", "read_aloud"}
-
-FLAG_FIELDS = {
-    "stem",
-    "choices",
-    "student_answer",
-    "teacher_mark",
-    "correct_answer",
-    "explanation",
-    "working_steps",
-    "is_correct",
-    "teacher_comment",
-    "student_marks",
-    "question_type",
-    "sub_questions",
-}
-
-QUESTION_TYPES = {
-    "multiple_choice": {"multiple_choice", "mcq", "choice", "choices", "选择", "选择题"},
-    "fill_blank": {"fill_blank", "fill_in", "fill", "blank", "填空", "填空题"},
-    "cloze": {"cloze", "grammar_cloze", "完形填空"},
-    "editing": {"editing", "proofreading", "改错"},
-    "open": {"open", "short_answer", "written", "problem", "word_problem", "问答", "问答题", "应用题"},
-}
+QUESTION_TYPES = ("multiple_choice", "fill_blank", "cloze", "editing", "open")
+TYPE_SPELLINGS = {"mcq": "multiple_choice", "fill_in": "fill_blank", "proofreading": "editing"}
 # Shorter parent-only text (a step like "6") can sit in a printed stem by chance; the key check still applies.
 MIN_LEAK_TEXT = 6
 TICKS = {"✓", "✔", "√", "☑"}
 CROSSES = {"✗", "✘", "×", "x", "X", "☒"}
 
 
-def _as_text(value: Any) -> str:
-    if value is None:
-        return ""
-    if isinstance(value, str):
-        return value.strip()
-    if isinstance(value, (int, float)):
-        return str(value)
-    if isinstance(value, dict):
-        for key in ("final", "text", "value"):
-            if value.get(key):
-                return str(value[key]).strip()
+def _text(value: Any) -> str:
+    if value is None or isinstance(value, (dict, bool)):
         return ""
     return str(value).strip()
 
 
-def _choices(raw: dict) -> list[str]:
-    choices = raw.get("choices")
-    if isinstance(choices, list) and choices:
-        return [str(item).strip() for item in choices if str(item).strip()]
-    options = raw.get("options") or {}
-    if isinstance(options, dict):
-        return [str(value).strip() for value in options.values() if str(value).strip()]
-    if isinstance(options, list):
-        return [str(item).strip() for item in options if str(item).strip()]
-    return []
-
-
-def _teacher_mark(raw: dict) -> str:
-    direct = _as_text(raw.get("teacher_mark"))
-    if direct:
-        return direct
-    feedback = raw.get("teacher_feedback") or {}
-    if not isinstance(feedback, dict):
-        return ""
-    symbols = feedback.get("symbols") or []
-    if isinstance(symbols, str):
-        symbols = [symbols]
-    score = _as_text(feedback.get("score"))
-    parts = [str(item).strip() for item in symbols if str(item).strip()]
-    if score:
-        parts.append(score)
-    return " ".join(parts).strip()
+def _lines(value: Any) -> list[str]:
+    if isinstance(value, str):
+        value = value.splitlines()
+    if not isinstance(value, list):
+        return []
+    return [line for line in map(_text, value) if line]
 
 
 def _flags(raw: dict) -> list[dict]:
-    incoming = raw.get("flags") or raw.get("reconstructions") or []
-    flags = []
-    if isinstance(incoming, list):
-        for item in incoming:
-            if not isinstance(item, dict):
-                continue
-            field = str(item.get("field") or "")
-            if field not in FLAG_FIELDS:
-                continue
-            kind = item.get("kind") or "reconstructed"
-            if kind not in {"reconstructed", "generated"}:
-                kind = "reconstructed"
-            flags.append(
-                {
-                    "field": field,
-                    "kind": kind,
-                    "note": _as_text(item.get("note") or item.get("reason")) or "Filled in by the reader.",
-                }
-            )
-    return flags
-
-
-def _feedback(raw: dict) -> dict:
-    feedback = raw.get("teacher_feedback")
-    return feedback if isinstance(feedback, dict) else {}
-
-
-def _choice_labels(raw: dict, choices: list[str]) -> list[str]:
-    labels = raw.get("choice_labels") or raw.get("choice_letters")
-    options = raw.get("options")
-    if not labels and isinstance(options, dict) and not raw.get("choices"):
-        labels = [key for key, value in options.items() if str(value).strip()]
-    labels = [str(label).strip() for label in labels or []]
-    return labels if len(labels) == len(choices) and all(labels) else []
-
-
-def _question_type(raw: dict, stem: str, choices: list[str]) -> str:
-    given = _as_text(raw.get("question_type") or raw.get("type")).lower().replace("-", "_").replace(" ", "_")
-    for name, aliases in QUESTION_TYPES.items():
-        if given in aliases:
-            return name
-    if len(choices) >= 2:
-        return "multiple_choice"
-    if "____" in stem:
-        return "fill_blank"
-    return "open"
-
-
-def _working_steps(raw: dict) -> list[str]:
-    steps = raw.get("working_steps") or raw.get("working") or raw.get("steps") or []
-    if isinstance(steps, str):
-        steps = steps.splitlines()
-    if not isinstance(steps, list):
-        return []
-    return [text for text in (_as_text(step) for step in steps) if text]
-
-
-def _is_correct(raw: dict, mark: str) -> bool | None:
-    for value in (raw.get("is_correct"), _feedback(raw).get("is_correct")):
-        if isinstance(value, bool):
-            return value
-    symbols = set(mark.split())
-    if symbols & TICKS and not symbols & CROSSES:
-        return True
-    if symbols & CROSSES and not symbols & TICKS:
-        return False
-    return None
-
-
-def _teacher_comment(raw: dict) -> str:
-    comment = raw.get("teacher_comment") or _feedback(raw).get("comment") or _feedback(raw).get("comments")
-    if isinstance(comment, list):
-        return " ".join(_as_text(item) for item in comment if _as_text(item))
-    return _as_text(comment)
-
-
-def _student_marks(raw: dict) -> str:
-    return _as_text(raw.get("student_marks") or raw.get("marks") or raw.get("score") or _feedback(raw).get("score"))
-
-
-def _sub_questions(raw: dict) -> list[dict]:
-    items = raw.get("sub_questions") or raw.get("subquestions") or raw.get("parts") or []
-    if not isinstance(items, list):
-        return []
-    subs = []
-    for position, item in enumerate(items, start=1):
-        if not isinstance(item, dict):
+    kept = []
+    for item in raw.get("flags") or raw.get("reconstructions") or []:
+        if not isinstance(item, dict) or item.get("field") not in FLAG_FIELDS:
             continue
-        mark = _teacher_mark(item)
-        subs.append(
+        kind = item.get("kind") if item.get("kind") in {"reconstructed", "generated"} else "reconstructed"
+        kept.append({"field": item["field"], "kind": kind, "note": _text(item.get("note")) or "Filled in by the reader."})
+    return kept
+
+
+def _labels(raw: dict, choices: list[str]) -> list[str]:
+    labels = _lines(raw.get("choice_labels"))
+    return labels if len(labels) == len(choices) else []
+
+
+def _kind(raw: dict, stem: str, choices: list[str]) -> str:
+    said = _text(raw.get("question_type")).lower().replace(" ", "_").replace("-", "_")
+    said = TYPE_SPELLINGS.get(said, said)
+    if said in QUESTION_TYPES:
+        return said
+    if len(choices) > 1:
+        return "multiple_choice"
+    return "fill_blank" if "____" in stem else "open"
+
+
+def _verdict(raw: dict, mark: str) -> bool | None:
+    if isinstance(raw.get("marked_right"), bool):
+        return raw["marked_right"]
+    seen = set(mark.split())
+    ticked, crossed = bool(seen & TICKS), bool(seen & CROSSES)
+    return ticked if ticked != crossed else None
+
+
+def _comment(raw: dict) -> str:
+    said = raw.get("teacher_comment")
+    return " ".join(_lines(said)) if isinstance(said, list) else _text(said)
+
+
+def _parts(raw: dict) -> list[dict]:
+    found = []
+    for position, item in enumerate(item for item in raw.get("parts") or [] if isinstance(item, dict)):
+        mark = _text(item.get("teacher_mark"))
+        found.append(
             {
-                "label": _as_text(item.get("label") or item.get("id")) or chr(ord("a") + position - 1),
-                "stem": _as_text(item.get("stem")),
-                "student_answer": _as_text(item.get("student_answer")),
+                "label": _text(item.get("label")) or "abcdefghij"[position % 10],
+                "stem": _text(item.get("stem")),
+                "student_answer": _text(item.get("student_answer")),
                 "teacher_mark": mark,
-                "correct_answer": _as_text(item.get("correct_answer") or item.get("answer")),
-                "is_correct": _is_correct(item, mark),
-                "working_steps": _working_steps(item),
+                "correct_answer": _text(item.get("correct_answer")),
+                "marked_right": _verdict(item, mark),
+                "working_steps": _lines(item.get("working_steps")),
             }
         )
-    return subs
+    return found
 
 
 def map_question(raw: dict, index: int) -> dict:
     """Parent question. Everything past id, stem and choices stays parent-side."""
-    explanation = _as_text(raw.get("explanation"))
+    stem = _text(raw.get("stem"))
+    choices = _lines(raw.get("choices"))
+    mark = _text(raw.get("teacher_mark"))
+    explanation = _text(raw.get("explanation"))
     flags = _flags(raw)
-    if explanation and not any(flag["field"] == "explanation" for flag in flags):
-        flags.append(
-            {
-                "field": "explanation",
-                "kind": "generated",
-                "note": "Written for the parent. The child does not see this.",
-            }
-        )
-    stem = _as_text(raw.get("stem"))
-    choices = _choices(raw)
-    mark = _teacher_mark(raw)
+    if explanation and all(flag["field"] != "explanation" for flag in flags):
+        flags.append({"field": "explanation", "kind": "generated", "note": "Written for the parent. The child does not see this."})
     return {
-        "id": _as_text(raw.get("id")) or str(index),
+        "id": _text(raw.get("id")) or str(index),
         "stem": stem,
         "choices": choices,
-        "choice_labels": _choice_labels(raw, choices),
-        "question_type": _question_type(raw, stem, choices),
-        "student_answer": _as_text(raw.get("student_answer")),
-        "working_steps": _working_steps(raw),
+        "choice_labels": _labels(raw, choices),
+        "question_type": _kind(raw, stem, choices),
+        "student_answer": _text(raw.get("student_answer")),
+        "working_steps": _lines(raw.get("working_steps")),
         "teacher_mark": mark,
-        "is_correct": _is_correct(raw, mark),
-        "teacher_comment": _teacher_comment(raw),
-        "student_marks": _student_marks(raw),
-        "correct_answer": _as_text(raw.get("correct_answer") or raw.get("answer")),
+        "marked_right": _verdict(raw, mark),
+        "teacher_comment": _comment(raw),
+        "marks_awarded": _text(raw.get("marks_awarded")),
+        "correct_answer": _text(raw.get("correct_answer")),
         "explanation": explanation,
-        "sub_questions": _sub_questions(raw),
+        "parts": _parts(raw),
         "flags": flags,
     }
 
@@ -314,7 +213,7 @@ def assert_child_view_safe(parent: dict, child: dict) -> None:
         if len(comment) >= MIN_LEAK_TEXT and comment in blob:
             raise AssertionError(f"Child view leaked the teacher comment for {question.get('id')}")
         private = list(question.get("working_steps") or [])
-        for sub in question.get("sub_questions") or []:
+        for sub in question.get("parts") or []:
             private += [sub.get("student_answer") or "", sub.get("correct_answer") or "", *(sub.get("working_steps") or [])]
         for text in private:
             if len(text) >= MIN_LEAK_TEXT and text not in choice_text and text in blob:

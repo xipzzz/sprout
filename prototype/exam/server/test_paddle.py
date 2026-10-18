@@ -20,10 +20,10 @@ from fastapi.testclient import TestClient
 
 import app as app_module
 import batch
-import extract
+import scan_reader
 import paddle_ocr
 import synthetic_pages as sp
-from extract import extract_scan
+from scan_reader import read_photo
 from paddle_ocr import Box, group_lines, lines_to_text
 from schema import assert_child_view_safe, to_child_view
 
@@ -41,7 +41,7 @@ def paddle_scan(jpeg: bytes, text: str) -> dict:
     with mock.patch.object(paddle_ocr, "available", return_value=True), mock.patch.object(
         paddle_ocr, "paddle_text", return_value=text
     ):
-        return run(extract_scan(jpeg, "page.jpg", False, "", "auto", "", "paddle"))
+        return run(read_photo(jpeg, "page.jpg", False, "", "auto", "", "paddle"))
 
 
 class EngineSwitchTests(unittest.TestCase):
@@ -62,7 +62,7 @@ class EngineSwitchTests(unittest.TestCase):
 
     def test_missing_paddle_names_the_install_command(self):
         with mock.patch.object(paddle_ocr, "available", return_value=False):
-            result = run(extract_scan(sp.clean_blue_url().jpeg, "page.jpg", False, "", "auto", "", "paddle"))
+            result = run(read_photo(sp.clean_blue_url().jpeg, "page.jpg", False, "", "auto", "", "paddle"))
         self.assertFalse(result["ok"])
         self.assertTrue(result["engine_missing"])
         self.assertIn("requirements-paddle.txt", result["message"])
@@ -70,8 +70,8 @@ class EngineSwitchTests(unittest.TestCase):
 
     def test_explicit_engine_skips_the_vision_key(self):
         text = (SYNTH / "clean-blue-url.ocr-clean.txt").read_text(encoding="utf-8")
-        with mock.patch.object(extract, "vision_api_key", return_value="sk-test") as key, mock.patch.object(
-            extract, "vision_extract"
+        with mock.patch.object(scan_reader, "vision_api_key", return_value="sk-test") as key, mock.patch.object(
+            scan_reader, "vision_read"
         ) as vision:
             result = paddle_scan(sp.clean_blue_url().jpeg, text)
         vision.assert_not_called()
@@ -88,7 +88,7 @@ class ApiPassThroughTests(unittest.TestCase):
             self.calls.append(args)
             return {"ok": True}
 
-        patcher = mock.patch.object(app_module, "extract_scan", side_effect=fake)
+        patcher = mock.patch.object(app_module, "read_photo", side_effect=fake)
         patcher.start()
         self.addCleanup(patcher.stop)
 
@@ -96,19 +96,19 @@ class ApiPassThroughTests(unittest.TestCase):
         return self.client.post(url, files={"file": ("page.jpg", b"jpeg", "image/jpeg")}, data=data or {})
 
     def test_query_option_reaches_extract(self):
-        self.assertEqual(self.post("/api/extract?ocr=paddle").status_code, 200)
+        self.assertEqual(self.post("/api/read?ocr=paddle").status_code, 200)
         self.assertEqual(self.calls[-1][-1], "paddle")
 
     def test_form_field_reaches_extract(self):
-        self.post("/api/extract", {"ocr": "paddle"})
+        self.post("/api/read", {"ocr": "paddle"})
         self.assertEqual(self.calls[-1][-1], "paddle")
 
     def test_no_choice_leaves_it_to_the_server(self):
-        self.post("/api/extract")
+        self.post("/api/read")
         self.assertEqual(self.calls[-1][-1], "")
 
     def test_unknown_engine_is_a_400(self):
-        response = self.post("/api/extract?ocr=nope")
+        response = self.post("/api/read?ocr=nope")
         self.assertEqual(response.status_code, 400)
         self.assertFalse(response.json()["ok"])
         self.assertEqual(self.calls, [])
@@ -170,7 +170,7 @@ class RealPaddleTests(unittest.TestCase):
 
     def read(self, name: str, jpeg: bytes) -> dict:
         if name not in self.results:
-            self.results[name] = run(extract_scan(jpeg, f"{name}.jpg", False, "", "auto", "", "paddle"))
+            self.results[name] = run(read_photo(jpeg, f"{name}.jpg", False, "", "auto", "", "paddle"))
         result = self.results[name]
         self.assertTrue(result["ok"], result.get("message"))
         assert_child_view_safe(result["scan"], to_child_view(result["scan"]))

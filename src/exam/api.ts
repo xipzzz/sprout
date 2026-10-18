@@ -1,19 +1,19 @@
 import { createWorker } from 'tesseract.js';
-import { dataUrlToBlob, nextOcrPass, type ExtractResponse, type SubjectChoice } from './ocr.ts';
+import { dataUrlToBlob, nextOcrPass, type ReadResponse, type SubjectChoice } from './ocr.ts';
 import type { OcrEngine, OcrLang, ParentScan } from './types.ts';
 
-export type { ExtractResponse } from './ocr.ts';
+export type { ReadResponse } from './ocr.ts';
 
-async function postExtract(file: File, extra: Record<string, string>): Promise<ExtractResponse> {
+async function postPhoto(file: File, extra: Record<string, string>): Promise<ReadResponse> {
   const body = new FormData();
   body.append('file', file, file.name || 'homework.jpg');
   for (const [key, value] of Object.entries(extra)) body.append(key, value);
-  const res = await fetch('/api/extract', { method: 'POST', body });
+  const res = await fetch('/api/read', { method: 'POST', body });
   if (!res.ok) {
     const text = await res.text();
     throw new Error(text || `Scan server returned ${res.status}`);
   }
-  return res.json() as Promise<ExtractResponse>;
+  return res.json() as Promise<ReadResponse>;
 }
 
 /** Free Tesseract.js. Language data (eng, chi_sim) comes from the public tesseract.js CDN, no sign-in. */
@@ -33,7 +33,7 @@ async function recognizeCleanPage(image: string, lang: OcrLang): Promise<string>
 
 export class UnsupportedPageError extends Error {}
 
-export async function extractExam(
+export async function readPhoto(
   file: File,
   demo: boolean,
   subject: SubjectChoice = 'auto',
@@ -41,13 +41,13 @@ export async function extractExam(
   ocr: OcrEngine | '' = '',
 ): Promise<ParentScan> {
   if (ocr === 'paddle') onStep('Straightening, lifting ink, and reading with PaddleOCR on this computer…');
-  let response = await postExtract(file, { demo: demo ? '1' : '0', subject, ocr });
+  let response = await postPhoto(file, { demo: demo ? '1' : '0', subject, ocr });
   const tried: OcrLang[] = [];
   for (let pass = nextOcrPass(response, tried); pass; pass = nextOcrPass(response, tried)) {
     tried.push(pass.lang);
     onStep(pass.lang === 'chi_sim' ? 'Reading the cleaned page in Chinese…' : 'Reading the cleaned page…');
     const ocrText = await recognizeCleanPage(pass.image, pass.lang);
-    response = await postExtract(file, { demo: '0', subject, ocr, ocr_text: ocrText, ocr_lang: pass.lang });
+    response = await postPhoto(file, { demo: '0', subject, ocr, ocr_text: ocrText, ocr_lang: pass.lang });
   }
   if (response.ok && response.scan) return response.scan;
   if (response.unsupported) throw new UnsupportedPageError(response.message || 'Sprout cannot read this page yet.');
