@@ -1,7 +1,8 @@
-from fastapi import Body, FastAPI, File, Form, Request, UploadFile
+from fastapi import Body, FastAPI, File, Form, Query, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+import paddle_ocr
 from extract import extract_scan, vision_api_key
 from save_note import save_scan
 import os
@@ -24,11 +25,17 @@ async def unhandled(request: Request, exc: Exception):
 
 @app.get("/api/health")
 def health():
+    try:
+        ocr_default = paddle_ocr.engine_name()
+    except ValueError as exc:
+        ocr_default = f"invalid: {exc}"
     return {
         "ok": True,
         "vision": bool(vision_api_key()),
         "vision_key_name": "ZHIPU_API_KEY",
         "model": os.environ.get("ZHIPU_MODEL", "glm-4.6v"),
+        "ocr_default": ocr_default,
+        "paddle_installed": paddle_ocr.available(),
     }
 
 
@@ -39,7 +46,14 @@ async def extract_api(
     ocr_text: str = Form(""),
     subject: str = Form("auto"),
     ocr_lang: str = Form(""),
+    ocr: str = Form(""),
+    ocr_query: str = Query("", alias="ocr"),
 ):
+    engine = ocr or ocr_query
+    try:
+        paddle_ocr.engine_name(engine)
+    except ValueError as exc:
+        return JSONResponse(status_code=400, content={"ok": False, "message": str(exc)})
     data = await file.read()
     if not data:
         return {"ok": False, "message": "That photo was empty."}
@@ -50,6 +64,7 @@ async def extract_api(
         ocr_text,
         subject,
         ocr_lang,
+        engine,
     )
 
 

@@ -1,6 +1,6 @@
 import { createWorker } from 'tesseract.js';
 import { dataUrlToBlob, nextOcrPass, type ExtractResponse, type SubjectChoice } from './ocr.ts';
-import type { OcrLang, ParentScan } from './types.ts';
+import type { OcrEngine, OcrLang, ParentScan } from './types.ts';
 
 export type { ExtractResponse } from './ocr.ts';
 
@@ -38,14 +38,16 @@ export async function extractExam(
   demo: boolean,
   subject: SubjectChoice = 'auto',
   onStep: (message: string) => void = () => {},
+  ocr: OcrEngine | '' = '',
 ): Promise<ParentScan> {
-  let response = await postExtract(file, { demo: demo ? '1' : '0', subject });
+  if (ocr === 'paddle') onStep('Straightening, lifting ink, and reading with PaddleOCR on this computer…');
+  let response = await postExtract(file, { demo: demo ? '1' : '0', subject, ocr });
   const tried: OcrLang[] = [];
   for (let pass = nextOcrPass(response, tried); pass; pass = nextOcrPass(response, tried)) {
     tried.push(pass.lang);
     onStep(pass.lang === 'chi_sim' ? 'Reading the cleaned page in Chinese…' : 'Reading the cleaned page…');
     const ocrText = await recognizeCleanPage(pass.image, pass.lang);
-    response = await postExtract(file, { demo: '0', subject, ocr_text: ocrText, ocr_lang: pass.lang });
+    response = await postExtract(file, { demo: '0', subject, ocr, ocr_text: ocrText, ocr_lang: pass.lang });
   }
   if (response.ok && response.scan) return response.scan;
   if (response.unsupported) throw new UnsupportedPageError(response.message || 'Sprout cannot read this page yet.');

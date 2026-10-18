@@ -4,7 +4,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { extractExam, saveExam, UnsupportedPageError } from '../exam/api';
-import { SUBJECTS, type SubjectChoice } from '../exam/ocr';
+import { ocrEngineFromQuery, SUBJECTS, type SubjectChoice } from '../exam/ocr';
 import {
   BLANK,
   blankBefore,
@@ -248,7 +248,7 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
     setSkipped([]);
     setPractice(null);
     try {
-      const next = await extractExam(file, demo, subjectChoice, setStep);
+      const next = await extractExam(file, demo, subjectChoice, setStep, ocrEngineFromQuery(window.location.search));
       setOriginalStems(Object.fromEntries(next.questions.map((question) => [question.id, question.stem])));
       setScan(next);
       setReview(initialReview(next));
@@ -373,7 +373,10 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
               off the preview, and lays out each question for you to check.
             </p>
             <p className="exam-proto__hint">
-              Your photo is read with free Tesseract.js. No account and no API key.
+              {ocrEngineFromQuery(window.location.search) === 'paddle'
+                ? 'Your photo is read on this computer with PaddleOCR.'
+                : 'Your photo is read with free Tesseract.js, or PaddleOCR if the server sets SPROUT_OCR=paddle.'}{' '}
+              No account and no API key.
               Zhipu GLM-4.6V is optional, and only runs if <code>ZHIPU_API_KEY</code> is set.
             </p>
             <button type="button" className="btn-primary exam-proto__cta" onClick={() => void onSample()}>

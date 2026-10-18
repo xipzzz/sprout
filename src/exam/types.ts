@@ -23,7 +23,7 @@ export type ParentQuestion = {
 };
 
 export type ParentScan = {
-  extraction: 'stub' | 'zhipu' | 'tesseract';
+  extraction: 'stub' | 'zhipu' | 'tesseract' | 'paddle';
   subject: string;
   paper_title: string;
   source_photo: string;
@@ -34,6 +34,7 @@ export type ParentScan = {
   /** Whole-page notes for the parent: pencil seen, passage blanks, Chinese read. */
   page_flags?: PageFlag[];
   ocr_lang?: OcrLang;
+  ocr_engine?: OcrEngine;
   previews?: {
     deskew_jpeg?: string;
     clean_jpeg?: string;
@@ -41,6 +42,8 @@ export type ParentScan = {
 };
 
 export type OcrLang = 'eng' | 'chi_sim';
+
+export type OcrEngine = 'tesseract' | 'paddle';
 
 export type PageFlag = {
   kind: 'pencil' | 'cloze' | 'editing' | 'chinese';

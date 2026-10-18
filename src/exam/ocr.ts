@@ -1,7 +1,7 @@
 /* Which image the browser OCRs, and in which language.
    The server sends back the cleaned, straightened page. The raw photo is never OCR'd. */
 
-import type { OcrLang, ParentScan } from './types.ts';
+import type { OcrEngine, OcrLang, ParentScan } from './types.ts';
 
 export type ExtractResponse = {
   ok: boolean;
@@ -44,3 +44,9 @@ export const SUBJECTS = [
 ] as const;
 
 export type SubjectChoice = (typeof SUBJECTS)[number]['value'];
+
+/** `?ocr=paddle` on the page URL asks the local server for PaddleOCR. Anything else uses the default. */
+export function ocrEngineFromQuery(search: string): OcrEngine | '' {
+  const value = new URLSearchParams(search).get('ocr');
+  return value === 'paddle' || value === 'tesseract' ? value : '';
+}

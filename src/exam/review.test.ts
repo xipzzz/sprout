@@ -84,6 +84,8 @@ const tesseract: ParentScan = {
     '3': { status: 'open' },
   };
   assert.equal(reviewProgress(tesseract, partly).unlocked, false);
+  const paddleReview = initialReview({ ...tesseract, extraction: 'paddle' });
+  assert.ok(Object.values(paddleReview).every((entry) => entry.status === 'open'), 'PaddleOCR answers wait for the parent too');
   assert.equal(buildPractice(tesseract, partly), null, 'One open question keeps play locked');
 
   const notAChoice: ReviewState = { ...partly, '3': { status: 'picked', answer: 'under' } };

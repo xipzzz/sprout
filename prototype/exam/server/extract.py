@@ -7,6 +7,7 @@ Zhipu GLM-4.6V is optional, and runs only when ZHIPU_API_KEY is set
 
 from __future__ import annotations
 
+import asyncio
 import base64
 import json
 import os
@@ -15,11 +16,13 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 from pathlib import Path
 
 import httpx
 from dotenv import load_dotenv
 
+import paddle_ocr
 from deskew import prepare_page
 from schema import map_question, subject_slug
 from worksheet_text import ParsedSheet, parse_worksheet_text, text_script
@@ -139,19 +142,26 @@ OCR_NOTE = {
     "eng": "Read by Tesseract.js from the cleaned page. Blue and red ink were lifted first; pencil was not.",
     "chi_sim": "Read by Tesseract.js in Chinese (chi_sim) from the cleaned page. Pencil was not lifted.",
 }
+PADDLE_NOTE = (
+    "Read by PaddleOCR (PP-OCRv5, on this computer) from the cleaned page. "
+    "Blue and red ink were lifted first; pencil was not."
+)
+ENGINE_LABEL = {"tesseract": "Tesseract", "paddle": "PaddleOCR"}
 
 
 def _flag(field: str, note: str) -> dict:
     return {"field": field, "kind": "reconstructed", "note": note}
 
 
-def read_sheet(text: str, ocr_lang: str = "eng") -> tuple[ParsedSheet, list[dict]]:
+def read_sheet(text: str, ocr_lang: str = "eng", engine: str = "tesseract") -> tuple[ParsedSheet, list[dict]]:
     sheet = parse_worksheet_text(text)
+    label = ENGINE_LABEL.get(engine, "Tesseract")
     questions = []
     for parsed in sheet.questions:
         stem = parsed.stem
         choices = parsed.choices
-        flags = [_flag("stem", OCR_NOTE.get(ocr_lang, OCR_NOTE["eng"]))]
+        note = PADDLE_NOTE if engine == "paddle" else OCR_NOTE.get(ocr_lang, OCR_NOTE["eng"])
+        flags = [_flag("stem", note)]
         if choices:
             flags.append(_flag("choices", "Choices came from the text scan and may include stray handwriting."))
         if sheet.layout == "cloze":
@@ -159,10 +169,10 @@ def read_sheet(text: str, ocr_lang: str = "eng") -> tuple[ParsedSheet, list[dict
         if sheet.layout == "editing":
             flags.append(_flag("stem", "Editing passage. The child fixes the word after the number in brackets."))
         if parsed.stem_changes:
-            flags.append(_flag("stem", "Tesseract ran words together. Spaces were added: " + "; ".join(parsed.stem_changes) + "."))
+            flags.append(_flag("stem", f"{label} ran words together. Spaces were added: " + "; ".join(parsed.stem_changes) + "."))
         if parsed.choice_changes:
             flags.append(
-                _flag("choices", "Tesseract ran words together. Spaces were added: " + "; ".join(parsed.choice_changes) + ".")
+                _flag("choices", f"{label} ran words together. Spaces were added: " + "; ".join(parsed.choice_changes) + ".")
             )
         if parsed.removed:
             flags.append(_flag("stem", "Stray marks were left out of the question: " + " ".join(parsed.removed) + "."))
@@ -216,7 +226,7 @@ def _tesseract_text(rgb, lang: str = "eng") -> str:
     return out.strip()
 
 
-def page_flags(pencil: dict, layout: str, ocr_lang: str) -> list[dict]:
+def page_flags(pencil: dict, layout: str, ocr_lang: str, engine: str = "tesseract") -> list[dict]:
     flags = []
     if pencil.get("likely"):
         flags.append(
@@ -233,7 +243,8 @@ def page_flags(pencil: dict, layout: str, ocr_lang: str) -> list[dict]:
     if layout == "editing":
         flags.append({"kind": "editing", "note": "Editing passage. Each numbered word became its own question."})
     if ocr_lang == "chi_sim":
-        flags.append({"kind": "chinese", "note": "Chinese page, read with Tesseract chi_sim. Check characters closely."})
+        reader = "PaddleOCR PP-OCRv5" if engine == "paddle" else "Tesseract chi_sim"
+        flags.append({"kind": "chinese", "note": f"Chinese page, read with {reader}. Check characters closely."})
     return flags
 
 
@@ -318,6 +329,28 @@ def _need_ocr(page: dict, previews: dict, lang: str, retry: bool) -> dict:
     }
 
 
+def _ocr_scan(page: dict, filename: str, text: str, lang: str, subject: str, engine: str) -> dict:
+    sheet, questions = read_sheet(text, lang, engine)
+    if lang == "chi_sim":
+        subject_name = "chinese"
+    else:
+        subject_name = subject_slug(subject) if subject not in {"", "auto"} else "english"
+    return {
+        "extraction": engine,
+        "subject": subject_name,
+        "paper_title": sheet.title or "Homework",
+        "source_photo": filename,
+        "note": (
+            f"Read with free {ENGINE_LABEL[engine]} from the cleaned page. "
+            "Pencil is not lifted. Flagged fields need a parent look."
+        ),
+        "questions": questions,
+        "ocr_lang": lang,
+        "ocr_engine": engine,
+        "page_flags": page_flags(page["pencil"], sheet.layout, lang, engine),
+    }
+
+
 def _tesseract_scan(page: dict, previews: dict, filename: str, ocr_text: str, subject: str, ocr_lang: str) -> dict:
     lang = ocr_lang if ocr_lang in OCR_NOTE else wanted_lang(subject)
     text = (ocr_text or "").strip() or _tesseract_text(page["clean_rgb"], lang)
@@ -333,25 +366,23 @@ def _tesseract_scan(page: dict, previews: dict, filename: str, ocr_text: str, su
         break
     if decision["action"] != "parse":
         return {"ok": False, "unsupported": True, "ocr_lang": lang, "message": UNSUPPORTED, "previews": previews}
-    sheet, questions = read_sheet(text, lang)
-    if lang == "chi_sim":
-        subject_name = "chinese"
-    else:
-        subject_name = subject_slug(subject) if subject not in {"", "auto"} else "english"
-    scan = {
-        "extraction": "tesseract",
-        "subject": subject_name,
-        "paper_title": sheet.title or "Homework",
-        "source_photo": filename,
-        "note": (
-            "Read with free Tesseract from the cleaned page. "
-            "Pencil is not lifted. Flagged fields need a parent look."
-        ),
-        "questions": questions,
-        "ocr_lang": lang,
-        "page_flags": page_flags(page["pencil"], sheet.layout, lang),
-    }
-    return {"ok": True, "scan": scan}
+    return {"ok": True, "scan": _ocr_scan(page, filename, text, lang, subject, "tesseract"), "ocr_text": text}
+
+
+async def _paddle_scan(page: dict, previews: dict, filename: str, subject: str) -> dict:
+    if not paddle_ocr.available():
+        return {
+            "ok": False,
+            "engine_missing": True,
+            "message": f"PaddleOCR is not installed on this server. Run: {paddle_ocr.INSTALL}",
+            "previews": previews,
+        }
+    text = await asyncio.to_thread(paddle_ocr.paddle_text, page["clean_rgb"])
+    script = text_script(text)
+    lang = "chi_sim" if script["han_share"] >= 0.3 else "eng"
+    if not text.strip() or script["garbled"]:
+        return {"ok": False, "unsupported": True, "ocr_lang": lang, "message": UNSUPPORTED, "previews": previews, "ocr_text": text}
+    return {"ok": True, "scan": _ocr_scan(page, filename, text, lang, subject, "paddle"), "ocr_text": text}
 
 
 async def extract_scan(
@@ -361,26 +392,42 @@ async def extract_scan(
     ocr_text: str,
     subject: str = "auto",
     ocr_lang: str = "",
+    ocr_engine: str = "",
 ) -> dict:
-    """OCR always reads the cleaned, straightened page, never the raw photo."""
+    """OCR always reads the cleaned, straightened page, never the raw photo.
+
+    ocr_engine (or SPROUT_OCR) picks tesseract or paddle. Naming an engine explicitly
+    skips the optional Zhipu vision read.
+    """
+    engine = paddle_ocr.engine_name(ocr_engine)
+    started = time.perf_counter()
     page = prepare_page(image_bytes)
+    prepared = time.perf_counter()
     previews = {"deskew_jpeg": page["deskew_jpeg"], "clean_jpeg": page["clean_jpeg"]}
     sample_name = filename.lower().startswith("sample-exam")
+    text = ""
+    key = None if (ocr_engine or os.environ.get("SPROUT_OCR")) else vision_api_key()
     if demo or sample_name:
         scan = stub_scan(filename)
         scan["page_flags"] = page_flags(page["pencil"], "questions", "eng")
+    elif key:
+        scan = await vision_extract(_jpeg_bytes(page["clean_jpeg"]), key)
+        scan["page_flags"] = page_flags(page["pencil"], "questions", "eng")
     else:
-        key = vision_api_key()
-        if key:
-            scan = await vision_extract(_jpeg_bytes(page["clean_jpeg"]), key)
-            scan["page_flags"] = page_flags(page["pencil"], "questions", "eng")
+        if engine == "paddle":
+            result = await _paddle_scan(page, previews, filename, subject)
         else:
             result = _tesseract_scan(page, previews, filename, ocr_text, subject, ocr_lang)
-            if not result["ok"]:
-                return result
-            scan = result["scan"]
+        result["timings"] = {
+            "prepare_s": round(prepared - started, 3),
+            "ocr_s": round(time.perf_counter() - prepared, 3),
+        }
+        if not result["ok"]:
+            return result
+        scan, text = result["scan"], result.get("ocr_text", "")
     scan["source_photo"] = filename
     scan["deskew"] = page["deskew"]
     scan["ink_pixels_lifted"] = page["ink_pixels_lifted"]
     scan["previews"] = previews
-    return {"ok": True, "scan": scan}
+    timings = {"prepare_s": round(prepared - started, 3), "ocr_s": round(time.perf_counter() - prepared, 3)}
+    return {"ok": True, "scan": scan, "ocr_text": text, "timings": timings}

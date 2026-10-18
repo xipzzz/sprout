@@ -21,19 +21,24 @@ export type Practice = {
   grade: (questionId: string, choice: string) => Grade;
 };
 
+/** OCR engines read no answers, so every question waits for the parent. */
+function isOcrRead(scan: ParentScan): boolean {
+  return scan.extraction === 'tesseract' || scan.extraction === 'paddle';
+}
+
 function readerAnswer(scan: ParentScan, question: ParentQuestion): string {
-  if (scan.extraction === 'tesseract') return '';
+  if (isOcrRead(scan)) return '';
   if (question.flags.some((flag) => flag.field === 'correct_answer')) return '';
   return question.choices.includes(question.correct_answer) ? question.correct_answer : '';
 }
 
-/** Tesseract answers always start open. A reader answer is kept only when it is a choice and was not guessed. */
+/** OCR-read answers always start open. A reader answer is kept only when it is a choice and was not guessed. */
 export function initialReview(scan: ParentScan): ReviewState {
   const review: ReviewState = {};
   for (const question of scan.questions) {
     const answer = readerAnswer(scan, question);
     if (answer) review[question.id] = { status: 'picked', answer };
-    else if (!question.choices.length && scan.extraction !== 'tesseract') review[question.id] = { status: 'read_aloud' };
+    else if (!question.choices.length && !isOcrRead(scan)) review[question.id] = { status: 'read_aloud' };
     else review[question.id] = { status: 'open' };
   }
   return review;

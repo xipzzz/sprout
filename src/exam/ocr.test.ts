@@ -1,6 +1,6 @@
 /* Run: node --experimental-strip-types src/exam/ocr.test.ts */
 
-import { dataUrlToBlob, nextOcrPass, type ExtractResponse } from './ocr.ts';
+import { dataUrlToBlob, nextOcrPass, ocrEngineFromQuery, type ExtractResponse } from './ocr.ts';
 
 function check(condition: unknown, message: string): void {
   if (!condition) throw new Error(message);
@@ -30,5 +30,9 @@ check(nextOcrPass({ ok: true }, []) === null, 'a finished scan needs no OCR');
 
 const blob = dataUrlToBlob('data:image/jpeg;base64,' + btoa('abc'));
 check(blob.type === 'image/jpeg' && blob.size === 3, 'data URL decodes to the JPEG bytes');
+
+check(ocrEngineFromQuery('?exam=1&ocr=paddle') === 'paddle', '?ocr=paddle passes through');
+check(ocrEngineFromQuery('?exam=1') === '', 'no query keeps the server default');
+check(ocrEngineFromQuery('?ocr=evil') === '', 'unknown engines are ignored');
 
 console.log('ocr routing test passed');
