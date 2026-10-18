@@ -34,27 +34,24 @@ const STATUS_LABEL: Record<QuestionReview['status'], string> = {
   dropped: 'Dropped',
 };
 
-function flagsFor(question: ParentQuestion, field: ReconstructionFlag['field']) {
-  return question.flags.filter((flag) => flag.field === field);
-}
-
 function listIds(ids: string[]) {
   const labels = ids.map((id) => `Q${id}`);
   if (labels.length < 2) return labels.join('');
   return `${labels.slice(0, -1).join(', ')} and ${labels[labels.length - 1]}`;
 }
 
-function FlagTape({ flags }: { flags: ReconstructionFlag[] }) {
+function FlagTape({ flags, questionId }: { flags: ReconstructionFlag[]; questionId: string }) {
   if (!flags.length) return null;
   return (
-    <div className="exam-proto__flags">
+    <div className="exam-proto__flags" role="group" aria-label={`AI changes for question ${questionId}`}>
       {flags.map((flag) => (
-        <p key={`${flag.field}-${flag.note}`} className="exam-proto__flag">
-          <span className="exam-proto__flag-label">
+        <details key={`${flag.field}-${flag.note}`} className="exam-proto__flag">
+          <summary className="exam-proto__flag-label">
+            {flag.field.replaceAll('_', ' ')}:{' '}
             {flag.kind === 'generated' ? 'AI wrote this' : 'AI filled this in'}
-          </span>
-          <span className="exam-proto__flag-note">{flag.note}</span>
-        </p>
+          </summary>
+          <p className="exam-proto__flag-note">{flag.note}</p>
+        </details>
       ))}
     </div>
   );
@@ -391,7 +388,7 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
     <div className="screen exam-proto" data-screen={phase === 'parent' ? 'parent-review' : 'exam-pick'}>
       <header className="exam-proto__top">
         <button type="button" className="lesson__close" onClick={onExit} aria-label="Close exam scan">
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
             <path d="M6 6l12 12M18 6L6 18" />
           </svg>
         </button>
@@ -479,25 +476,6 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
               {saveError && <>Could not save the note. {saveError}</>}
               {!saved.length && !skipped.length && !saveError && 'Saving the note…'}
             </p>
-            {copy?.questions.some((question) => question.flags.length > 0) && (
-              <ul className="exam-proto__flag-summary">
-                {[
-                  ...new Map(
-                    copy.questions.flatMap((question) =>
-                      question.flags.map((flag) => [
-                        `${question.id}|${flag.field}|${flag.kind}`,
-                        { id: question.id, field: flag.field, kind: flag.kind },
-                      ]),
-                    ),
-                  ),
-                ].map(([key, chip]) => (
-                  <li key={key}>
-                    {chip.kind === 'generated' ? 'AI wrote this' : 'AI filled this in'}
-                    {' · '}Q{chip.id} {chip.field.replaceAll('_', ' ')}
-                  </li>
-                ))}
-              </ul>
-            )}
             <div className="exam-proto__previews">
               {scan.previews?.deskew_jpeg && (
                 <figure>
@@ -540,24 +518,20 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
                       onChange={(stem) => setStem(question.id, stem)}
                     />
                   )}
-                  {!dropped && <FlagTape flags={flagsFor(question, 'stem')} />}
                   {!dropped && (
                     <>
                       <AnswerPicker question={question} entry={entry} onReview={(next) => setEntry(question.id, next)} />
-                      <FlagTape flags={[...flagsFor(question, 'choices'), ...flagsFor(question, 'correct_answer')]} />
                       <dl className="exam-proto__facts">
                         <div>
                           <dt>Handwritten answer</dt>
                           <dd>
                             {question.student_answer || 'Blank'}
-                            <FlagTape flags={flagsFor(question, 'student_answer')} />
                           </dd>
                         </div>
                         <div>
                           <dt>Teacher’s mark</dt>
                           <dd>
                             {question.teacher_mark || 'None'}
-                            <FlagTape flags={flagsFor(question, 'teacher_mark')} />
                           </dd>
                         </div>
                       </dl>
@@ -566,7 +540,7 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
                         <span className="exam-proto__explain-label">For you</span>
                         {explained?.explanation || 'Pick the right answer and a short explanation appears here.'}
                       </p>
-                      {explained && <FlagTape flags={flagsFor(explained, 'explanation')} />}
+                      <FlagTape questionId={question.id} flags={explained?.flags ?? question.flags} />
                     </>
                   )}
                   <button

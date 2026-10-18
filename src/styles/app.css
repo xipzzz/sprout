@@ -2534,23 +2534,19 @@ body.calm-motion *, body.calm-motion *::before, body.calm-motion *::after { anim
   text-transform: uppercase;
   color: var(--green-deep);
 }
-.exam-proto__flag-summary {
+.exam-proto__flags {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
+  align-items: flex-start;
+  gap: 8px;
+  overflow-x: auto;
+  margin-top: var(--s3);
+  padding-bottom: 4px;
 }
-.exam-proto__flag-summary li {
-  padding: 4px 8px;
-  border-radius: var(--r-pill);
-  background: var(--gold-tint);
-  border: 1px solid var(--gold);
-  font-size: 0.72rem;
-  font-weight: 800;
-}
+.exam-proto__parent-details { margin-top: var(--s3); }
+.exam-proto__parent-details dd { white-space: pre-wrap; }
 .exam-proto__flag {
+  flex: 0 0 auto;
+  max-width: 270px;
   margin: 0;
   padding: 8px 10px;
   border-radius: var(--r-sm);
@@ -2558,7 +2554,7 @@ body.calm-motion *, body.calm-motion *::before, body.calm-motion *::after { anim
   border-left: 4px solid var(--gold);
 }
 .exam-proto__flag-label {
-  display: block;
+  cursor: pointer;
   font-size: var(--fs-eyebrow);
   font-weight: 900;
   letter-spacing: 0.04em;
@@ -2567,7 +2563,7 @@ body.calm-motion *, body.calm-motion *::before, body.calm-motion *::after { anim
 }
 .exam-proto__flag-note {
   display: block;
-  margin-top: 2px;
+  margin: 6px 0 0;
   font-weight: 700;
   font-size: var(--fs-caption);
   line-height: 1.35;
