@@ -1,8 +1,12 @@
-fastapi>=0.115.0
-uvicorn>=0.32.0
-python-multipart>=0.0.20
-pillow>=10.0.0
-numpy>=1.26.0
-httpx>=0.27.0
-python-dotenv>=1.0.0
-scipy>=1.11
+# Floors are the versions the prototype tests ran on (Python 3.12).
+# page prep
+numpy>=2.3,<3
+scipy>=1.18,<2
+pillow>=13.0,<14
+# scan server
+fastapi>=0.143,<1
+uvicorn>=0.54,<1
+python-multipart>=0.0.32
+# optional Zhipu read, and .env loading
+httpx>=0.28,<1
+python-dotenv>=1.2,<2
