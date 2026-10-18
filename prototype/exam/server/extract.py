@@ -11,16 +11,15 @@ import base64
 import json
 import os
 import re
-import shutil
 import subprocess
 import sys
-import tempfile
 from pathlib import Path
 
 import httpx
 from dotenv import load_dotenv
 
 from deskew import prepare_page
+from ocr_engines import OcrUnavailable, paddle_text, pick_engine, tesseract_text
 from schema import map_question, subject_slug
 from worksheet_text import ParsedSheet, parse_worksheet_text, text_script
 
@@ -135,6 +134,8 @@ def questions_from_model(data: dict) -> list[dict]:
     return [map_question(item, index + 1) for index, item in enumerate(raw_questions) if isinstance(item, dict)]
 
 
+PADDLE_NOTE = "Read by local PaddleOCR from the cleaned page. Blue and red ink were lifted first; pencil was not."
+
 OCR_NOTE = {
     "eng": "Read by Tesseract.js from the cleaned page. Blue and red ink were lifted first; pencil was not.",
     "chi_sim": "Read by Tesseract.js in Chinese (chi_sim) from the cleaned page. Pencil was not lifted.",
@@ -199,22 +200,11 @@ def questions_from_ocr(text: str) -> list[dict]:
 
 
 def _tesseract_text(rgb, lang: str = "eng") -> str:
-    if not shutil.which("tesseract"):
-        return ""
-    from PIL import Image
+    return tesseract_text(rgb, lang)
 
-    with tempfile.NamedTemporaryFile(suffix=".png") as handle:
-        Image.fromarray(rgb, "RGB").save(handle.name)
-        try:
-            out = subprocess.check_output(
-                ["tesseract", handle.name, "stdout", "-l", lang],
-                stderr=subprocess.DEVNULL,
-                text=True,
-                timeout=40,
-            )
-        except (OSError, subprocess.SubprocessError):
-            return ""
-    return out.strip()
+
+def _engine_text(rgb, lang: str, engine: str) -> str:
+    return paddle_text(rgb, lang) if engine == "paddle" else _tesseract_text(rgb, lang)
 
 
 def page_flags(pencil: dict, layout: str, ocr_lang: str) -> list[dict]:
@@ -319,34 +309,53 @@ def _need_ocr(page: dict, previews: dict, lang: str, retry: bool) -> dict:
     }
 
 
-def _tesseract_scan(page: dict, previews: dict, filename: str, ocr_text: str, subject: str, ocr_lang: str) -> dict:
+def _tesseract_scan(
+    page: dict,
+    previews: dict,
+    filename: str,
+    ocr_text: str,
+    subject: str,
+    ocr_lang: str,
+    engine: str = "tesseract",
+) -> dict:
     lang = ocr_lang if ocr_lang in OCR_NOTE else wanted_lang(subject)
-    text = (ocr_text or "").strip() or _tesseract_text(page["clean_rgb"], lang)
-    retried = False
-    while True:
-        if not text:
-            return _need_ocr(page, previews, lang, retried)
-        decision = ocr_decision(text, lang)
-        if decision["action"] == "retry" and not retried:
-            lang, retried = decision["ocr_lang"], True
-            text = _tesseract_text(page["clean_rgb"], lang)
-            continue
-        break
+    paddle = engine == "paddle"
+    try:
+        text = ("" if paddle else (ocr_text or "").strip()) or _engine_text(page["clean_rgb"], lang, engine)
+        retried = False
+        while True:
+            if not text:
+                if paddle:
+                    return {"ok": False, "unsupported": True, "ocr_lang": lang, "message": UNSUPPORTED, "previews": previews}
+                return _need_ocr(page, previews, lang, retried)
+            decision = ocr_decision(text, lang)
+            if decision["action"] == "retry" and not retried:
+                lang, retried = decision["ocr_lang"], True
+                text = _engine_text(page["clean_rgb"], lang, engine)
+                continue
+            break
+    except OcrUnavailable as exc:
+        return {"ok": False, "ocr_unavailable": True, "message": str(exc), "previews": previews}
     if decision["action"] != "parse":
         return {"ok": False, "unsupported": True, "ocr_lang": lang, "message": UNSUPPORTED, "previews": previews}
     sheet, questions = read_sheet(text, lang)
+    if paddle:
+        for question in questions:
+            for flag in question["flags"]:
+                if flag["note"] in OCR_NOTE.values():
+                    flag["note"] = PADDLE_NOTE
     if lang == "chi_sim":
         subject_name = "chinese"
     else:
         subject_name = subject_slug(subject) if subject not in {"", "auto"} else "english"
     scan = {
-        "extraction": "tesseract",
+        "extraction": engine,
         "subject": subject_name,
         "paper_title": sheet.title or "Homework",
         "source_photo": filename,
         "note": (
-            "Read with free Tesseract from the cleaned page. "
-            "Pencil is not lifted. Flagged fields need a parent look."
+            ("Read with local PaddleOCR" if paddle else "Read with free Tesseract")
+            + " from the cleaned page. Pencil is not lifted. Flagged fields need a parent look."
         ),
         "questions": questions,
         "ocr_lang": lang,
@@ -362,8 +371,13 @@ async def extract_scan(
     ocr_text: str,
     subject: str = "auto",
     ocr_lang: str = "",
+    ocr_engine: str = "",
 ) -> dict:
-    """OCR always reads the cleaned, straightened page, never the raw photo."""
+    """OCR always reads the cleaned, straightened page, never the raw photo.
+
+    ocr_engine (or SPROUT_OCR) set to paddle reads the page with local PaddleOCR on this server.
+    """
+    engine = pick_engine(ocr_engine)
     page = prepare_page(image_bytes)
     previews = {"deskew_jpeg": page["deskew_jpeg"], "clean_jpeg": page["clean_jpeg"]}
     sample_name = filename.lower().startswith("sample-exam")
@@ -371,12 +385,12 @@ async def extract_scan(
         scan = stub_scan(filename)
         scan["page_flags"] = page_flags(page["pencil"], "questions", "eng")
     else:
-        key = vision_api_key()
+        key = None if engine == "paddle" else vision_api_key()
         if key:
             scan = await vision_extract(_jpeg_bytes(page["clean_jpeg"]), key)
             scan["page_flags"] = page_flags(page["pencil"], "questions", "eng")
         else:
-            result = _tesseract_scan(page, previews, filename, ocr_text, subject, ocr_lang)
+            result = _tesseract_scan(page, previews, filename, ocr_text, subject, ocr_lang, engine)
             if not result["ok"]:
                 return result
             scan = result["scan"]

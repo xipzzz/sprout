@@ -7,6 +7,7 @@ export type ExtractResponse = {
   ok: boolean;
   need_ocr?: boolean;
   unsupported?: boolean;
+  ocr_unavailable?: boolean;
   ocr_lang?: OcrLang;
   ocr_jpeg?: string;
   message?: string;
@@ -34,6 +35,14 @@ export function dataUrlToBlob(dataUrl: string): Blob {
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
   return new Blob([bytes], { type: mime });
+}
+
+export type OcrEngine = 'tesseract' | 'paddle';
+
+/** ?ocr=paddle asks the scan server to read the page with local PaddleOCR. Anything else keeps the default. */
+export function ocrEngineFromSearch(search: string): OcrEngine | null {
+  const value = new URLSearchParams(search).get('ocr')?.trim().toLowerCase();
+  return value === 'paddle' || value === 'tesseract' ? value : null;
 }
 
 export const SUBJECTS = [

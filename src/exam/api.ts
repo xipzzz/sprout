@@ -1,5 +1,5 @@
 import { createWorker } from 'tesseract.js';
-import { dataUrlToBlob, nextOcrPass, type ExtractResponse, type SubjectChoice } from './ocr.ts';
+import { dataUrlToBlob, nextOcrPass, ocrEngineFromSearch, type ExtractResponse, type SubjectChoice } from './ocr.ts';
 import type { OcrLang, ParentScan } from './types.ts';
 
 export type { ExtractResponse } from './ocr.ts';
@@ -8,6 +8,8 @@ async function postScan(file: File, extra: Record<string, string>): Promise<Extr
   const body = new FormData();
   body.append('file', file, file.name || 'homework.jpg');
   for (const [key, value] of Object.entries(extra)) body.append(key, value);
+  const engine = typeof window === 'undefined' ? null : ocrEngineFromSearch(window.location.search);
+  if (engine) body.append('ocr', engine);
   const res = await fetch('/api/scan', { method: 'POST', body });
   if (!res.ok) {
     const text = await res.text();

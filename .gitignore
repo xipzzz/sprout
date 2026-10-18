@@ -31,5 +31,6 @@ dist-ssr
 .env
 sprout-notes/
 prototype/exam/.venv/
+prototype/exam/.venv-paddle/
 __pycache__/
 *.py[cod]

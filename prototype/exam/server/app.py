@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from extract import extract_scan, vision_api_key
+from ocr_engines import pick_engine
 from save_note import save_scan
 import os
 
@@ -29,6 +30,7 @@ def health():
         "vision": bool(vision_api_key()),
         "vision_key_name": "ZHIPU_API_KEY",
         "model": os.environ.get("ZHIPU_MODEL", "glm-4.6v"),
+        "ocr": pick_engine(),
     }
 
 
@@ -39,6 +41,7 @@ async def scan_photo(
     ocr_text: str = Form(""),
     subject: str = Form("auto"),
     ocr_lang: str = Form(""),
+    ocr: str = Form(""),
 ):
     data = await file.read()
     if not data:
@@ -50,6 +53,7 @@ async def scan_photo(
         ocr_text,
         subject,
         ocr_lang,
+        ocr,
     )
 
 

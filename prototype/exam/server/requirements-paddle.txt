@@ -1,0 +1,7 @@
+# Optional local PaddleOCR engine (SPROUT_OCR=paddle or ?ocr=paddle).
+# paddlepaddle has wheels for Python 3.9 to 3.12 only. On a newer Python, make a 3.11 venv:
+#   uv venv -p 3.11 prototype/exam/.venv-paddle
+#   uv pip install -p prototype/exam/.venv-paddle -r prototype/exam/server/requirements.txt -r prototype/exam/server/requirements-paddle.txt
+# The first run downloads the PaddleOCR models to ~/.paddlex (outside the repo). No key or account.
+paddlepaddle>=3.0,<4
+paddleocr>=3.0,<4

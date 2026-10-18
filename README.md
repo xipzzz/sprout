@@ -28,7 +28,7 @@ practice for the child. The existing Scan homework button is unchanged.
 
 ```bash
 npm install          # once
-npm run exam         # Vite on :5173 and the local saver on :8787
+npm run exam         # Vite on :5173 and the local saver on :8787 (SPROUT_EXAM_API=http://127.0.0.1:PORT if 8787 is taken)
 ```
 
 Open http://localhost:5173/?exam=1 and tap **Try the sample photo**. That path needs no API key.
@@ -56,6 +56,35 @@ security add-generic-password -s sprout -a ZHIPU_API_KEY -w
 ```
 
 The child screen receives a different data shape with no handwritten answer, teacher's mark, or correct answer.
+
+### Local PaddleOCR (optional)
+
+Set `SPROUT_OCR=paddle` for the server, or open `?exam=1&ocr=paddle`, to read the cleaned page
+with PaddleOCR on this machine instead of Tesseract. It never calls the vision model. PaddleOCR
+is not in the default install. `paddlepaddle` has wheels for Python 3.9 to 3.12 only, so make a
+3.11 venv for it:
+
+```bash
+uv venv -p 3.11 prototype/exam/.venv-paddle
+uv pip install -p prototype/exam/.venv-paddle -r prototype/exam/server/requirements.txt \
+  -r prototype/exam/server/requirements-paddle.txt
+```
+
+The first read downloads the models to `~/.paddlex`. Without PaddleOCR, `ocr=paddle` returns a
+message that says what to install, and nothing else changes.
+
+### Batch run
+
+Scan a folder of photos with one engine and get one CSV row per photo (question count, flags,
+EXIF turn, deskew, stems). It saves no notes, never calls the vision model, and refuses an
+`--out` path inside the repo.
+
+```bash
+python -m prototype.exam.server.batch --ocr tesseract ~/Pictures/homework --out ~/Desktop/tesseract.csv
+prototype/exam/.venv-paddle/bin/python -m prototype.exam.server.batch --ocr paddle ~/Pictures/homework --out ~/Desktop/paddle.csv
+```
+
+Run it from the repo root with a Python that has `requirements.txt` installed.
 
 The saver writes one Obsidian note per scan, named like `2026-10-17-english.md`, to
 `SPROUT_VAULT_DIR` (default `/Users/ml/Documents/10_Obsidian/Xip/Sprout/`). If that folder
