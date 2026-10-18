@@ -71,6 +71,37 @@ def _practice_line(question: dict) -> str:
     return f"Practice answer (hidden from the child): {answer or '(unknown)'}"
 
 
+def _page_detail_lines(question: dict, depth: int = 0) -> list[str]:
+    """Extra fields read from the page. Parent copy only."""
+    lines = []
+    labels = question.get("choice_labels") or []
+    if labels:
+        lines.append("Choice labels: " + ", ".join(labels))
+    if question.get("question_type"):
+        lines.append(f"Question type: {question['question_type']}")
+    working = question.get("working") or []
+    if working:
+        lines.append("Child's working: " + " / ".join(working))
+    if isinstance(question.get("is_correct"), bool):
+        lines.append("Teacher marked it " + ("right." if question["is_correct"] else "wrong."))
+    if question.get("marks"):
+        lines.append(f"Marks: {question['marks']}")
+    if question.get("teacher_comment"):
+        lines.append(f"Teacher's comment: {question['teacher_comment']}")
+    out = []
+    for line in lines:
+        out.extend([line, ""])
+    for sub in question.get("sub_questions") or []:
+        out.extend([f"Part {sub.get('id')}: {sub.get('stem') or ''}", ""])
+        if sub.get("student_answer"):
+            out.extend([f"Child's handwritten answer: {sub['student_answer']}", ""])
+        if sub.get("teacher_mark"):
+            out.extend([f"Teacher's mark: {sub['teacher_mark']}", ""])
+        if depth < 2:
+            out.extend(_page_detail_lines(sub, depth + 1))
+    return out
+
+
 def render_markdown(scan: dict, when: date | None = None) -> str:
     when = when or date.today()
     questions = scan.get("questions") or []
@@ -130,6 +161,7 @@ def render_markdown(scan: dict, when: date | None = None) -> str:
                 "",
             ]
         )
+        parent.extend(_page_detail_lines(question))
         if question.get("stem_edited"):
             parent.extend(["Stem edited by parent before practice.", ""])
         explanation = question.get("explanation") or "an explanation appears once an answer is picked."

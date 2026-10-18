@@ -114,5 +114,60 @@ try {
 }
 if (!caught) throw new Error('A lone 8 in the stem must count as a leaked answer');
 
+// Extra page fields stay on the parent question.
+const rich: ParentScan = {
+  ...scan,
+  questions: [
+    {
+      id: '4',
+      stem: 'Mei has 12 stickers. She gives away some.',
+      choices: ['5', '7'],
+      student_answer: '7',
+      teacher_mark: '✓ 2',
+      correct_answer: '7',
+      explanation: '',
+      flags: [],
+      choice_labels: ['A', 'B'],
+      question_type: 'word problem',
+      working: ['12 - 5 = 7'],
+      is_correct: true,
+      teacher_comment: 'Neat working!',
+      marks: '2',
+      sub_questions: [
+        {
+          id: '4a',
+          stem: 'How many are left?',
+          choices: [],
+          student_answer: 'seven',
+          teacher_mark: '',
+          correct_answer: 'seven',
+          explanation: '',
+          flags: [],
+        },
+      ],
+    },
+  ],
+};
+const richChild = toChildView(rich);
+assertChildViewSafe(rich, richChild);
+if (JSON.stringify(richChild.questions) !== JSON.stringify([{ id: '4', stem: rich.questions[0].stem, choices: ['5', '7'] }])) {
+  throw new Error(`Child payload must be id, stem and choices only: ${JSON.stringify(richChild)}`);
+}
+for (const leak of [
+  (c: typeof richChild) => { c.questions[0].stem += ' Hint: seven.'; },
+  (c: typeof richChild) => { c.questions[0].stem = 'Neat working!'; },
+  (c: typeof richChild) => { (c.questions[0] as Record<string, unknown>).choice_labels = ['A', 'B']; },
+]) {
+  const tampered = structuredClone(richChild);
+  leak(tampered);
+  let failed = false;
+  try {
+    assertChildViewSafe(rich, tampered);
+  } catch {
+    failed = true;
+  }
+  if (!failed) throw new Error(`Tampered child payload passed: ${JSON.stringify(tampered)}`);
+}
+
 console.log('child view test passed');
 console.log(blob);

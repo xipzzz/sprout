@@ -43,6 +43,13 @@ Each question item has these keys:
 - correct_answer: your best answer for practice.
 - explanation: one or two short sentences a parent can read.
 - flags: a list of {field, kind, note} for every part you were not sure of.
+- choice_labels: the printed label of each choice, such as A or 1, in the same order.
+- question_type: a short name, such as multiple choice, fill in the blank or word problem.
+- working: a list of the child's working steps, if any.
+- is_correct: true or false from the teacher's mark, or null if there is no mark.
+- teacher_comment: any words the teacher wrote. Empty if none.
+- marks: the score the teacher gave, such as 2 or 1/2. Empty if none.
+- sub_questions: parts like 1a and 1b, each with these same keys. Empty if none.
 
 How to flag:
 - If print was hidden, smudged or covered and you guessed it, flag that field with kind reconstructed.
@@ -169,6 +176,7 @@ def read_sheet(text: str, ocr_lang: str = "eng") -> tuple[ParsedSheet, list[dict
             "id": str(parsed.number),
             "stem": stem or "Question from the photo",
             "choices": choices,
+            "choice_labels": parsed.choice_labels,
             "student_answer": "",
             "teacher_mark": "",
             "correct_answer": "",

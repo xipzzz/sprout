@@ -20,6 +20,14 @@ export type ParentQuestion = {
   flags: ReconstructionFlag[];
   review?: ReviewStatus;
   stem_edited?: boolean;
+  /* Read from the page, parent side only. toChildView never copies these. */
+  choice_labels?: string[];
+  question_type?: string;
+  working?: string[];
+  is_correct?: boolean | null;
+  teacher_comment?: string;
+  marks?: string;
+  sub_questions?: ParentQuestion[];
 };
 
 export type ParentScan = {

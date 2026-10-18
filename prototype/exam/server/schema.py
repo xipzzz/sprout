@@ -20,6 +20,13 @@ FORBIDDEN_CHILD_KEYS = {
     "review",
     "stem_edited",
     "page_flags",
+    "choice_labels",
+    "question_type",
+    "working",
+    "is_correct",
+    "teacher_comment",
+    "marks",
+    "sub_questions",
 }
 
 PRACTICE_REVIEWS = {"picked", "read_aloud"}
@@ -59,6 +66,37 @@ def _choices(raw: dict) -> list[str]:
     if isinstance(options, list):
         return [str(item).strip() for item in options if str(item).strip()]
     return []
+
+
+def _choice_labels(raw: dict) -> list[str]:
+    labels = raw.get("choice_labels")
+    if isinstance(labels, list):
+        return [str(item).strip() for item in labels if str(item).strip()]
+    options = raw.get("options")
+    if isinstance(options, dict):
+        return [str(key).strip() for key, value in options.items() if str(value).strip()]
+    return []
+
+
+def _feedback(raw: dict) -> dict:
+    feedback = raw.get("teacher_feedback")
+    return feedback if isinstance(feedback, dict) else {}
+
+
+def _working(raw: dict) -> list[str]:
+    steps = raw.get("working")
+    if steps is None and isinstance(raw.get("student_answer"), dict):
+        steps = raw["student_answer"].get("steps")
+    if isinstance(steps, str):
+        steps = [steps]
+    if not isinstance(steps, list):
+        return []
+    return [_as_text(step) for step in steps if _as_text(step)]
+
+
+def _is_correct(raw: dict) -> bool | None:
+    value = raw.get("is_correct", _feedback(raw).get("is_correct"))
+    return value if isinstance(value, bool) else None
 
 
 def _teacher_mark(raw: dict) -> str:
@@ -121,6 +159,17 @@ def map_question(raw: dict, index: int) -> dict:
         "correct_answer": _as_text(raw.get("correct_answer") or raw.get("answer")),
         "explanation": explanation,
         "flags": flags,
+        "choice_labels": _choice_labels(raw),
+        "question_type": _as_text(raw.get("question_type") or raw.get("type")),
+        "working": _working(raw),
+        "is_correct": _is_correct(raw),
+        "teacher_comment": _as_text(raw.get("teacher_comment") or _feedback(raw).get("comment")),
+        "marks": _as_text(raw.get("marks") or _feedback(raw).get("score")),
+        "sub_questions": [
+            map_question(item, number + 1)
+            for number, item in enumerate(raw.get("sub_questions") or [])
+            if isinstance(item, dict)
+        ],
     }
 
 
@@ -209,20 +258,39 @@ def assert_child_view_safe(parent: dict, child: dict) -> None:
         for question in parent.get("questions") or []
         for choice in (question.get("choices") or [])
     }
-    for question in parent.get("questions") or []:
-        explanation = question.get("explanation") or ""
-        if explanation and contains_token(blob, explanation):
-            raise AssertionError(f"Child view leaked the explanation for {question.get('id')}")
-        mark = question.get("teacher_mark") or ""
-        if mark and mark not in choice_text and contains_token(blob, mark):
-            raise AssertionError(f"Child view leaked the teacher mark for {question.get('id')}")
-        written = question.get("student_answer") or ""
-        if written and written not in choice_text and contains_token(blob, written):
-            raise AssertionError(f"Child view leaked the handwritten answer for {question.get('id')}")
-        correct = question.get("correct_answer") or ""
-        if correct and correct not in choice_text and contains_token(blob, correct):
-            raise AssertionError(f"Child view leaked the correct answer for {question.get('id')}")
-        for flag in question.get("flags") or []:
-            note = (flag or {}).get("note") or ""
-            if note and contains_token(blob, note):
-                raise AssertionError(f"Child view leaked a flag note for {question.get('id')}")
+    for question in _with_sub_questions(parent.get("questions") or []):
+        _assert_no_secret_text(question, blob, choice_text)
+
+
+def _with_sub_questions(questions: list[dict]) -> list[dict]:
+    out = []
+    for question in questions:
+        out.append(question)
+        out.extend(_with_sub_questions(question.get("sub_questions") or []))
+    return out
+
+
+def _assert_no_secret_text(question: dict, blob: str, choice_text: set[str]) -> None:
+    qid = question.get("id")
+    explanation = question.get("explanation") or ""
+    if explanation and contains_token(blob, explanation):
+        raise AssertionError(f"Child view leaked the explanation for {qid}")
+    comment = question.get("teacher_comment") or ""
+    if comment and contains_token(blob, comment):
+        raise AssertionError(f"Child view leaked the teacher comment for {qid}")
+    for step in question.get("working") or []:
+        if step and step not in choice_text and contains_token(blob, step):
+            raise AssertionError(f"Child view leaked the child's working for {qid}")
+    mark = question.get("teacher_mark") or ""
+    if mark and mark not in choice_text and contains_token(blob, mark):
+        raise AssertionError(f"Child view leaked the teacher mark for {qid}")
+    written = question.get("student_answer") or ""
+    if written and written not in choice_text and contains_token(blob, written):
+        raise AssertionError(f"Child view leaked the handwritten answer for {qid}")
+    correct = question.get("correct_answer") or ""
+    if correct and correct not in choice_text and contains_token(blob, correct):
+        raise AssertionError(f"Child view leaked the correct answer for {qid}")
+    for flag in question.get("flags") or []:
+        note = (flag or {}).get("note") or ""
+        if note and contains_token(blob, note):
+            raise AssertionError(f"Child view leaked a flag note for {qid}")

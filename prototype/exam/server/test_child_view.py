@@ -68,6 +68,93 @@ class SchemaTests(unittest.TestCase):
         self.assertEqual(questions[0]["explanation"], "")
 
 
+def rich_question() -> dict:
+    """Sprout's own sample with every extra field a reader can return."""
+    return map_question(
+        {
+            "id": "4",
+            "type": "word problem",
+            "stem": "Mei has 12 stickers. She gives away some.",
+            "options": {"A": "5", "B": "7"},
+            "student_answer": {"final": "7", "steps": ["12 - 5 = 7"]},
+            "teacher_feedback": {"is_correct": True, "score": "2", "symbols": ["✓"], "comment": "Neat working!"},
+            "sub_questions": [
+                {"id": "4a", "stem": "How many are left?", "student_answer": "seven", "correct_answer": "seven"},
+            ],
+        },
+        4,
+    )
+
+
+class ExtraFieldTests(unittest.TestCase):
+    def test_extra_fields_land_on_the_parent_question(self):
+        question = rich_question()
+        self.assertEqual(question["choice_labels"], ["A", "B"])
+        self.assertEqual(question["question_type"], "word problem")
+        self.assertEqual(question["working"], ["12 - 5 = 7"])
+        self.assertIs(question["is_correct"], True)
+        self.assertEqual(question["teacher_comment"], "Neat working!")
+        self.assertEqual(question["marks"], "2")
+        self.assertEqual([sub["id"] for sub in question["sub_questions"]], ["4a"])
+        self.assertEqual(question["sub_questions"][0]["correct_answer"], "seven")
+
+    def test_flat_sprout_keys_map_too(self):
+        question = map_question(
+            {"stem": "Pick one.", "choices": ["x", "y"], "choice_labels": ["1", "2"], "is_correct": "yes", "marks": "1/2"},
+            2,
+        )
+        self.assertEqual(question["choice_labels"], ["1", "2"])
+        self.assertIsNone(question["is_correct"])
+        self.assertEqual(question["marks"], "1/2")
+        self.assertEqual(question["sub_questions"], [])
+
+    def test_child_view_keeps_only_id_stem_choices(self):
+        scan = {"subject": "math", "questions": [rich_question()]}
+        child = to_child_view(scan)
+        assert_child_view_safe(scan, child)
+        self.assertEqual(child["questions"], [
+            {"id": "4", "stem": "Mei has 12 stickers. She gives away some.", "choices": ["5", "7"]}
+        ])
+        blob = __import__("json").dumps(child, ensure_ascii=False)
+        for secret in ("Neat working", "12 - 5 = 7", "seven", "4a", "word problem"):
+            self.assertNotIn(secret, blob)
+
+    def test_extra_fields_in_a_child_payload_fail(self):
+        scan = {"subject": "math", "questions": [rich_question()]}
+        child = to_child_view(scan)
+        child["questions"][0]["choice_labels"] = ["A", "B"]
+        with self.assertRaises(AssertionError):
+            assert_child_view_safe(scan, child)
+
+    def test_sub_question_answer_in_a_stem_fails(self):
+        scan = {"subject": "math", "questions": [rich_question()]}
+        child = to_child_view(scan)
+        child["questions"][0]["stem"] += " Hint: seven."
+        with self.assertRaises(AssertionError):
+            assert_child_view_safe(scan, child)
+
+    def test_teacher_comment_in_a_stem_fails(self):
+        scan = {"subject": "math", "questions": [rich_question()]}
+        child = to_child_view(scan)
+        child["questions"][0]["stem"] = "Neat working!"
+        with self.assertRaises(AssertionError):
+            assert_child_view_safe(scan, child)
+
+    def test_ocr_keeps_printed_choice_labels(self):
+        questions = questions_from_ocr("1. Which word?\nA) bloom\nB) root\n\n2. Pick a number.\n(1) ten (2) six (3) nine\n")
+        self.assertEqual(questions[0]["choice_labels"], ["A", "B"])
+        self.assertEqual(questions[1]["choice_labels"], ["1", "2", "3"])
+
+    def test_note_shows_extras_in_the_parent_copy_only(self):
+        scan = {"subject": "math", "paper_title": "Sums", "questions": [rich_question()]}
+        parent, practice = render_markdown(scan).split("## Practice prompts", 1)
+        for line in ("Choice labels: A, B", "Question type: word problem", "Child's working: 12 - 5 = 7",
+                     "Teacher marked it right.", "Marks: 2", "Teacher's comment: Neat working!", "Part 4a:"):
+            self.assertIn(line, parent)
+        for secret in ("Neat working", "12 - 5", "Part 4a", "word problem"):
+            self.assertNotIn(secret, practice)
+
+
 class WholeTokenTests(unittest.TestCase):
     def _scan(self, stem):
         return {

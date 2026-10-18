@@ -1,7 +1,7 @@
 /* Build the child practice payload from a parent scan.
    Answers stay in the parent object. This function is the only bridge. */
 
-import type { ChildView, ParentScan } from './types.ts';
+import type { ChildView, ParentQuestion, ParentScan } from './types.ts';
 
 const FORBIDDEN_KEYS = new Set([
   'student_answer',
@@ -18,6 +18,13 @@ const FORBIDDEN_KEYS = new Set([
   'review',
   'stem_edited',
   'page_flags',
+  'choice_labels',
+  'question_type',
+  'working',
+  'is_correct',
+  'teacher_comment',
+  'marks',
+  'sub_questions',
 ]);
 
 const WORD_CHAR = /[\p{L}\p{N}]/u;
@@ -90,35 +97,41 @@ export function assertChildViewSafe(parent: ParentScan, child: ChildView): void 
 
   const blob = childText(child);
   const choiceText = new Set(parent.questions.flatMap((q) => q.choices));
-  for (const question of parent.questions) {
-    if (question.explanation && containsToken(blob, question.explanation)) {
-      throw new Error(`Child view leaked the explanation for question ${question.id}`);
+  for (const question of withSubQuestions(parent.questions)) {
+    assertNoSecretText(question, blob, choiceText);
+  }
+}
+
+function withSubQuestions(questions: ParentQuestion[]): ParentQuestion[] {
+  return questions.flatMap((q) => [q, ...withSubQuestions(q.sub_questions ?? [])]);
+}
+
+function assertNoSecretText(question: ParentQuestion, blob: string, choiceText: Set<string>): void {
+  const id = question.id;
+  if (question.explanation && containsToken(blob, question.explanation)) {
+    throw new Error(`Child view leaked the explanation for question ${id}`);
+  }
+  if (question.teacher_comment && containsToken(blob, question.teacher_comment)) {
+    throw new Error(`Child view leaked the teacher's comment for question ${id}`);
+  }
+  for (const step of question.working ?? []) {
+    if (step && !choiceText.has(step) && containsToken(blob, step)) {
+      throw new Error(`Child view leaked the child's working for question ${id}`);
     }
-    if (
-      question.teacher_mark &&
-      !choiceText.has(question.teacher_mark) &&
-      containsToken(blob, question.teacher_mark)
-    ) {
-      throw new Error(`Child view leaked the teacher's mark for question ${question.id}`);
+  }
+  const answers: [string, string][] = [
+    [question.teacher_mark, "teacher's mark"],
+    [question.student_answer, 'handwritten answer'],
+    [question.correct_answer, 'correct answer'],
+  ];
+  for (const [value, label] of answers) {
+    if (value && !choiceText.has(value) && containsToken(blob, value)) {
+      throw new Error(`Child view leaked the ${label} for question ${id}`);
     }
-    if (
-      question.student_answer &&
-      !choiceText.has(question.student_answer) &&
-      containsToken(blob, question.student_answer)
-    ) {
-      throw new Error(`Child view leaked the handwritten answer for question ${question.id}`);
-    }
-    if (
-      question.correct_answer &&
-      !choiceText.has(question.correct_answer) &&
-      containsToken(blob, question.correct_answer)
-    ) {
-      throw new Error(`Child view leaked the correct answer for question ${question.id}`);
-    }
-    for (const flag of question.flags) {
-      if (flag.note && containsToken(blob, flag.note)) {
-        throw new Error(`Child view leaked a reconstruction note for question ${question.id}`);
-      }
+  }
+  for (const flag of question.flags) {
+    if (flag.note && containsToken(blob, flag.note)) {
+      throw new Error(`Child view leaked a reconstruction note for question ${id}`);
     }
   }
 }
