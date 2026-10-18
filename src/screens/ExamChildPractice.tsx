@@ -3,6 +3,7 @@
 
 import { useState } from 'react';
 import type { ChildView } from '../exam/types';
+import PrintChildButton from '../print/PrintChildButton';
 
 type Grade = 'nice' | 'almost';
 
@@ -105,6 +106,7 @@ export default function ExamChildPractice({ view, onGrade, onBack, onExit }: Exa
             <p className="exam-proto__done">That is the last question.</p>
           )}
         </article>
+        <PrintChildButton view={view} />
       </main>
     </div>
   );

@@ -19,6 +19,10 @@ import {
   type ReviewState,
 } from '../exam/review';
 import type { ParentQuestion, ParentScan, ReconstructionFlag } from '../exam/types';
+import { useParentUnlocked } from '../parent/hooks';
+import ParentGate from '../parent/ParentGate';
+import ParentTools from '../parent/ParentTools';
+import { lockParent } from '../parent/pin';
 import ExamChildPractice from './ExamChildPractice';
 
 interface ExamPrototypeScreenProps {
@@ -235,6 +239,7 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
   const [subject, setSubject] = useState<SubjectChoice>('auto');
   const [step, setStep] = useState('Straightening the page…');
   const [unsupported, setUnsupported] = useState(false);
+  const parentOpen = useParentUnlocked();
 
   const runFile = useCallback(async (file: File, demo: boolean, subjectChoice: SubjectChoice = 'auto') => {
     scanToken.current += 1;
@@ -284,7 +289,7 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
   }, [scan, review, phase]);
 
   useEffect(() => {
-    if (started.current) return;
+    if (started.current || !parentOpen) return;
     const params = new URLSearchParams(window.location.search);
     if (params.get('demo') !== '1') return;
     started.current = true;
@@ -295,7 +300,7 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
       const file = new File([blob], 'sample-exam-english.png', { type: 'image/png' });
       await runFile(file, true);
     }
-  }, [runFile]);
+  }, [runFile, parentOpen]);
 
   async function onSample() {
     const response = await fetch('/sample-exam-english.png');
@@ -334,6 +339,7 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
       }
       setPractice(next);
       setError('');
+      lockParent();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Child view was not safe to open.');
     }
@@ -353,6 +359,19 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
       .map((question) => [question.id, question]),
   );
   const total = scan?.questions.length ?? 0;
+  if (!parentOpen) {
+    return (
+      <ParentGate
+        onExit={onExit}
+        onReset={() => {
+          setScan(null);
+          setSaved([]);
+          setSkipped([]);
+          setPhase('pick');
+        }}
+      />
+    );
+  }
 
   return (
     <div className="screen exam-proto" data-screen={phase === 'parent' ? 'parent-review' : 'exam-pick'}>
@@ -482,6 +501,7 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
               )}
             </div>
 
+            <ParentTools scan={copy ?? scan} />
             {scan.questions.map((question) => {
               const entry = review[question.id] ?? { status: 'open' };
               const explained = copyById.get(question.id);
