@@ -34,7 +34,8 @@ npm run exam         # Vite on :5173 and the local saver on :8787
 Open http://localhost:5173/?exam=1 and tap **Try the sample photo**. That path needs no API key.
 Add `?exam=1&demo=1` to open the sample immediately.
 
-A real photo is straightened and its blue and red ink is lifted first. Free Tesseract.js in
+A real photo is turned upright from its camera EXIF orientation, then straightened, and its
+blue and red ink is lifted. Free Tesseract.js in
 the browser (or a local `tesseract` binary if one is installed) then reads that cleaned page,
 never the raw photo. No Zhipu key. Guessed text is flagged on the parent screen.
 The text is split into questions by `prototype/exam/server/worksheet_text.py`. It reads
@@ -42,7 +43,9 @@ numbers like `1.`, `1)`, `1` or `Q1`, choices like `A.`, `a)`, `(1)` or `1)`, a 
 and blanks, and it tolerates OCR noise such as `{3)`, `(2)-on`, `k 3`, `\ 1)` or `: 9.`.
 Passages with inline `(1)` blanks (cloze, editing) become one question per blank, with that
 blank's sentence as the stem. Footer and URL lines are dropped. Words Tesseract ran together
-are re-split from a small wordlist and flagged.
+are re-split from a small wordlist and flagged. The parent question also keeps choice
+labels, question type, working steps, right or wrong, the teacher's comment, marks, and
+sub-questions when the reader finds them; the child still gets only id, stem and choices.
 
 Pick **Chinese** as the subject, or let an English read that comes out garbled retry once,
 and the page is read with Tesseract `chi_sim` (open-source language data from the
