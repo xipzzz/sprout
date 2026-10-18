@@ -28,33 +28,26 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 FIXTURE_PATH = REPO_ROOT / "src" / "exam" / "fixture.json"
 ZHIPU_URL = "https://open.bigmodel.cn/api/paas/v4/chat/completions"
 
-PROMPT = """You turn one photo of a school worksheet into JSON.
-Return only JSON, no markdown, with this shape:
-{
-  "paper_title": "",
-  "subject": "english or math",
-  "questions": [
-    {
-      "id": "1",
-      "stem": "printed question with handwriting left out of the sentence",
-      "choices": ["printed choice"],
-      "student_answer": "what the child wrote, or empty",
-      "teacher_mark": "the teacher's check, cross, or score, or empty",
-      "correct_answer": "the answer to use for practice",
-      "explanation": "one or two plain sentences a parent can read",
-      "flags": [
-        {"field": "stem", "kind": "reconstructed", "note": "why this was guessed"}
-      ]
-    }
-  ]
-}
-Rules:
-- stem and choices are the printed question. Do not leave handwriting inside the stem.
-- student_answer is only what the child wrote. teacher_mark is only the teacher's mark.
-- If you guess text that was hidden, smudged, or covered, add a flags entry for that field.
-- Use kind reconstructed for guessed page text, and kind generated for the explanation.
-- Always flag the explanation as generated.
-- If you are unsure, still give your best practice answer and flag correct_answer.
+PROMPT = """Read this photo of a primary school worksheet for a parent.
+Reply with one JSON object and nothing else. No markdown fence.
+
+Top level keys: paper_title (the sheet heading, or empty), subject (english, math or chinese),
+and questions (a list, one item per numbered question, in page order).
+
+Each question item has these keys:
+- id: the number printed on the page, as a string.
+- stem: the printed question only. Leave the child's handwriting out of it.
+- choices: a list of the printed options, without their letters or numbers. Empty if none.
+- student_answer: only what the child wrote or circled. Empty if nothing.
+- teacher_mark: only the teacher's tick, cross or score. Empty if nothing.
+- correct_answer: your best answer for practice.
+- explanation: one or two short sentences a parent can read.
+- flags: a list of {field, kind, note} for every part you were not sure of.
+
+How to flag:
+- If print was hidden, smudged or covered and you guessed it, flag that field with kind reconstructed.
+- Always flag explanation with kind generated.
+- If you are not sure of correct_answer, still give one and flag it.
 """
 
 

@@ -32,8 +32,8 @@ def health():
     }
 
 
-@app.post("/api/extract")
-async def extract_api(
+@app.post("/api/scan")
+async def scan_photo(
     file: UploadFile = File(...),
     demo: str = Form("0"),
     ocr_text: str = Form(""),

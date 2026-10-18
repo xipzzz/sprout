@@ -3,7 +3,7 @@
    Practice stays locked until the parent picks or drops every question. */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { extractExam, saveExam, UnsupportedPageError } from '../exam/api';
+import { saveExam, scanPage, UnsupportedPageError } from '../exam/api';
 import { SUBJECTS, type SubjectChoice } from '../exam/ocr';
 import {
   BLANK,
@@ -248,7 +248,7 @@ export default function ExamPrototypeScreen({ onExit }: ExamPrototypeScreenProps
     setSkipped([]);
     setPractice(null);
     try {
-      const next = await extractExam(file, demo, subjectChoice, setStep);
+      const next = await scanPage(file, demo, subjectChoice, setStep);
       setOriginalStems(Object.fromEntries(next.questions.map((question) => [question.id, question.stem])));
       setScan(next);
       setReview(initialReview(next));

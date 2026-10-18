@@ -13,24 +13,25 @@ from schema import assert_child_view_safe, map_question, to_child_view
 
 
 class SchemaTests(unittest.TestCase):
-    def test_maps_goppai_shaped_question(self):
+    def test_maps_nested_answer_and_feedback_shape(self):
+        # Sprout's own sample, written in the nested shape the mapper also accepts.
         question = map_question(
             {
-                "id": "19",
-                "stem": "客厅面积有____平方米",
-                "options": {"A": "30", "B": "15"},
-                "student_answer": {"final": "30, 15"},
-                "teacher_feedback": {"is_correct": True, "score": "2分", "symbols": ["√"]},
-                "correct_answer": "30",
-                "explanation": "四分之一乘以一百二十是三十。",
+                "id": "7",
+                "stem": "小明有____支红笔和____支蓝笔",
+                "options": {"A": "6", "B": "9"},
+                "student_answer": {"final": "6 和 9"},
+                "teacher_feedback": {"is_correct": False, "score": "1分", "symbols": ["×"]},
+                "correct_answer": "6",
+                "explanation": "一共十五支，蓝笔比红笔多三支。",
             },
             1,
         )
-        self.assertEqual(question["stem"], "客厅面积有____平方米")
-        self.assertEqual(question["choices"], ["30", "15"])
-        self.assertEqual(question["student_answer"], "30, 15")
-        self.assertEqual(question["teacher_mark"], "√ 2分")
-        self.assertEqual(question["correct_answer"], "30")
+        self.assertEqual(question["stem"], "小明有____支红笔和____支蓝笔")
+        self.assertEqual(question["choices"], ["6", "9"])
+        self.assertEqual(question["student_answer"], "6 和 9")
+        self.assertEqual(question["teacher_mark"], "× 1分")
+        self.assertEqual(question["correct_answer"], "6")
         self.assertTrue(any(flag["field"] == "explanation" for flag in question["flags"]))
 
     def test_child_view_drops_answers(self):
@@ -42,7 +43,7 @@ class SchemaTests(unittest.TestCase):
                     "stem": "Read this.",
                     "choices": [],
                     "student_answer": "secret-handwriting",
-                    "teacher_mark": "2分",
+                    "teacher_mark": "3分",
                     "correct_answer": "hidden-key",
                     "explanation": "The answer is hidden-key.",
                     "flags": [{"field": "correct_answer", "kind": "reconstructed", "note": "Guessed hidden-key."}],
@@ -53,7 +54,7 @@ class SchemaTests(unittest.TestCase):
         child = to_child_view(scan)
         assert_child_view_safe(scan, child)
         blob = __import__("json").dumps(child, ensure_ascii=False)
-        for secret in ("watr", "secret-handwriting", "hidden-key", "2分", "✓", "×", "Guessed hidden-key"):
+        for secret in ("watr", "secret-handwriting", "hidden-key", "3分", "✓", "×", "Guessed hidden-key"):
             self.assertNotIn(secret, blob)
 
     def test_model_fence_and_ocr_flags(self):
