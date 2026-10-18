@@ -1,0 +1,3 @@
+# Local photos, scan dumps, videos, and screenshots. Never commit these.
+data/
+out/

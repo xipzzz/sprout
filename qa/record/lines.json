@@ -1,0 +1,32 @@
+{
+  "1": {
+    "title": "Scan a worksheet",
+    "line": "Pip scans a worksheet photo, lifts the ink, and lays out each question.",
+    "skip": "A worksheet scan is missing in this build."
+  },
+  "2": {
+    "title": "Parent review with flags",
+    "line": "The parent checks flags and picks the right answers. The child never sees this page.",
+    "skip": "Parent review is missing in this build."
+  },
+  "3": {
+    "title": "Explain card and hint",
+    "line": "An explain card walks through the answer, then Pip can offer a hint.",
+    "skip": "The explain card and hints are not in this build yet."
+  },
+  "4": {
+    "title": "Mistake notebook and weak topics",
+    "line": "Wrong questions land in a mistake notebook, ranked by weak topics.",
+    "skip": "The mistake notebook is not in this build yet."
+  },
+  "5": {
+    "title": "Parent PIN, year group and print",
+    "line": "A parent PIN locks the review page. You can set the year group and print a worksheet.",
+    "skip": "Parent PIN, year group, and print are not in this build yet."
+  },
+  "6": {
+    "title": "Child practice",
+    "line": "The child practises with the question and choices only. No answers appear.",
+    "skip": "Child practice is missing in this build."
+  }
+}
